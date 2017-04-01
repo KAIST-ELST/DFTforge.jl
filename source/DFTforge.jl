@@ -43,7 +43,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,
     return Eigenstate;
 end
 
-function cal_nonco_linear_EigenState()
+function cal_nonco_linear_Eigenstate()
 end
 
 ################################################################################
@@ -55,8 +55,8 @@ using ProgressMeter
 
 
 export set_current_dftdataset,cal_colinear_eigenstate,get_dftdataset
-export Job_input_Type
-export cachecal_all_Qpoint_eigenstats,cacheset,cacheread_eigenState
+export Job_input_Type,Job_input_kq_Type
+export cachecal_all_Qpoint_eigenstats,cacheset,cacheread_eigenstate
 export get_ChempP
 
   type DFTdataset
@@ -65,7 +65,7 @@ export get_ChempP
     spin_type::SPINtype
   end
 
-  type EigenState_hdf5
+  type Eigenstate_hdf5
     hdf_cache_name::AbstractString
     fid_hdf::HDF5.HDF5File
     q_points::Array{k_point_Tuple}
@@ -74,11 +74,11 @@ export get_ChempP
     spin_type::SPINtype
     TotalOrbitalNum::Int64
     dftresult::DFTdataset
-    EigenState_real::Array{Float64,4}
-    EigenState_imag::Array{Float64,4}
-    EigenValues::Array{Float64,3}
+    Eigenvect_real::Array{Float64,4}
+    Eigenvect_imag::Array{Float64,4}
+    Eigenvalues::Array{Float64,3}
 
-    EigenState_hdf5(hdf_cache_name,fid_hdf,q_points,q_points_int,
+    Eigenstate_hdf5(hdf_cache_name,fid_hdf,q_points,q_points_int,
       q_points_intdic,spin_type,TotalOrbitalNum,dftresult) =
     new(hdf_cache_name,fid_hdf,q_points,q_points_int,
       q_points_intdic,spin_type,TotalOrbitalNum,dftresult);
@@ -92,8 +92,19 @@ export get_ChempP
     Job_input_Type(k_point,spin_type,result_index) = new(k_point,spin_type,result_index)
   end
 
+  type Job_input_kq_Type
+    k_point::k_point_Tuple
+    kq_point::k_point_Tuple
+    spin_type::SPINtype
+    result_index::Int
+    Job_input_kq_Type(k_point,kq_point,spin_type) =
+      new(k_point,kq_point,spin_type,1)
+    Job_input_kq_Type(k_point,kq_point,spin_type,result_index) =
+      new(k_point,kq_point,spin_type,result_index)
+  end
+
   global dftresult = Array{DFTdataset}();
-  global eigenstate_list =  Array{EigenState_hdf5}();
+  global eigenstate_list =  Array{Eigenstate_hdf5}();
 
   function set_current_dftdataset(scf_name::AbstractString,
     dfttype::DFTtype,spin_type::SPINtype,result_index=1)
@@ -153,13 +164,13 @@ export get_ChempP
 
     #print(spin_dim )
     fid_hdf = h5open(hdf_cache_name,"w");
-    hdf5_eigenstate_real = d_create(fid_hdf,"EigenState_real",datatype(Float64),
+    hdf5_eigenstate_real = d_create(fid_hdf,"Eigenvect_real",datatype(Float64),
     dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
-    hdf5_eigenstate_imag = d_create(fid_hdf,"EigenState_imag",datatype(Float64),
+    hdf5_eigenstate_imag = d_create(fid_hdf,"Eigenvect_imag",datatype(Float64),
     dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
-    hdf5_eigenvalues = d_create(fid_hdf,"EigenValues",datatype(Float64),
+    hdf5_eigenvalues = d_create(fid_hdf,"Eigenvalues",datatype(Float64),
     dataspace(TotalOrbitalNum2, TotalOrbitalNum2, Total_q_point_num));
 
     job_list = Array(Job_input_Type,0)
@@ -205,29 +216,28 @@ export get_ChempP
     q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
 
 
-    eigenState_cache =  EigenState_hdf5(hdf_cache_name,fid_hdf,q_point_list,
+    eigenstate_cache =  Eigenstate_hdf5(hdf_cache_name,fid_hdf,q_point_list,
       q_points_int,q_points_intdic,
       dftresult[result_index].spin_type,TotalOrbitalNum,
       dftresult[result_index]);
 
-    eigenstate_list[cache_index] = eigenState_cache;
-    return eigenState_cache;
+    eigenstate_list[cache_index] = eigenstate_cache;
+    return eigenstate_cache;
   end
 
-  function cacheset(eigenState_cache::EigenState_hdf5,cache_index=1)
+  function cacheset(eigenstate_cache::Eigenstate_hdf5,cache_index=1)
     global eigenstate_list
-    fid_hdf = h5open(eigenState_cache.hdf_cache_name,"r");
-    #print(typeof(readmmap(fid_hdf["EigenState_real"])),"\n")
-    #print(typeof(readmmap(fid_hdf["EigenValues"])),"\n")
+    fid_hdf = h5open(eigenstate_cache.hdf_cache_name,"r");
 
-    eigenState_cache.EigenState_real = readmmap(fid_hdf["EigenState_real"]);
-    eigenState_cache.EigenState_imag = readmmap(fid_hdf["EigenState_imag"]);
-    eigenState_cache.EigenValues     = readmmap(fid_hdf["EigenValues"]);
-    eigenState_cache.fid_hdf = fid_hdf;
-    eigenstate_list[cache_index] = eigenState_cache;
+
+    eigenstate_cache.Eigenvect_real = readmmap(fid_hdf["Eigenvect_real"]);
+    eigenstate_cache.Eigenvect_imag = readmmap(fid_hdf["Eigenvect_imag"]);
+    eigenstate_cache.Eigenvalues     = readmmap(fid_hdf["Eigenvalues"]);
+    eigenstate_cache.fid_hdf = fid_hdf;
+    eigenstate_list[cache_index] = eigenstate_cache;
 
   end
-  function cacheread_eigenState(k_point::k_point_Tuple,spin=1,cache_index=1)
+  function cacheread_eigenstate(k_point::k_point_Tuple,spin=1,cache_index=1)
     global eigenstate_list;
     k_point_int = k_point_float2int(kPoint2BrillouinZone_Tuple(k_point));
 
@@ -243,29 +253,29 @@ export get_ChempP
     if(DFTforge.non_colinear_type == spin_type)
       TotalOrbitalNum2 = 2*TotalOrbitalNum;
     end
-    EigenState = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
-    EigenValues = zeros(Float_my,TotalOrbitalNum2);
+    Eigenstate = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
+    Eigenvalues = zeros(Float_my,TotalOrbitalNum2);
 
     if(haskey(eigenstate_list[cache_index].q_points_intdic, k_point_int))
       q_index =  eigenstate_list[cache_index].q_points_intdic[k_point_int];
     end
     if(q_index>=1)
       if(DFTforge.para_type == spin_type)
-          EigenState[:,:] = eigenstate_list[cache_index].EigenState_real[:,:,1,q_index] +
-          im * eigenstate_list[cache_index].EigenState_imag[:,:,1,q_index];
-          EigenValues[:] = eigenstate_list[cache_index].EigenValues[:,1,q_index];
+          Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,:,1,q_index] +
+          im * eigenstate_list[cache_index].Eigenvect_imag[:,:,1,q_index];
+          Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[:,1,q_index];
       elseif (DFTforge.colinear_type == spin_type)
-          EigenState[:,:] = eigenstate_list[cache_index].EigenState_real[:,:,spin,q_index] +
-          im * eigenstate_list[cache_index].EigenState_imag[:,:,spin,q_index];
-          EigenValues[:] = eigenstate_list[cache_index].EigenValues[:,spin,q_index];
+          Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,:,spin,q_index] +
+          im * eigenstate_list[cache_index].Eigenvect_imag[:,:,spin,q_index];
+          Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[:,spin,q_index];
       elseif (DFTforge.non_colinear_type == spin_type)
-        EigenState[:,:] = eigenstate_list[cache_index].EigenState_real[:,:,1,q_index] +
-        im * eigenstate_list[cache_index].EigenState_imag[:,:,1,q_index];
-        EigenValues[:] = eigenstate_list[cache_index].EigenValues[:,1,q_index];
+        Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,:,1,q_index] +
+        im * eigenstate_list[cache_index].Eigenvect_imag[:,:,1,q_index];
+        Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[:,1,q_index];
       end
     end
 
-    return Kpoint_eigenstate(EigenState,EigenValues,k_point);
+    return Kpoint_eigenstate(Eigenstate,Eigenvalues,k_point);
   end
 
   function get_TotalOrbitalNum(result_index=1)

@@ -1,7 +1,8 @@
 module DFTcommon
 export Kpoint_eigenstate,Complex_my,Float_my,k_point_Tuple,k_point_int_Tuple
-export k_point_int2float,k_point_float2int,kPoint2BrillouinZone_Tuple
+export k_point_int2float,k_point_float2int,kPoint2BrillouinZone_Tuple,kPoint2BrillouinZone_int_Tuple
 export pwork
+export k_point_precision
 
 export eigfact_hermitian,check_eigmat
 
