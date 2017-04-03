@@ -1,15 +1,21 @@
 module DFTcommon
 export Kpoint_eigenstate,Complex_my,Float_my,k_point_Tuple,k_point_int_Tuple
-export k_point_int2float,k_point_float2int,kPoint2BrillouinZone_Tuple,kPoint2BrillouinZone_int_Tuple
+export k_point_int2float,k_point_float2int,kPoint2BrillouinZone_Tuple,
+       kPoint2BrillouinZone_int_Tuple,kPoint_gen_GammaCenter
 export pwork
 export k_point_precision
 
+
+
 export eigfact_hermitian,check_eigmat
 
+export Hartree2cm,cm2meV,cm2meV,Hartree2meV,Hatree2eV,kB
 const Hartree2cm = 2.194746*100000.0;
 const cm2meV = 0.1240;
 const Hartree2meV = Hartree2cm*cm2meV;
+const Hatree2eV = 27.2114;
 const kB=0.000003166813628;  # Boltzman constant (Hatree/K)
+
 const k_point_precision = 10.0^6;
 
 
@@ -59,6 +65,19 @@ function kPoint2BrillouinZone_int_Tuple(k_point_int::k_point_int_Tuple)
     return (k_point_int_array[1],k_point_int_array[2],k_point_int_array[3])
 end
 
+function kPoint_gen_GammaCenter(k_point_num)
+  k_point_list = Array(k_point_Tuple,0);
+
+  for kx in (1:k_point_num[1])/(1+k_point_num[1]) - 1/2
+      for ky in (1:k_point_num[2])/(1+k_point_num[2]) - 1/2
+          for kz in (1:k_point_num[3])/(1+k_point_num[3]) - 1/2
+              push!(k_point_list,
+                  kPoint2BrillouinZone_Tuple((kx,ky,kz)) );
+          end
+      end
+  end
+  return k_point_list;
+end
 
 @enum orbital_mask_enum nomask=0 unmask=1 mask=2
 type orbital_mask_input_Type
