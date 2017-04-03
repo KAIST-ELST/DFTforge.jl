@@ -213,7 +213,7 @@ export get_ChempP
       next!(p)
     end
     close(fid_hdf);
-    fid_hdf = h5open(hdf_cache_name,"r");
+    #fid_hdf = h5open(hdf_cache_name,"r");
     q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
 
 
@@ -230,13 +230,18 @@ export get_ChempP
     global eigenstate_list
     fid_hdf = h5open(eigenstate_cache.hdf_cache_name,"r");
 
-
-    eigenstate_cache.Eigenvect_real = readmmap(fid_hdf["Eigenvect_real"]);
-    eigenstate_cache.Eigenvect_imag = readmmap(fid_hdf["Eigenvect_imag"]);
-    eigenstate_cache.Eigenvalues     = readmmap(fid_hdf["Eigenvalues"]);
-    eigenstate_cache.fid_hdf = fid_hdf;
     eigenstate_list[cache_index] = eigenstate_cache;
 
+    eigenstate_list[cache_index].Eigenvect_real = readmmap(fid_hdf["Eigenvect_real"]);
+    eigenstate_list[cache_index].Eigenvect_imag = readmmap(fid_hdf["Eigenvect_imag"]);
+    eigenstate_list[cache_index].Eigenvalues     = readmmap(fid_hdf["Eigenvalues"]);
+    #eigenstate_cache.fid_hdf = fid_hdf;
+
+    gc();
+  end
+  function cacheread(cache_index=1)
+    global eigenstate_list;
+    return eigenstate_list[cache_index]
   end
   function cacheread_eigenstate(k_point::k_point_Tuple,spin=1,cache_index=1)
     global eigenstate_list;
