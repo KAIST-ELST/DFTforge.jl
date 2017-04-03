@@ -56,7 +56,8 @@ using ProgressMeter
 
 export set_current_dftdataset,cal_colinear_eigenstate,get_dftdataset
 export Job_input_Type,Job_input_kq_Type
-export cachecal_all_Qpoint_eigenstats,cacheset,cacheread_eigenstate
+export cachecal_all_Qpoint_eigenstats,cacheset,cacheread_eigenstate,cacheread,
+  cacheread_lampup
 export get_ChempP
 
   type DFTdataset
@@ -97,10 +98,11 @@ export get_ChempP
     kq_point::k_point_Tuple
     spin_type::SPINtype
     result_index::Int
+    cache_index::Int
     Job_input_kq_Type(k_point,kq_point,spin_type) =
-      new(k_point,kq_point,spin_type,1)
-    Job_input_kq_Type(k_point,kq_point,spin_type,result_index) =
-      new(k_point,kq_point,spin_type,result_index)
+      new(k_point,kq_point,spin_type,1,1)
+    Job_input_kq_Type(k_point,kq_point,spin_type,result_index,cache_index) =
+      new(k_point,kq_point,spin_type,result_index,cache_index)
   end
 
   global dftresult = Array{DFTdataset}();
@@ -223,6 +225,10 @@ export get_ChempP
       dftresult[result_index]);
 
     eigenstate_list[cache_index] = eigenstate_cache;
+    hdf5_eigenstate_real = [];
+    hdf5_eigenstate_imag = [];
+    hdf5_eigenvalues = [];
+    gc();
     return eigenstate_cache;
   end
 
@@ -282,6 +288,11 @@ export get_ChempP
     end
 
     return Kpoint_eigenstate(Eigenstate,Eigenvalues,k_point);
+  end
+  function cacheread_lampup(q_point_list::Array{k_point_Tuple},cache_index=1)
+    for q_point in q_point_list
+      cacheread_eigenstate(q_point,cache_index)
+    end
   end
 
   function get_TotalOrbitalNum(result_index=1)
