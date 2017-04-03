@@ -171,7 +171,7 @@ export get_ChempP
     dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
     hdf5_eigenvalues = d_create(fid_hdf,"Eigenvalues",datatype(Float64),
-    dataspace(TotalOrbitalNum2, TotalOrbitalNum2, Total_q_point_num));
+    dataspace(TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
     job_list = Array(Job_input_Type,0)
     q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
@@ -205,8 +205,9 @@ export get_ChempP
           hdf5_eigenstate_imag[:,:,2,jj] = imag(temp[ii][2].Eigenstate);
           hdf5_eigenvalues[:,2,jj] = temp[ii][2].Eigenvalues;
         end
+        ii += 1;
       end
-      ii += 1;
+
       # write to hdf5
       cnt = end_idx + 1;
       next!(p)
