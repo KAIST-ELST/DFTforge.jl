@@ -3,6 +3,8 @@
 using MAT
 using HDF5
 export update_co_linear_Energy,cal_noncolinear_eigenstate
+export test_SmallHks
+export colinear_Hamiltonian
 const OLP_eigen_cut = 1.0e-10;
 using DFTcommon
 include("OpenMX_read_scf.jl")
@@ -192,6 +194,20 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf,spin_li
       push!(kpoint_eigenstate_list,kpoint_common);
   end
   return kpoint_eigenstate_list;
+end
+
+function colinear_Hamiltonian(spin::Int,scf_r::Openmxscf)
+  TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
+  MPF = zeros(Int,scf_r.atomnum)
+  #MPF = Array(Int,scf_r.atomnum)
+  orbitalStartIdx = 0
+  for i = 1:scf_r.atomnum
+      MPF[i] = orbitalStartIdx;
+      orbitalStartIdx += scf_r.Total_NumOrbs[i]
+  end
+  Hout = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
+  Overlap_Band!(scf_r.Hks[spin],Hout,MPF,0.0,0.0,0.0,scf_r)
+  return Hout;
 end
 
 

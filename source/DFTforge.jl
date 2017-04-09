@@ -1,7 +1,11 @@
+__precompile__(false)
+
 module DFTforge
 using DFTcommon
 export DFTtype, SPINtype
-export k_point_Tuple,k_point_int_Tuple,cal_colinear_eigenstate
+export k_point_Tuple,k_point_int_Tuple
+export cal_colinear_eigenstate,cal_colinear_Hamiltonian
+
 
 @enum DFTtype OpenMX = 1 Wannier90 = 2
 @enum SPINtype para_type = 1 colinear_type = 2 non_colinear_type = 4
@@ -46,6 +50,19 @@ end
 function cal_nonco_linear_Eigenstate()
 end
 
+function cal_colinear_Hamiltonian(dfttype::DFTforge.DFTtype,scf_r,spin=1)
+
+  H::Hamiltonian_type = zeros(Complex_my,2,2);
+  if(OpenMX==dfttype)
+    H =  OpenMXdata.colinear_Hamiltonian(spin,scf_r)
+  end
+  return H
+end
+
+
+
+
+
 ################################################################################
 module DFTrefinery
 using DFTforge
@@ -53,17 +70,20 @@ using DFTcommon
 using HDF5
 using ProgressMeter
 
-
 export set_current_dftdataset,cal_colinear_eigenstate,get_dftdataset
-export Job_input_Type,Job_input_kq_Type
+export Job_input_Type,Job_input_kq_Type,Job_input_kq_atom_Type
+
 export cachecal_all_Qpoint_eigenstats,cacheset,cacheread_eigenstate,cacheread,
-  cacheread_lampup
+  cacheread_lampup,cacheread_atomsOrbital_lists,cacheread_Hamiltonian
 export get_ChempP
+export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
 
   type DFTdataset
     dfttype::DFTtype
     scf_r
     spin_type::SPINtype
+    orbitalStartIdx::Array{Int,1}
+    orbitalNums::Array{Int,1}
   end
 
   type Eigenstate_hdf5
@@ -71,13 +91,16 @@ export get_ChempP
     fid_hdf::HDF5.HDF5File
     q_points::Array{k_point_Tuple}
     q_points_int::Array{k_point_int_Tuple};
-    q_points_intdic::Dict{k_point_int_Tuple,Int64};
+    q_points_intdic::Dict{k_point_int_Tuple,Int};
     spin_type::SPINtype
-    TotalOrbitalNum::Int64
+    TotalOrbitalNum::Int
     dftresult::DFTdataset
     Eigenvect_real::Array{Float64,4}
     Eigenvect_imag::Array{Float64,4}
     Eigenvalues::Array{Float64,3}
+    Hamiltonian_real::Array{Float64,3}
+    Hamiltonian_imag::Array{Float64,3}
+
 
     Eigenstate_hdf5(hdf_cache_name,fid_hdf,q_points,q_points_int,
       q_points_intdic,spin_type,TotalOrbitalNum,dftresult) =
@@ -104,18 +127,41 @@ export get_ChempP
     Job_input_kq_Type(k_point,kq_point,spin_type,result_index,cache_index) =
       new(k_point,kq_point,spin_type,result_index,cache_index)
   end
+  type Job_input_kq_atom_Type
+    k_point::k_point_Tuple
+    kq_point::k_point_Tuple
+    spin_type::SPINtype
+    atom1::Int
+    atom2::Int
+    result_index::Int
+    cache_index::Int
+    Job_input_kq_atom_Type(k_point,kq_point,spin_type,atom1,atom2) =
+      new(k_point,kq_point,spin_type,atom1,atom2,1,1)
+    Job_input_kq_atom_Type(k_point,kq_point,spin_type,atom1,atom2,result_index,cache_index) =
+      new(k_point,kq_point,spin_type,atom1,atom2,result_index,cache_index)
+  end
 
   global dftresult = Array{DFTdataset}();
-  global eigenstate_list =  Array{Eigenstate_hdf5}();
+  global eigenstate_list =  Array{Eigenstate_hdf5}(); #cached Eigenstates
 
   function set_current_dftdataset(scf_name::AbstractString,
     dfttype::DFTtype,spin_type::SPINtype,result_index=1)
     if(DFTforge.OpenMX == dfttype)
       # Read SCF and Set as current dftdata
       scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
+      orbitalStartIdx = zeros(Int,scf_r.atomnum);
+      orbitalIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
+      orbitalNums = zeros(Int,scf_r.atomnum)
+      for i = 1:scf_r.atomnum
+          orbitalStartIdx[i] = orbitalIdx;
+          orbitalIdx += scf_r.Total_NumOrbs[i]
+          orbitalNums[i] = scf_r.Total_NumOrbs[i];
+      end
+
       #assert(0 == scf_r.SpinP_switch - spin_type);
       dftresult[result_index] =
-      DFTdataset(dfttype, scf_r,spin_type);
+      DFTdataset(dfttype, scf_r,spin_type,
+        orbitalStartIdx,orbitalNums);
       return scf_r;
     end
   end
@@ -144,6 +190,14 @@ export get_ChempP
       return kpoint_eigenstate_list
     elseif(DFTforge.colinear_type ==  input.spin_type)
       return cal_colinear_eigenstate(input.k_point,[1,2],input.result_index)
+    end
+  end
+  function cal_Hamiltonian(spin=1,result_index=1)
+    global dftresult;
+    spin_type = dftresult[result_index].spin_type;
+    dfttype::DFTtype = dftresult[result_index].dfttype;
+    if(DFTforge.para_type == spin_type || DFTforge.colinear_type == spin_type)
+      return cal_colinear_Hamiltonian(dfttype,dftresult[result_index].scf_r,spin);
     end
   end
 
@@ -175,6 +229,23 @@ export get_ChempP
     hdf5_eigenvalues = d_create(fid_hdf,"Eigenvalues",datatype(Float64),
     dataspace(TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
+    hdf5_hamiltonian_real = d_create(fid_hdf,"Hamiltonian_real",datatype(Float64),
+    dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim));
+
+    hdf5_hamiltonian_imag = d_create(fid_hdf,"Hamiltonian_imag",datatype(Float64),
+    dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim));
+    # Write hamiltonian
+    H::Hamiltonian_type = cal_Hamiltonian(1,result_index);
+    hdf5_hamiltonian_real[:,:,1] = real(H);
+    hdf5_hamiltonian_imag[:,:,1] = imag(H);
+    if(DFTforge.colinear_type == spin_type )
+      H = cal_Hamiltonian(2,result_index);
+      hdf5_hamiltonian_real[:,:,2] = real(H);
+      hdf5_hamiltonian_imag[:,:,2] = imag(H);
+    end
+
+
+
     job_list = Array(Job_input_Type,0)
     q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
     q_points_intdic = Dict{k_point_int_Tuple,Int}();
@@ -188,7 +259,7 @@ export get_ChempP
 
     batch_size = 2*nprocs();
     cnt = 1;
-    p = Progress(floor(Int64, length(q_point_list)/batch_size),
+    p = Progress(floor(Int, length(q_point_list)/batch_size),
     "Computing Eigenstates(q)...");
 
     while cnt < Total_q_point_num
@@ -241,6 +312,9 @@ export get_ChempP
     eigenstate_list[cache_index].Eigenvect_real = readmmap(fid_hdf["Eigenvect_real"]);
     eigenstate_list[cache_index].Eigenvect_imag = readmmap(fid_hdf["Eigenvect_imag"]);
     eigenstate_list[cache_index].Eigenvalues     = readmmap(fid_hdf["Eigenvalues"]);
+    eigenstate_list[cache_index].Hamiltonian_real    = readmmap(fid_hdf["Hamiltonian_real"]);
+    eigenstate_list[cache_index].Hamiltonian_imag    = readmmap(fid_hdf["Hamiltonian_imag"]);
+
     #eigenstate_cache.fid_hdf = fid_hdf;
 
     gc();
@@ -249,7 +323,7 @@ export get_ChempP
     global eigenstate_list;
     return eigenstate_list[cache_index]
   end
-  function cacheread_eigenstate(k_point::k_point_Tuple,spin=1,cache_index=1)
+  function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
     global eigenstate_list;
     k_point_int = k_point_float2int(kPoint2BrillouinZone_Tuple(k_point));
 
@@ -270,6 +344,8 @@ export get_ChempP
 
     if(haskey(eigenstate_list[cache_index].q_points_intdic, k_point_int))
       q_index =  eigenstate_list[cache_index].q_points_intdic[k_point_int];
+    else
+      error(string("cacheread_eigenstate ",k_point," Not Found Exception"))
     end
     if(q_index>=1)
       if(DFTforge.para_type == spin_type)
@@ -289,6 +365,25 @@ export get_ChempP
 
     return Kpoint_eigenstate(Eigenstate,Eigenvalues,k_point);
   end
+  function cacheread_Hamiltonian(spin=1,cache_index=1)
+    global eigenstate_list;
+    TotalOrbitalNum = eigenstate_list[cache_index].TotalOrbitalNum;
+    TotalOrbitalNum2 = TotalOrbitalNum
+    spin_type =  eigenstate_list[cache_index].spin_type;
+    if(DFTforge.non_colinear_type == spin_type)
+      TotalOrbitalNum2 = 2*TotalOrbitalNum;
+    end
+    Hamiltonian = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
+    Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,spin]
+      + im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,spin]
+
+    return Hamiltonian;
+  end
+  function cacheread_atomsOrbital_lists(cache_index=1)
+    global eigenstate_list;
+    return (eigenstate_list[cache_index].dftresult.orbitalStartIdx,
+    eigenstate_list[cache_index].dftresult.orbitalNums)
+  end
   function cacheread_lampup(q_point_list::Array{k_point_Tuple},cache_index=1)
     for q_point in q_point_list
       cacheread_eigenstate(q_point,cache_index)
@@ -300,7 +395,7 @@ export get_ChempP
     TotalOrbitalNum = sum(dftresult[result_index].scf_r.Total_NumOrbs);
     #print(TotalOrbitalNum)
     #print(typeof(TotalOrbitalNum))
-    assert(Int64 == typeof(TotalOrbitalNum));
+    assert(Int == typeof(TotalOrbitalNum));
     return TotalOrbitalNum
   end
   function get_ChempP(result_index=1)
@@ -312,13 +407,85 @@ export get_ChempP
   function cacheread(cache_name::AbstractString)
 
   end
-  function clear_cache(result_index=1)
+  function clear_cache(cache_index=1)
 
   end
 
   function clear_dftdataset()
     dftresult = Array{DFTdataset}();
   end
+
+################################################################################
+# Genernal K space, K-Q space
+################################################################################
+  function Qspace_Ksum_parallel(kq_function,q_point_list,k_point_list,
+    result_index=1,cache_index=1)
+    batch_size = 2*nprocs();
+    cnt = 1
+    spin_type = get_dftdataset(result_index).spin_type;
+
+    Q_ksum = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
+
+    p = Progress( round(Int, length(q_point_list)/4),
+      string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
+    for (q_i,q_point) in enumerate(q_point_list)
+      q_point_int = k_point_float2int(q_point);
+
+      job_list = Array(Job_input_kq_Type,0)
+      for k_point in k_point_list
+        kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
+        kq_point = kPoint2BrillouinZone_Tuple(kq_point);
+        kq_point_int = k_point_float2int(kq_point);
+        push!(job_list,Job_input_kq_Type(k_point,kq_point,spin_type));
+      end
+      temp = pmap(kq_function,job_list);
+
+      Q_ksum[q_point_int] = vcat(temp...);
+      ## End of each q_point
+      if(1==rem(q_i,4))
+        next!(p)
+      end
+      if(1==rem(q_i,50))
+        @everywhere gc()
+      end
   end
+    return Q_ksum;
+  end
+  function Qspace_Ksum_atom_parallel(kq_function,q_point_list,k_point_list,atom1,atom2,
+    result_index=1,cache_index=1)
+    batch_size = 2*nprocs();
+    cnt = 1
+    spin_type = get_dftdataset(result_index).spin_type;
+
+    Q_ksum = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
+
+    p = Progress( round(Int, length(q_point_list)/6),
+      string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
+    for (q_i,q_point) in enumerate(q_point_list)
+      q_point_int = k_point_float2int(q_point);
+
+      job_list = Array(Job_input_kq_atom_Type,0)
+      for k_point in k_point_list
+        kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
+        kq_point = kPoint2BrillouinZone_Tuple(kq_point);
+        kq_point_int = k_point_float2int(kq_point);
+        push!(job_list,Job_input_kq_atom_Type(k_point,kq_point,spin_type,atom1,atom2));
+      end
+      temp = pmap(kq_function,job_list);
+
+      Q_ksum[q_point_int] = vcat(temp...);
+      ## End of each q_point
+      if(1==rem(q_i,6))
+        next!(p)
+      end
+      if(1==rem(q_i,50))
+        @everywhere gc()
+      end
+    end
+    return Q_ksum;
+  end
+
+  end
+
 
 end
