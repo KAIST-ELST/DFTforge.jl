@@ -14,17 +14,17 @@ include("OpenMX_read_scf.jl")
 #global scf_r = Openmxscf
 
 function Overlap_Band!(OLP::Overlap_type,
-    S::Array{Complex{Float_my},2},MP::Array{Int32,1},k1,k2,k3,scf_r)
+    S::Array{Complex{Float_my},2},MP::Array{Int,1},k1,k2,k3,scf_r::Openmxscf)
     #@acc begin
     k_point::Array{Float_my,1} = [k1,k2,k3];
-    TotalOrbitalNum::Int32 = sum(scf_r.Total_NumOrbs[:]);
-    #orbitalStartIdx::Int32 = 0; #각 atom별로 orbital index시작하는 지점
+    TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:]);
+    #orbitalStartIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
 
     #assert(TotalOrbitalNum==orbitalStartIdx);
 
 
     #println(TotalOrbitalNum)
-    #S_size::Int32 = orbitalNum + 0;
+    #S_size::Int = orbitalNum + 0;
     S1 = zeros(Float64,TotalOrbitalNum,TotalOrbitalNum);
     S2 = zeros(Float64,TotalOrbitalNum,TotalOrbitalNum);
     assert(size(S) == size(S1));
@@ -35,10 +35,10 @@ function Overlap_Band!(OLP::Overlap_type,
       atom1_orbitalStart = MP[GA_AN];
       for LB_AN = 1:scf_r.FNAN[GA_AN]+1 #atom_i is not atom1,2 index
 
-            GB_AN::UInt32 = scf_r.natn[GA_AN][LB_AN]
-            Rn::UInt32 = 1+scf_r.ncn[GA_AN][LB_AN]
-            atom2_orbitalNum::UInt32 = scf_r.Total_NumOrbs[GB_AN]
-            atom2_orbitalStart::UInt32 = MP[GB_AN];
+            GB_AN::UInt = scf_r.natn[GA_AN][LB_AN]
+            Rn::UInt = 1+scf_r.ncn[GA_AN][LB_AN]
+            atom2_orbitalNum::UInt = scf_r.Total_NumOrbs[GB_AN]
+            atom2_orbitalStart::UInt = MP[GB_AN];
             kRn::Float_my = sum(scf_r.atv_ijk[Rn,:][:].*k_point);
             si::Float_my = sin(2.0*pi*kRn);
             co::Float_my = cos(2.0*pi*kRn);
@@ -65,13 +65,78 @@ function Overlap_Band!(OLP::Overlap_type,
     #end
 end
 
+function test_SmallHks(atom1::Int,atom2::Int,scf_r::Openmxscf)
+  Number_ChoosenAtom = 2;
+  ChoosenAtom_list = [atom1,atom2];
+
+  atom1_orbitalNum = scf_r.Total_NumOrbs[atom1];
+  atom2_orbitalNum = scf_r.Total_NumOrbs[atom2];
+  small_orbitalNum = atom1_orbitalNum + atom2_orbitalNum;
+
+  SmallHks = Array(Array{Float_my,2},scf_r.SpinP_switch+1);
+  for ii = 1:scf_r.SpinP_switch+1
+      SmallHks[ii] = zeros(Float_my,small_orbitalNum,small_orbitalNum)
+  end
+  # MP
+  MP = zeros(Int32,2,) # Orbital index for chosen two atom used inside J cal only
+  MP[1] = 0;
+  MP[2] = scf_r.Total_NumOrbs[atom1];
+  # MPF
+  MPF = zeros(Int32,scf_r.atomnum)
+  orbitalStartIdx::Int32 = 0; #각 atom별로 orbital index시작하는 지점
+  for i = 1:scf_r.atomnum
+      MPF[i] = orbitalStartIdx;
+      orbitalStartIdx += scf_r.Total_NumOrbs[i]
+  end
+
+  atom1_MPF = MPF[atom1];
+  atom2_MPF = MPF[atom2];
+
+  ####################################
+  # Get SmallHks
+  ####################################
+  # AN (atom number)
+  ## Hamiltonian and overlap for selected two atoms
+  #tic()
+  for spin = 1:scf_r.SpinP_switch+1
+      for atom1_i = 1:Number_ChoosenAtom
+          atom1_orbitalStartidx = MP[atom1_i]
+          ct_AN = ChoosenAtom_list[atom1_i];
+          TNO1 = scf_r.Total_NumOrbs[ct_AN]
+
+          for atom2_i = 1:Number_ChoosenAtom
+              atom2_orbitalStartidx = MP[atom2_i];
+              for h_AN = 1:scf_r.FNAN[ct_AN]+1
+                  Gh_AN = scf_r.natn[ct_AN][h_AN];
+              #println("Spin ",spin," ct_AN ",ct_AN," Gh_An ", Gh_AN)
+                  TNO2 = scf_r.Total_NumOrbs[Gh_AN];
+                  if((Gh_AN == ChoosenAtom_list[atom2_i])
+                      && (0==scf_r.ncn[ct_AN][h_AN]))
+                      for ii = 1:TNO1
+                          #for jj = 1:TNO2
+                          #    SmallHks[spin][atom1_orbitalStartidx + ii, atom2_orbitalStartidx + jj] =
+                          #scf_r.Hks[spin][ct_AN][h_AN][ii][jj];
+                          SmallHks[spin][atom1_orbitalStartidx + ii, atom2_orbitalStartidx + (1:TNO2)] =
+                          scf_r.Hks[spin][ct_AN][h_AN][ii][1:TNO2];
+
+                          #end
+                      end
+                  end
+              end
+          end
+      end
+      #SmallHks[spin] = scf_r.Hks[spin][atom1_i][atom2]
+  end
+  return SmallHks;
+end
+
 function cal_colinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf,spin_list=1)
 
   ## Overlapmaxitrx S
   TotalOrbitalNum = sum(scf_r.Total_NumOrbs[:]);
   S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
-  MPF = zeros(Int32,scf_r.atomnum)
-  #MPF = Array(Int32,scf_r.atomnum)
+  MPF = zeros(Int,scf_r.atomnum)
+  #MPF = Array(Int,scf_r.atomnum)
   orbitalStartIdx = 0
   for i = 1:scf_r.atomnum
       MPF[i] = orbitalStartIdx;
@@ -140,9 +205,9 @@ function nc_Hamiltonian_basis_Transform!(Hout::Array{Complex{Float_my},2},
     assert(3 == size(iH)[1]);
 
     k_point::Array{Float_my,1} = [k1,k2,k3];
-    TotalOrbitalNum::Int32 = sum(scf_r.Total_NumOrbs[:])
-    orbitalStartIdx::Int32 = 0; #각 atom별로 orbital index시작하는 지점
-    MP = Array(Int32,scf_r.atomnum)
+    TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
+    orbitalStartIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
+    MP = Array(Int,scf_r.atomnum)
     for i = 1:scf_r.atomnum
         MP[i] = orbitalStartIdx;
         orbitalStartIdx += scf_r.Total_NumOrbs[i]
@@ -157,10 +222,10 @@ function nc_Hamiltonian_basis_Transform!(Hout::Array{Complex{Float_my},2},
         atom1_orbitalNum = scf_r.Total_NumOrbs[GA_AN];
         atom1_orbitalStart = MP[GA_AN];
         for LB_AN = 1:scf_r.FNAN[GA_AN]+1 #atom_i is not atom1,2 index
-            GB_AN::UInt32 = scf_r.natn[GA_AN][LB_AN]
-            Rn::UInt32 = 1+scf_r.ncn[GA_AN][LB_AN]
-            atom2_orbitalNum::UInt32 = scf_r.Total_NumOrbs[GB_AN]
-            atom2_orbitalStart::UInt32 = MP[GB_AN];
+            GB_AN::UInt = scf_r.natn[GA_AN][LB_AN]
+            Rn::UInt = 1+scf_r.ncn[GA_AN][LB_AN]
+            atom2_orbitalNum::UInt = scf_r.Total_NumOrbs[GB_AN]
+            atom2_orbitalStart::UInt = MP[GB_AN];
             kRn::Float_my = sum(scf_r.atv_ijk[Rn,:][:].*k_point);
             si::Float_my = sin(2.0*pi*kRn);
             co::Float_my = cos(2.0*pi*kRn);
@@ -216,7 +281,7 @@ function cal_nonco_linear_EigenState(k_point_int::k_point_int_Tuple)
 
     ## Overlap matrix S
     S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
-    MPF = zeros(Int32,scf_r.atomnum)
+    MPF = zeros(Int,scf_r.atomnum)
     Overlap_Band!(scf_r.OLP,S,MPF,k_point[1],k_point[2],k_point[3]);
     #S = S';
 
@@ -329,7 +394,7 @@ function update_nc_Energy_testing(k_point::k_point_Tuple)
 
   ## Overlap matrix S
   S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
-  MPF = zeros(Int32,scf_r.atomnum)
+  MPF = zeros(Int,scf_r.atomnum)
   Overlap_Band!(scf_r.OLP,S,MPF,k_point[1],k_point[2],k_point[3]);
   #S = S';
 
