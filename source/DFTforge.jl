@@ -5,6 +5,7 @@ using DFTcommon
 export DFTtype, SPINtype
 export k_point_Tuple,k_point_int_Tuple
 export cal_colinear_eigenstate,cal_colinear_Hamiltonian
+export cal_nonco_linear_Eigenstate,cal_noncolinear_Hamiltonian
 
 
 @enum DFTtype OpenMX = 1 Wannier90 = 2
@@ -47,18 +48,29 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,
     return Eigenstate;
 end
 
-function cal_nonco_linear_Eigenstate()
+function cal_nonco_linear_Eigenstate(k_point::k_point_Tuple,
+    dfttype::DFTforge.DFTtype,scf_r)
+    if (OpenMX == dfttype)
+      EigenState = OpenMXdata.cal_noncolinear_eigenstate(k_point, scf_r)
+      return EigenState
+    end
 end
 
 function cal_colinear_Hamiltonian(dfttype::DFTforge.DFTtype,scf_r,spin=1)
 
   H::Hamiltonian_type = zeros(Complex_my,2,2);
-  if(OpenMX==dfttype)
+  if (OpenMX==dfttype)
     H =  OpenMXdata.colinear_Hamiltonian(spin,scf_r)
   end
   return H
 end
 
+function cal_noncolinear_Hamiltonian(dfttype::DFTforge.DFTtype,scf_r)
+  if (OpenMX==dfttype)
+    H = OpenMXdata.noncolinear_Hamiltonian(scf_r);
+    return H
+  end
+end
 
 
 
@@ -178,9 +190,14 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     return DFTforge.cal_colinear_eigenstate(Kpoint,
     dftresult[result_index].dfttype,dftresult[result_index].scf_r,spin_list )
   end
+  function cal_nonco_linear_Eigenstate(Kpoint::k_point_Tuple,result_index=1)
+    global dftresult
+    return DFTforge.cal_nonco_linear_Eigenstate(Kpoint,
+    dftresult[result_index].dfttype,dftresult[result_index].scf_r);
+  end
 
   # for pmap
-  function cal_eigenstate(input::Job_input_Type)
+  function cal_eigenstate(input::Job_input_Type,result_index=1)
     # specfify spin type is required
 
     if(DFTforge.para_type == input.spin_type)
@@ -190,6 +207,8 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
       return kpoint_eigenstate_list
     elseif(DFTforge.colinear_type ==  input.spin_type)
       return cal_colinear_eigenstate(input.k_point,[1,2],input.result_index)
+    elseif(DFTforge.non_colinear_type == input.spin_type)
+      return cal_nonco_linear_Eigenstate(input.k_point,input.result_index)
     end
   end
   function cal_Hamiltonian(spin=1,result_index=1)
@@ -198,7 +217,10 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     dfttype::DFTtype = dftresult[result_index].dfttype;
     if(DFTforge.para_type == spin_type || DFTforge.colinear_type == spin_type)
       return cal_colinear_Hamiltonian(dfttype,dftresult[result_index].scf_r,spin);
+    elseif(DFTforge.non_colinear_type == spin_type)
+      return cal_noncolinear_Hamiltonian(dfttype,dftresult[result_index].scf_r)
     end
+
   end
 
 
@@ -211,6 +233,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     TotalOrbitalNum = get_TotalOrbitalNum(result_index);
     spin_type = dftresult[result_index].spin_type;
     spin_dim  = Int(spin_type)
+    println(string("spin_dim ",spin_dim))
 
     TotalOrbitalNum2 = TotalOrbitalNum;
 
@@ -236,6 +259,8 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim));
     # Write hamiltonian
     H::Hamiltonian_type = cal_Hamiltonian(1,result_index);
+    println((TotalOrbitalNum,TotalOrbitalNum2))
+    println(size(H))
     hdf5_hamiltonian_real[:,:,1] = real(H);
     hdf5_hamiltonian_imag[:,:,1] = imag(H);
     if(DFTforge.colinear_type == spin_type )
@@ -268,19 +293,26 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
       end_idx = minimum([cnt+batch_size-1,Total_q_point_num]);
       temp = pmap(cal_eigenstate,job_list[start_idx:end_idx]);
       ii = 1;
-      for jj = start_idx:end_idx
+	    if (DFTforge.colinear_type == spin_type || DFTforge.para_type == spin_type)
+        for jj = start_idx:end_idx
 
-        hdf5_eigenstate_real[:,:,1,jj] = real(temp[ii][1].Eigenstate);
-        hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii][1].Eigenstate);
-        hdf5_eigenvalues[:,1,jj] = temp[ii][1].Eigenvalues;
-        if(DFTforge.colinear_type == spin_type )
-          hdf5_eigenstate_real[:,:,2,jj] = real(temp[ii][2].Eigenstate);
-          hdf5_eigenstate_imag[:,:,2,jj] = imag(temp[ii][2].Eigenstate);
-          hdf5_eigenvalues[:,2,jj] = temp[ii][2].Eigenvalues;
+          hdf5_eigenstate_real[:,:,1,jj] = real(temp[ii][1].Eigenstate);
+          hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii][1].Eigenstate);
+          hdf5_eigenvalues[:,1,jj] = temp[ii][1].Eigenvalues;
+          if (DFTforge.colinear_type == spin_type )
+            hdf5_eigenstate_real[:,:,2,jj] = real(temp[ii][2].Eigenstate);
+            hdf5_eigenstate_imag[:,:,2,jj] = imag(temp[ii][2].Eigenstate);
+            hdf5_eigenvalues[:,2,jj] = temp[ii][2].Eigenvalues;
+          end
+	      end
+      elseif (DFTforge.non_colinear_type == spin_type)
+        for jj = start_idx:end_idx
+          hdf5_eigenstate_real[:,:,1,jj] = real(temp[ii].Eigenstate);
+          hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii].Eigenstate);
+          hdf5_eigenvalues[:,1,jj] = temp[ii].Eigenvalues;
         end
-        ii += 1;
       end
-
+      ii += 1;
       # write to hdf5
       cnt = end_idx + 1;
       next!(p)
@@ -311,7 +343,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
 
     eigenstate_list[cache_index].Eigenvect_real = readmmap(fid_hdf["Eigenvect_real"]);
     eigenstate_list[cache_index].Eigenvect_imag = readmmap(fid_hdf["Eigenvect_imag"]);
-    eigenstate_list[cache_index].Eigenvalues     = readmmap(fid_hdf["Eigenvalues"]);
+    eigenstate_list[cache_index].Eigenvalues    = readmmap(fid_hdf["Eigenvalues"]);
     eigenstate_list[cache_index].Hamiltonian_real    = readmmap(fid_hdf["Hamiltonian_real"]);
     eigenstate_list[cache_index].Hamiltonian_imag    = readmmap(fid_hdf["Hamiltonian_imag"]);
 
@@ -335,7 +367,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     spin_type = eigenstate_list[cache_index].spin_type
     q_index = -1;
     TotalOrbitalNum = eigenstate_list[cache_index].TotalOrbitalNum;
-	TotalOrbitalNum2 = TotalOrbitalNum
+    TotalOrbitalNum2 = TotalOrbitalNum
     if(DFTforge.non_colinear_type == spin_type)
       TotalOrbitalNum2 = 2*TotalOrbitalNum;
     end
@@ -448,7 +480,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
       if(1==rem(q_i,50))
         @everywhere gc()
       end
-  end
+    end
     return Q_ksum;
   end
   function Qspace_Ksum_atom_parallel(kq_function,q_point_list,k_point_list,atom1,atom2,

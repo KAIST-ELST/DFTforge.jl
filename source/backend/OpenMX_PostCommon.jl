@@ -4,7 +4,7 @@ using MAT
 using HDF5
 export update_co_linear_Energy,cal_noncolinear_eigenstate
 export test_SmallHks
-export colinear_Hamiltonian
+export colinear_Hamiltonian,noncolinear_Hamiltonian
 const OLP_eigen_cut = 1.0e-10;
 using DFTcommon
 include("OpenMX_read_scf.jl")
@@ -14,6 +14,7 @@ include("OpenMX_read_scf.jl")
 
 #used for all atoms
 #global scf_r = Openmxscf
+@enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
 
 function Overlap_Band!(OLP::Overlap_type,
     S::Array{Complex{Float_my},2},MP::Array{Int,1},k1,k2,k3,scf_r::Openmxscf)
@@ -210,12 +211,9 @@ function colinear_Hamiltonian(spin::Int,scf_r::Openmxscf)
   return Hout;
 end
 
-
-
-@enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
-function nc_Hamiltonian_basis_Transform!(Hout::Array{Complex{Float_my},2},
-    H::Array{Overlap_type,1},iH::Array{Overlap_type,1},
-    MP,k1,k2,k3,H_mode::nc_Hamiltonian_selection)
+function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
+    H::H_type,iH::H_type,MP,k1::Float64,k2::Float64,k3::Float64,
+    H_mode::nc_Hamiltonian_selection,scf_r::Openmxscf)
     # Essentially same as Overlap_Band!
     assert(4 == size(H)[1]);
     assert(3 == size(iH)[1]);
@@ -283,6 +281,21 @@ function nc_Hamiltonian_basis_Transform!(Hout::Array{Complex{Float_my},2},
             #Hout[i,j] = conj( Hout[i,j]); # test code
         end
     end
+end
+
+function noncolinear_Hamiltonian(scf_r::Openmxscf)
+  TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
+  assert(3==scf_r.SpinP_switch); # Check if Noncolinear
+  TotalOrbitalNum2 = TotalOrbitalNum*2;
+  MPF = zeros(Int,scf_r.atomnum)
+  orbitalStartIdx = 0
+  for i = 1:scf_r.atomnum
+      MPF[i] = orbitalStartIdx;
+      orbitalStartIdx += scf_r.Total_NumOrbs[i]
+  end
+  Hout = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
+  noncolinear_Hamiltonian!(Hout,scf_r.Hks,scf_r.iHks,MPF,0.0,0.0,0.0,nc_allH,scf_r)
+  return Hout;
 end
 
 
@@ -394,11 +407,11 @@ function cal_nonco_linear_EigenState(k_point_int::k_point_int_Tuple)
     return kpoint_nc_common;
 end
 
-function cal_noncolinear_eigenstate(k_point::k_point_Tuple)
-  return update_nc_Energy_testing(k_point);
+function cal_noncolinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf)
+  return update_nc_Energy_testing(k_point,scf_r);
 end
 
-function update_nc_Energy_testing(k_point::k_point_Tuple)
+function update_nc_Energy_testing(k_point::k_point_Tuple,scf_r::Openmxscf)
   # testing version different from Opnemx Band_MO.c implimentation
   # Currently Eigen values are corrent but, LCAO coef are not matched
   # non collinear Enk and Eigen function \Psi
@@ -411,7 +424,7 @@ function update_nc_Energy_testing(k_point::k_point_Tuple)
   ## Overlap matrix S
   S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
   MPF = zeros(Int,scf_r.atomnum)
-  Overlap_Band!(scf_r.OLP,S,MPF,k_point[1],k_point[2],k_point[3]);
+  Overlap_Band!(scf_r.OLP,S,MPF,k_point[1],k_point[2],k_point[3],scf_r);
   #S = S';
 
   S2 = copy(S);
@@ -438,8 +451,8 @@ function update_nc_Energy_testing(k_point::k_point_Tuple)
   ##
   H0 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
   # H_orig is updated
-  nc_Hamiltonian_basis_Transform!(H0,scf_r.Hks,scf_r.iHks,MPF,k_point[1],
-  k_point[2],k_point[3],nc_allH);
+  noncolinear_Hamiltonian!(H0,scf_r.Hks,scf_r.iHks,MPF,
+  k_point[1],k_point[2],k_point[3],nc_allH,scf_r);
   # C = M1 Ut H U M1
 
   Enks = zeros(Float_my,2*TotalOrbitalNum);
