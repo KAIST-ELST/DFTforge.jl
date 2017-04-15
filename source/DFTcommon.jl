@@ -76,14 +76,29 @@ end
 function kPoint_gen_GammaCenter(k_point_num)
   k_point_list = Array(k_point_Tuple,0);
 
-  for kx in (1:k_point_num[1])/(1+k_point_num[1]) - 1/2
-      for ky in (1:k_point_num[2])/(1+k_point_num[2]) - 1/2
-          for kz in (1:k_point_num[3])/(1+k_point_num[3]) - 1/2
+  for kx in (0:k_point_num[1])/(1+k_point_num[1]) #- 1/2
+      for ky in (0:k_point_num[2])/(1+k_point_num[2]) #- 1/2
+          for kz in (0:k_point_num[3])/(1+k_point_num[3]) #- 1/2
               push!(k_point_list,
                   kPoint2BrillouinZone_Tuple((kx,ky,kz)) );
           end
       end
   end
+  k_point_list = sort(unique(k_point_list));
+  return k_point_list;
+end
+function kPoint_gen_EquallySpaced(k_point_num)
+  k_point_list = Array(k_point_Tuple,0);
+  kPoint_esp = 10.0^-8;
+  for kx in (0.0:1/k_point_num[1]:(1.0-kPoint_esp))
+    for ky in (0.0:1/k_point_num[2]:(1.0-kPoint_esp))
+      for kz in (0.0:1/k_point_num[3]:(1.0-kPoint_esp))
+        push!(k_point_list,
+            kPoint2BrillouinZone_Tuple((kx,ky,kz)) );
+      end
+    end
+  end
+  k_point_list = sort(unique(k_point_list));
   return k_point_list;
 end
 
