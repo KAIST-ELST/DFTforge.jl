@@ -284,10 +284,11 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
 
     batch_size = 2*nprocs();
     cnt = 1;
+
     p = Progress(floor(Int, length(q_point_list)/batch_size),
     "Computing Eigenstates(q)...");
 
-    while cnt < Total_q_point_num
+    while cnt <= Total_q_point_num
       # pmap
       start_idx = cnt;
       end_idx = minimum([cnt+batch_size-1,Total_q_point_num]);
@@ -304,22 +305,35 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
             hdf5_eigenstate_imag[:,:,2,jj] = imag(temp[ii][2].Eigenstate);
             hdf5_eigenvalues[:,2,jj] = temp[ii][2].Eigenvalues;
           end
+          ii += 1;
 	      end
       elseif (DFTforge.non_colinear_type == spin_type)
         for jj = start_idx:end_idx
           hdf5_eigenstate_real[:,:,1,jj] = real(temp[ii].Eigenstate);
           hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii].Eigenstate);
           hdf5_eigenvalues[:,1,jj] = temp[ii].Eigenvalues;
+          ii += 1;
         end
       end
-      ii += 1;
       # write to hdf5
       cnt = end_idx + 1;
       next!(p)
     end
+
+    H::Hamiltonian_type = cal_Hamiltonian(1,result_index);
+
+    println(size(H))
+    hdf5_hamiltonian_real[:,:,1] = real(H);
+    hdf5_hamiltonian_imag[:,:,1] = imag(H);
+    if (DFTforge.colinear_type == spin_type )
+      H = cal_Hamiltonian(2,result_index);
+      hdf5_hamiltonian_real[:,:,2] = real(H);
+      hdf5_hamiltonian_imag[:,:,2] = imag(H);
+    end
+
     close(fid_hdf);
     #fid_hdf = h5open(hdf_cache_name,"r");
-    q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
+    #q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
 
 
     eigenstate_cache =  Eigenstate_hdf5(hdf_cache_name,fid_hdf,q_point_list,
