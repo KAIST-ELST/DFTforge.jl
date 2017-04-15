@@ -113,7 +113,7 @@ function test_SmallHks(atom1::Int,atom2::Int,scf_r::Openmxscf)
                   Gh_AN = scf_r.natn[ct_AN][h_AN];
               #println("Spin ",spin," ct_AN ",ct_AN," Gh_An ", Gh_AN)
                   TNO2 = scf_r.Total_NumOrbs[Gh_AN];
-                  if((Gh_AN == ChoosenAtom_list[atom2_i])
+                  if ((Gh_AN == ChoosenAtom_list[atom2_i])
                       && (0==scf_r.ncn[ct_AN][h_AN]))
                       for ii = 1:TNO1
                           #for jj = 1:TNO2
@@ -151,7 +151,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf,spin_li
   S2 = copy(S);
   S_eigvals = zeros(Float_my, TotalOrbitalNum);
   eigfact_hermitian(S2,S_eigvals);
-  if(!check_eigmat(S,S2,S_eigvals))
+  if (!check_eigmat(S,S2,S_eigvals))
           println("S :",k_point)
   end
 
@@ -181,7 +181,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf,spin_li
       C3 = copy(C2);
       ko = zeros(TotalOrbitalNum);
       eigfact_hermitian(C3,ko);
-      if(!check_eigmat(C2,C3,ko))
+      if (!check_eigmat(C2,C3,ko))
           println("C2 : ",k_point,"\tspin: ",spin)
       end
       #
@@ -300,116 +300,123 @@ end
 
 
 
-function cal_nonco_linear_EigenState(k_point_int::k_point_int_Tuple)
-    #function nc_update_Energy(k_point_int::k_point_int_Tuple)
-    # non collinear Enk and Eigen function \Psi
+function cal_noncolinear_eigenstate(k_point,scf_r::Openmxscf)
+  #function nc_update_Energy(k_point_int::k_point_int_Tuple)
+  # non collinear Enk and Eigen function \Psi
 
-    k_point = k_point_int2float(k_point_int);
-    ## Common variables
-    TotalOrbitalNum = sum(scf_r.Total_NumOrbs[:])
+  #k_point = k_point_int2float(k_point_int);
+  ## Common variables
+  TotalOrbitalNum = sum(scf_r.Total_NumOrbs[:])
 
-    ## Overlap matrix S
-    S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
-    MPF = zeros(Int,scf_r.atomnum)
-    Overlap_Band!(scf_r.OLP,S,MPF,k_point[1],k_point[2],k_point[3]);
-    #S = S';
+  ## Overlap matrix S
+  S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
+  MPF = zeros(Int,scf_r.atomnum)
+  orbitalStartIdx = 0;
+  for i = 1:scf_r.atomnum
+      MPF[i] = orbitalStartIdx;
+      orbitalStartIdx += scf_r.Total_NumOrbs[i]
+  end
+  Overlap_Band!(scf_r.OLP,S,MPF,k_point[1],k_point[2],k_point[3],scf_r);
+  #S = S';
 
-    S2 = copy(S);
-    S_eigvals = zeros(Float_my, TotalOrbitalNum);
-    # S^1/2
-    eigfact_hermitian(S2,S_eigvals);
-    if(!check_eigmat(S,S2,S_eigvals))
-        println("S :",k_point)
-    end
-    #  S2 * 1.0/sqrt(S_eigvals[l])
-    M1 = zeros(size(S_eigvals))
-    M1[S_eigvals.>OLP_eigen_cut] = 1.0 ./sqrt(S_eigvals[S_eigvals.>OLP_eigen_cut]);
+  S2 = copy(S);
+  S_eigvals = zeros(Float_my, TotalOrbitalNum);
+  # S^1/2
+  eigfact_hermitian(S2,S_eigvals);
+  if (!check_eigmat(S,S2,S_eigvals))
+      println("S :",k_point)
+  end
+  #  S2 * 1.0/sqrt(S_eigvals[l])
+  M1 = zeros(size(S_eigvals))
+  M1[S_eigvals.>OLP_eigen_cut] = 1.0 ./sqrt(S_eigvals[S_eigvals.>OLP_eigen_cut]);
 
-    for j1 = 1:TotalOrbitalNum
-        S2[:,j1] *= M1[j1];
-    end
-    S2 = S2.';
+  for j1 = 1:TotalOrbitalNum
+      S2[:,j1] *= M1[j1];
+  end
+  S2 = S2.';
 
-    ## non-collinear Eigen funtion (S^(1/2)\Psi) and Eigen values (Enk)
-    ##
-    H0 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
-    H1 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
-    H2 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
-    # H_orig is updated
-    nc_Hamiltonian_basis_Transform!(H0,scf_r.Hks,scf_r.iHks,MPF,k_point[1],
-    k_point[2],k_point[3],nc_allH);
-    # C = M1 Ut H U M1
+  ## non-collinear Eigen funtion (S^(1/2)\Psi) and Eigen values (Enk)
+  ##
+  H0 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  H1 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  H2 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  # H_orig is updated
+  noncolinear_Hamiltonian!(H0,scf_r.Hks,scf_r.iHks,MPF,k_point[1],
+  k_point[2],k_point[3],nc_allH,scf_r);
+  # C = M1 Ut H U M1
 
-    H1 = copy(H0);
-    ko_all = zeros(Float_my,2*TotalOrbitalNum);
+  H1 = copy(H0);
+  ko_all = zeros(Float_my,2*TotalOrbitalNum);
 
-    C = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
-    # H*U'
-    for i1 = 1:2*TotalOrbitalNum
-        for j1 = 1:TotalOrbitalNum
-            sum_0 = sum(H1[i1,1:TotalOrbitalNum].*S2[j1,:])
-            sum_1 = sum(H1[i1,TotalOrbitalNum+(1:TotalOrbitalNum)].*S2[j1,:])
-            C[2*j1-1,i1] = sum_0;
-            C[2*j1,i1] = sum_1;
-        end
-    end
-    # U*(H*U')
-    S22 = conj(S2);
-    for j1 = 1:TotalOrbitalNum
-        jj1 = 2*j1-1;
-        jj2 = 2*j1;
-        for i1 = 1:TotalOrbitalNum
+  C = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  # H*U'
+  for i1 = 1:2*TotalOrbitalNum
+      for j1 = 1:TotalOrbitalNum
+          sum_0 = sum(H1[i1,1:TotalOrbitalNum].*S2[j1,:])
+          sum_1 = sum(H1[i1,TotalOrbitalNum+(1:TotalOrbitalNum)].*S2[j1,:])
+          C[2*j1-1,i1] = sum_0;
+          C[2*j1,i1] = sum_1;
+      end
+  end
+  # U*(H*U')
+  S22 = conj(S2);
+  for j1 = 1:TotalOrbitalNum
+      jj1 = 2*j1-1;
+      jj2 = 2*j1;
+      for i1 = 1:TotalOrbitalNum
 
-            sum_00 = sum(S22[i1,:].*C[jj1,1:TotalOrbitalNum])
-            sum_01 = sum(S22[i1,:].*C[jj1,TotalOrbitalNum+(1:TotalOrbitalNum)])
+          sum_00 = sum(S22[i1,:].*C[jj1,1:TotalOrbitalNum])
+          sum_01 = sum(S22[i1,:].*C[jj1,TotalOrbitalNum+(1:TotalOrbitalNum)])
 
-            sum_10 = sum(S22[i1,:].*C[jj2,1:TotalOrbitalNum])
-            sum_11 = sum(S22[i1,:].*C[jj2,TotalOrbitalNum+(1:TotalOrbitalNum)])
-
-
-            H2[jj1,2*i1-1] = sum_00;
-            H2[jj1,2*i1] = sum_01;
-            H2[jj2,2*i1-1] = sum_10;
-            H2[jj2,2*i1] = sum_11;
-        end
-    end
-    # find Eigenvalues
-
-    H2 = H2.' ;
-    H3 = copy(H2)
-
-    eigfact_hermitian(H3,ko_all);
-    if(!check_eigmat(H2,H3,ko_all))
-        println("H3 :",k_point)
-    end
+          sum_10 = sum(S22[i1,:].*C[jj2,1:TotalOrbitalNum])
+          sum_11 = sum(S22[i1,:].*C[jj2,TotalOrbitalNum+(1:TotalOrbitalNum)])
 
 
-    H3 = H3.'
-    S3 = copy(S2.');
-    NC_Es = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
-    NC_Es2 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
-    for j1=1:2*TotalOrbitalNum
-        for i1=1:TotalOrbitalNum
-            sum_0 = sum(S3[i1,:].*H3[j1,2*(1:TotalOrbitalNum)-1]);
-            sum_1 = sum(S3[i1,:].*H3[j1,2*(1:TotalOrbitalNum)]);
-            NC_Es[j1,i1] = sum_0;
-            NC_Es[j1,i1+TotalOrbitalNum] = sum_1;
+          H2[jj1,2*i1-1] = sum_00;
+          H2[jj1,2*i1] = sum_01;
+          H2[jj2,2*i1-1] = sum_10;
+          H2[jj2,2*i1] = sum_11;
+      end
+  end
+  # find Eigenvalues
 
-            NC_Es2[j1,2*i1-1] = sum_0;
-            NC_Es2[j1,i1] = sum_1;
-        end
-    end
-    NC_Es = NC_Es.';
-    #    Psi = Psi';
-    kpoint_nc_common = Kpoint_nc_commondata_Type(NC_Es,ko_all,k_point_int);
-    #kpoint_nc_common = Kpoint_nc_commondata_Type(H3,ko_all,k_point_int);
-    #kpoint_nc_common = Kpoint_nc_commondata_debug_Type(NC_Es,ko_all,k_point_int,S2,H0,H1,H2,H3);
-    return kpoint_nc_common;
+  H2 = H2.' ;
+  H3 = copy(H2)
+
+  eigfact_hermitian(H3,ko_all);
+  if (!check_eigmat(H2,H3,ko_all))
+      println("H3 :",k_point)
+  end
+
+
+  H3 = H3.'
+  S3 = copy(S2.');
+  NC_Es = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  NC_Es2 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  for j1=1:2*TotalOrbitalNum
+      for i1=1:TotalOrbitalNum
+          sum_0 = sum(S3[i1,:].*H3[j1,2*(1:TotalOrbitalNum)-1]);
+          sum_1 = sum(S3[i1,:].*H3[j1,2*(1:TotalOrbitalNum)]);
+          NC_Es[j1,i1] = sum_0;
+          NC_Es[j1,i1+TotalOrbitalNum] = sum_1;
+
+          NC_Es2[j1,2*i1-1] = sum_0;
+          NC_Es2[j1,i1] = sum_1;
+      end
+  end
+  NC_Es = NC_Es.';
+  #    Psi = Psi';
+  #kpoint_nc_common = Kpoint_nc_commondata_Type(NC_Es,ko_all,k_point_int);
+  #return kpoint_nc_common;
+  #kpoint_nc_common = Kpoint_nc_commondata_Type(H3,ko_all,k_point_int);
+  #kpoint_nc_common = Kpoint_nc_commondata_debug_Type(NC_Es,ko_all,k_point_int,S2,H0,H1,H2,H3);
+  kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(NC_Es,ko_all,k_point);
+  return kpoint_common
 end
 
-function cal_noncolinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf)
-  return update_nc_Energy_testing(k_point,scf_r);
-end
+#function cal_noncolinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf)
+#  return update_nc_Energy_testing(k_point,scf_r);
+#end
 
 function update_nc_Energy_testing(k_point::k_point_Tuple,scf_r::Openmxscf)
   # testing version different from Opnemx Band_MO.c implimentation
@@ -424,6 +431,12 @@ function update_nc_Energy_testing(k_point::k_point_Tuple,scf_r::Openmxscf)
   ## Overlap matrix S
   S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
   MPF = zeros(Int,scf_r.atomnum)
+  orbitalStartIdx = 0;
+  for i = 1:scf_r.atomnum
+      MPF[i] = orbitalStartIdx;
+      orbitalStartIdx += scf_r.Total_NumOrbs[i]
+  end
+
   Overlap_Band!(scf_r.OLP,S,MPF,k_point[1],k_point[2],k_point[3],scf_r);
   #S = S';
 
@@ -431,7 +444,7 @@ function update_nc_Energy_testing(k_point::k_point_Tuple,scf_r::Openmxscf)
   S_eigvals = zeros(Float_my, TotalOrbitalNum);
   # S^1/2
   eigfact_hermitian(S2,S_eigvals);
-  if(!check_eigmat(S,S2,S_eigvals))
+  if (!check_eigmat(S,S2,S_eigvals))
       println("S :",k_point)
   end
   #  S2 * 1.0/sqrt(S_eigvals[l])
@@ -460,8 +473,8 @@ function update_nc_Energy_testing(k_point::k_point_Tuple,scf_r::Openmxscf)
 
   H3 = copy(H2)
   eigfact_hermitian(H3,Enks);
-  if(!check_eigmat(H2,H3,Enks))
-      println("H3 :",k_point)
+  if (!check_eigmat(H2,H3,Enks))
+    println("H3 :",k_point)
   end
   NC_Es = S_2by2' * H3;
 
@@ -470,5 +483,5 @@ function update_nc_Energy_testing(k_point::k_point_Tuple,scf_r::Openmxscf)
   #kpoint_nc_common = Kpoint_nc_commondata_debug_Type(NC_Es,Enks,k_point_int,S_2by2,H0,H0,H2,H3);
   #return kpoint_nc_common;
 	kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(NC_Es,Enks,k_point);
-    return kpoint_common;
+  return kpoint_common;
 end
