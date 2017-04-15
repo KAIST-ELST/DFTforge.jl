@@ -17,11 +17,11 @@ end
 
 
 
-type OpenMX_data
-    scf_name::AbstractString
-    scf_r::OpenMXdata.Openmxscf
-    dfttype::DFTforge.DFTtype
-end
+#type OpenMX_data
+#    scf_name::AbstractString
+#    scf_r::OpenMXdata.Openmxscf
+#    dfttype::DFTforge.DFTtype
+#end
 
 function read_dftresult(scf_name::AbstractString, dfttype::DFTforge.DFTtype)
     if(OpenMX == dfttype)
@@ -258,18 +258,6 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     hdf5_hamiltonian_imag = d_create(fid_hdf,"Hamiltonian_imag",datatype(Float64),
     dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim));
     # Write hamiltonian
-    H::Hamiltonian_type = cal_Hamiltonian(1,result_index);
-    println((TotalOrbitalNum,TotalOrbitalNum2))
-    println(size(H))
-    hdf5_hamiltonian_real[:,:,1] = real(H);
-    hdf5_hamiltonian_imag[:,:,1] = imag(H);
-    if(DFTforge.colinear_type == spin_type )
-      H = cal_Hamiltonian(2,result_index);
-      hdf5_hamiltonian_real[:,:,2] = real(H);
-      hdf5_hamiltonian_imag[:,:,2] = imag(H);
-    end
-
-
 
     job_list = Array(Job_input_Type,0)
     q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
@@ -371,6 +359,8 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
   end
   function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
     global eigenstate_list;
+    global orbital_mask1,orbital_mask2,orbital_mask_on
+
     k_point_int = k_point_float2int(kPoint2BrillouinZone_Tuple(k_point));
 
     # non spin :

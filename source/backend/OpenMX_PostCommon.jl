@@ -86,7 +86,7 @@ function test_SmallHks(atom1::Int,atom2::Int,scf_r::Openmxscf)
   MP[2] = scf_r.Total_NumOrbs[atom1];
   # MPF
   MPF = zeros(Int32,scf_r.atomnum)
-  orbitalStartIdx::Int32 = 0; #각 atom별로 orbital index시작하는 지점
+  orbitalStartIdx = 0; #각 atom별로 orbital index시작하는 지점
   for i = 1:scf_r.atomnum
       MPF[i] = orbitalStartIdx;
       orbitalStartIdx += scf_r.Total_NumOrbs[i]

@@ -6,10 +6,12 @@ import TOML # Pkg.clone("https://github.com/wildart/TOML.jl.git")
 export Kpoint_eigenstate,Complex_my,Float_my,k_point_Tuple,k_point_int_Tuple
 export Hamiltonian_type
 export k_point_int2float,k_point_float2int,kPoint2BrillouinZone_Tuple,
-       kPoint2BrillouinZone_int_Tuple,kPoint_gen_GammaCenter,q_k_unique_points
+       kPoint2BrillouinZone_int_Tuple,q_k_unique_points
+export kPoint_gen_EquallySpaced,kPoint_gen_GammaCenter
 export pwork
 export k_point_precision
 
+export orbital_mask_input_Type,orbital_mask_enum
 export parse_input,Arg_Inputs
 
 
@@ -121,11 +123,44 @@ function q_k_unique_points(q_point_list,k_point_list)
 end
 
 @enum orbital_mask_enum nomask=0 unmask=1 mask=2
+atom12_Tuple = Tuple{Int64,Int64};
 type orbital_mask_input_Type
     orbital_mask1::Array{Int64,1}
     orbital_mask2::Array{Int64,1}
-    #atom12::atom12_Tuple
+    atom12::atom12_Tuple
     orbital_mask_on::Bool
+end
+
+function orbital_mask_inv(orbital_mask1,atom1_orbitalNum,orbital_mask_option)
+  orbital_mask1_inv = Array{Int64,1}();
+  if(nomask == orbital_mask_option)
+      if( 0 < length(orbital_mask1))
+          println("INFO: Orbital masking options only works with --ommode 1 or 2")
+      end
+      orbital_mask1 = Array{Int64,1}();
+      orbital_mask_name = "";
+  else
+      orbital_mask_on = true;
+      if(unmask ==  orbital_mask_option) # inverse selection
+
+          orbital_mask1_tmp = collect(1:atom1_orbitalNum);
+
+          for orbit1 in orbital_mask1
+              deleteat!(orbital_mask1_tmp, find(orbital_mask1_tmp.==orbit1))
+          end
+
+          orbital_mask1 = orbital_mask1_tmp;
+
+      end
+      ## orbital_mask1_inv are only used for file saving
+      for orbit1 = 1:atom1_orbitalNum
+          if(0==length(find( orbital_mask1.== orbit1)))
+              push!(orbital_mask1_inv,orbit1);
+          end
+      end
+
+  end
+  return orbital_mask1_inv;
 end
 
 function pwork(f,args)
