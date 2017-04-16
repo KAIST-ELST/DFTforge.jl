@@ -38,9 +38,9 @@ macro read_OLPmat(mat)
     #:(println($mat[1][1][1]);)
 end
 
-macro init_Hamil(mat,spin)
+macro init_Hamil(mat,spin,atomnum)
     :(
-    for ct_AN=1:atomnum
+    for ct_AN=1:$atomnum
         TNO1 = Total_NumOrbs[ct_AN];
         $mat[$spin][ct_AN] =
         Array(Array{Array{Float64,},},FNAN[ct_AN]+1);
@@ -61,9 +61,9 @@ macro init_Hamil(mat,spin)
     )
 end
 
-macro read_Hamil(mat,spin)
+macro read_Hamil(mat,spin,atomnum)
     :(
-        for ct_AN=1:atomnum
+        for ct_AN=1:$atomnum
         TNO1 = Total_NumOrbs[ct_AN];
 
         #read(f,Float64)
@@ -179,8 +179,8 @@ function read_scf(scf_name::AbstractString)
 
     #natn[atomnum+1][FNAN[ct_AN]+1];
     #ncn[atomnum+1][FNAN[ct_AN]+1];
-    natn =  Array(Array{Int32,},atomnum)
-    ncn =  Array(Array{Int32,},atomnum)
+    natn =  Array{Array{Int32,}}(atomnum)
+    ncn =  Array{Array{Int32,}}(atomnum)
     for ii=1:atomnum
         natn[ii] = zeros(Int32,FNAN[ii]+1)
         natn[ii] = read(f,Int32,FNAN[ii]+1)
@@ -267,31 +267,31 @@ function read_scf(scf_name::AbstractString)
     #               [FNAN[ct_AN]+1]
     #               [Total_NumOrbs[ct_AN]]
     #                [Total_NumOrbs[h_AN]];
-    Hks = Array(Array{Array{Array{Array{Float64,},},},},SpinP_switch+1)
-    iHks = Array(Array{Array{Array{Array{Float64,},},},},3)
+    Hks = Array{Array{Array{Array{Array{Float64}}}}}(SpinP_switch+1)
+    iHks = Array{Array{Array{Array{Array{Float64}}}}}(3)
 
-    OLP = Array(Array{Array{Array{Float64,},},},atomnum)
-    OLPpox = Array(Array{Array{Array{Float64,},},},atomnum);
-    OLPpoy = Array(Array{Array{Array{Float64,},},},atomnum);
-    OLPpoz = Array(Array{Array{Array{Float64,},},},atomnum);
-    DM = Array(Array{Array{Array{Array{Float64,},},},},SpinP_switch+1)
+    OLP = Array{Array{Array{Array{Float64}}}}(atomnum)
+    OLPpox = Array{Array{Array{Array{Float64}}}}(atomnum);
+    OLPpoy = Array{Array{Array{Array{Float64}}}}(atomnum);
+    OLPpoz = Array{Array{Array{Array{Float64}}}}(atomnum);
+    DM = Array{Array{Array{Array{Array{Float64}}}}}(SpinP_switch+1)
 
     for spin = 1:SpinP_switch+1
-        Hks[spin] = Array(Array{Array{Array{Float64,},},},atomnum)
-        @init_Hamil(Hks,spin)
+        Hks[spin] = Array{Array{Array{Array{Float64}}}}(atomnum)
+        @init_Hamil(Hks,spin,atomnum)
     end
     for spin = 1:3
-        iHks[spin] = Array(Array{Array{Array{Float64,},},},atomnum)
-        @init_Hamil(iHks,spin)
+        iHks[spin] = Array{Array{Array{Array{Float64}}}}(atomnum)
+        @init_Hamil(iHks,spin,atomnum)
     end
 
     # Hamiltonian matrix
     for spin = 1:SpinP_switch+1
-        @read_Hamil(Hks,spin)
+        @read_Hamil(Hks,spin,atomnum)
     end
     if 3 == SpinP_switch # non-collinear
         for spin = 1:3#SpinP_switch+1
-            @read_Hamil(iHks,spin)
+            @read_Hamil(iHks,spin,atomnum)
         end
     end
 
@@ -312,11 +312,11 @@ function read_scf(scf_name::AbstractString)
     #end
 
     for spin = 1:SpinP_switch+1
-        DM[spin] = Array(Array{Array{Array{Float64,},},},atomnum)
-        @init_Hamil(DM,spin)
+        DM[spin] = Array{Array{Array{Array{Float64}}}}(atomnum)
+        @init_Hamil(DM,spin,atomnum)
     end
     for spin = 1:SpinP_switch+1
-        @read_Hamil(DM,spin)
+        @read_Hamil(DM,spin,atomnum)
     end
     #############
     # Solver
