@@ -223,6 +223,7 @@ type Arg_Inputs
   scf_name::AbstractString
   atom1::Int
   atom2::Int
+  atom12_list::Vector{Tuple{Int64,Int64}}
   k_point_num::Array{Int,1}
   q_point_num::Array{Int,1}
   orbital_mask1
@@ -231,7 +232,7 @@ type Arg_Inputs
   orbital_mask_name
   hdftmpdir
   ChemP_delta_ev::Float64
-  Arg_Inputs() = new("",-1,-1,[2,2,2],[2,2,2],
+  Arg_Inputs() = new("",-1,-1,[(-1,-1)],[2,2,2],[2,2,2],
     Array{Int64,1}(),Array{Int64,1}(),nomask,"All","",0.0)
 end
 
@@ -255,7 +256,7 @@ function parse_input(args)
         "--DFTtype","-D"
         help = "openmx, openmxWF, vaspWF "
         "--atom12"
-        help = "target atom1&2 ex:) 1_2"     # used by the help screen
+        help = "target atom1&2 ex:) 1_1,1_2,2_5"     # used by the help screen
         "--kpoint", "-k"
         #action = :store_true   # this makes it a flag
         help = "k_point ex:) 5_5_5"
@@ -288,9 +289,17 @@ function parse_input(args)
         #println("  $key  =>  $val")
 
         if(key == "atom12" && (Void != typeof(val)))
-            atom12 =   map(x->parse(Int64,x),split(val,"_"))
-            input.atom1 = atom12[1];
-            input.atom2 = atom12[2];
+            atom_str_list = split(val,",")
+            atom12_list = Vector{Tuple{Int64,Int64}}();
+            for (atom_i, atom12_str) in enumerate(atom_str_list)
+              atom12 =   map(x->parse(Int64,x),split(atom12_str,"_"))
+              push!(atom12_list,(atom12[1],atom12[2]));
+            end
+            input.atom1 = atom12_list[1][1]
+            input.atom2 = atom12_list[1][2]
+            input.atom12_list = atom12_list
+            #input.atom1 = atom12[1];
+            #input.atom2 = atom12[2];
         end
         if(key == "scfname")
             if(isfile(val) && ".scfout" == splitext(val)[2])

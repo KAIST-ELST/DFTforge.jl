@@ -24,7 +24,7 @@ end
 #end
 
 function read_dftresult(scf_name::AbstractString, dfttype::DFTforge.DFTtype)
-    if(OpenMX == dfttype)
+    if (OpenMX == dfttype)
       scf_r = OpenMXdata.read_scf(scf_name);
       return scf_r;
     elseif (Wannier90 == dfttype)
@@ -39,7 +39,7 @@ end
 function cal_colinear_eigenstate(k_point::k_point_Tuple,
     dfttype::DFTforge.DFTtype,scf_r,spin_list=1)
     Eigenstate::Array{Kpoint_eigenstate,1} = Array{Kpoint_eigenstate,1}();
-    if(OpenMX==dfttype)
+    if (OpenMX==dfttype)
       #Eigenstate::DFTforge.Kpoint_eigenstate =
       Eigenstate =
        OpenMXdata.cal_colinear_eigenstate(k_point,scf_r,spin_list);
@@ -83,12 +83,13 @@ using HDF5
 using ProgressMeter
 
 export set_current_dftdataset,cal_colinear_eigenstate,get_dftdataset
-export Job_input_Type,Job_input_kq_Type,Job_input_kq_atom_Type
+export Job_input_Type,Job_input_kq_Type,Job_input_kq_atom_Type,Job_input_kq_atom_list_Type
 
 export cachecal_all_Qpoint_eigenstats,cacheset,cacheread_eigenstate,cacheread,
   cacheread_lampup,cacheread_atomsOrbital_lists,cacheread_Hamiltonian
 export get_ChempP
-export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
+export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
+  Kspace_parallel,Qspace_Ksum_atomlist_parallel_nc
 
   type DFTdataset
     dfttype::DFTtype
@@ -153,12 +154,26 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
       new(k_point,kq_point,spin_type,atom1,atom2,result_index,cache_index)
   end
 
+  type Job_input_kq_atom_list_Type
+    k_point::k_point_Tuple
+    kq_point::k_point_Tuple
+    spin_type::SPINtype
+    atom12_list::Vector{Tuple{Int64,Int64}}
+
+    result_index::Int
+    cache_index::Int
+    Job_input_kq_atom_list_Type(k_point,kq_point,spin_type,atom12) =
+      new(k_point,kq_point,spin_type,atom12,1,1)
+    Job_input_kq_atom_list_Type(k_point,kq_point,spin_type,atom12,result_index,cache_index) =
+      new(k_point,kq_point,spin_type,atom12,result_index,cache_index)
+  end
+
   global dftresult = Array{DFTdataset}();
   global eigenstate_list =  Array{Eigenstate_hdf5}(); #cached Eigenstates
 
   function set_current_dftdataset(scf_name::AbstractString,
     dfttype::DFTtype,spin_type::SPINtype,result_index=1)
-    if(DFTforge.OpenMX == dfttype)
+    if (DFTforge.OpenMX == dfttype)
       # Read SCF and Set as current dftdata
       scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
       orbitalStartIdx = zeros(Int,scf_r.atomnum);
@@ -200,14 +215,14 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
   function cal_eigenstate(input::Job_input_Type,result_index=1)
     # specfify spin type is required
 
-    if(DFTforge.para_type == input.spin_type)
+    if (DFTforge.para_type == input.spin_type)
       kpoint_eigenstate_list = Array{Kpoint_eigenstate}();
       push!(kpoint_eigenstate_list,
       cal_colinear_eigenstate(input.k_point,1,input.result_index) );
       return kpoint_eigenstate_list
-    elseif(DFTforge.colinear_type ==  input.spin_type)
+    elseif (DFTforge.colinear_type ==  input.spin_type)
       return cal_colinear_eigenstate(input.k_point,[1,2],input.result_index)
-    elseif(DFTforge.non_colinear_type == input.spin_type)
+    elseif (DFTforge.non_colinear_type == input.spin_type)
       return cal_nonco_linear_Eigenstate(input.k_point,input.result_index)
     end
   end
@@ -215,9 +230,9 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     global dftresult;
     spin_type = dftresult[result_index].spin_type;
     dfttype::DFTtype = dftresult[result_index].dfttype;
-    if(DFTforge.para_type == spin_type || DFTforge.colinear_type == spin_type)
+    if (DFTforge.para_type == spin_type || DFTforge.colinear_type == spin_type)
       return cal_colinear_Hamiltonian(dfttype,dftresult[result_index].scf_r,spin);
-    elseif(DFTforge.non_colinear_type == spin_type)
+    elseif (DFTforge.non_colinear_type == spin_type)
       return cal_noncolinear_Hamiltonian(dfttype,dftresult[result_index].scf_r)
     end
 
@@ -235,11 +250,12 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     spin_dim  = Int(spin_type)
     println(string("spin_dim ",spin_dim))
 
-    TotalOrbitalNum2 = TotalOrbitalNum;
 
-    if(DFTforge.non_colinear_type == spin_type)
+    TotalOrbitalNum2 = TotalOrbitalNum;
+    if (DFTforge.non_colinear_type == spin_type)
       TotalOrbitalNum2 = 2*TotalOrbitalNum;
     end
+    println((TotalOrbitalNum,TotalOrbitalNum2))
 
     #print(spin_dim )
     fid_hdf = h5open(hdf_cache_name,"w");
@@ -372,19 +388,19 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     q_index = -1;
     TotalOrbitalNum = eigenstate_list[cache_index].TotalOrbitalNum;
     TotalOrbitalNum2 = TotalOrbitalNum
-    if(DFTforge.non_colinear_type == spin_type)
+    if (DFTforge.non_colinear_type == spin_type)
       TotalOrbitalNum2 = 2*TotalOrbitalNum;
     end
     Eigenstate = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
     Eigenvalues = zeros(Float_my,TotalOrbitalNum2);
 
-    if(haskey(eigenstate_list[cache_index].q_points_intdic, k_point_int))
+    if (haskey(eigenstate_list[cache_index].q_points_intdic, k_point_int))
       q_index =  eigenstate_list[cache_index].q_points_intdic[k_point_int];
     else
       error(string("cacheread_eigenstate ",k_point," Not Found Exception"))
     end
-    if(q_index>=1)
-      if(DFTforge.para_type == spin_type)
+    if (q_index>=1)
+      if (DFTforge.para_type == spin_type)
           Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,:,1,q_index] +
           im * eigenstate_list[cache_index].Eigenvect_imag[:,:,1,q_index];
           Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[:,1,q_index];
@@ -406,7 +422,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
     TotalOrbitalNum = eigenstate_list[cache_index].TotalOrbitalNum;
     TotalOrbitalNum2 = TotalOrbitalNum
     spin_type =  eigenstate_list[cache_index].spin_type;
-    if(DFTforge.non_colinear_type == spin_type)
+    if (DFTforge.non_colinear_type == spin_type)
       TotalOrbitalNum2 = 2*TotalOrbitalNum;
     end
     Hamiltonian = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
@@ -478,10 +494,10 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
 
       Q_ksum[q_point_int] = vcat(temp...);
       ## End of each q_point
-      if(1==rem(q_i,4))
+      if (1==rem(q_i,4))
         next!(p)
       end
-      if(1==rem(q_i,50))
+      if (1==rem(q_i,50))
         @everywhere gc()
       end
     end
@@ -511,14 +527,67 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,Kspace_parallel
 
       Q_ksum[q_point_int] = vcat(temp...);
       ## End of each q_point
-      if(1==rem(q_i,6))
+      if (1==rem(q_i,6))
         next!(p)
       end
-      if(1==rem(q_i,50))
+      if (1==rem(q_i,50))
         @everywhere gc()
       end
     end
     return Q_ksum;
+  end
+  function Qspace_Ksum_atomlist_parallel_nc(kq_function,q_point_list,k_point_list,
+    atom12_list::Vector{Tuple{Int64,Int64}},
+    result_index=1,cache_index=1)
+
+    batch_size = 2*nprocs();
+    cnt = 1
+    spin_type = get_dftdataset(result_index).spin_type;
+
+    Xij_Q = Array(Dict{k_point_int_Tuple,Array{Complex_my,1}},10,length(atom12_list));
+    Xij_Q_mean = Array(Dict{k_point_int_Tuple,Complex_my},10,length(atom12_list));
+    for xyz_ij = 1:10
+        for atom12_i = 1:length(atom12_list)
+            Xij_Q[xyz_ij,atom12_i] = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
+            Xij_Q_mean[xyz_ij,atom12_i] = Dict{k_point_int_Tuple,Complex_my}();
+        end
+    end
+    #Q_ksum = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
+
+    p = Progress( round(Int, length(q_point_list)/6),
+      string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
+    for (q_i,q_point) in enumerate(q_point_list)
+      q_point_int = k_point_float2int(q_point);
+
+      job_list = Array(Job_input_kq_atom_list_Type,0)
+      for k_point in k_point_list
+        kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
+        kq_point = kPoint2BrillouinZone_Tuple(kq_point);
+        kq_point_int = k_point_float2int(kq_point);
+        push!(job_list,Job_input_kq_atom_list_Type(k_point,kq_point,spin_type,atom12_list));
+      end
+      X_temp = pmap(kq_function,job_list);
+      for xyz_ij = 1:10
+        for atom12_i = 1:length(atom12_list)
+          tmp = zeros(Complex_my,length(k_point_list))
+          for ii = 1:length(k_point_list)
+              tmp[ii] = X_temp[ii][xyz_ij,atom12_i];
+          end
+          Xij_Q[xyz_ij,atom12_i][q_point_int] = copy(tmp);
+          Xij_Q_mean[xyz_ij,atom12_i][q_point_int] = mean(tmp);
+        end
+      end
+
+      #Q_ksum[q_point_int] = vcat(temp...);
+      ## End of each q_point
+      if (1==rem(q_i,6))
+        next!(p)
+      end
+      if (1==rem(q_i,50))
+        @everywhere gc()
+      end
+    end
+    return (Xij_Q,Xij_Q_mean);
   end
 
   end
