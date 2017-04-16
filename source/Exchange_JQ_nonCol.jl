@@ -227,8 +227,8 @@ DFTforge.pwork(init_Hks,1)
       #Voff_1 = Hks_updown[atom1_orbits_up,atom1_orbits_down]
       Voff_1 = conj(Hks_updown[atom1_orbits_up,atom1_orbits_down]) +
         Hks_updown[atom1_orbits_down,atom1_orbits_up]
-      Vx_1 = (Voff_1 + conj(Voff_1))/2.0;
-      Vy_1 = (Voff_1 - conj(Voff_1))/(2.0*im);
+      Vx_1 = 0.5*(Voff_1 + conj(Voff_1))/2.0;
+      Vy_1 = 0.5*(Voff_1 - conj(Voff_1))/(2.0*im);
       #Plots.heatmap(real(Vz_1))
       #Plots.heatmap(real(Vy_1))
 
@@ -239,8 +239,8 @@ DFTforge.pwork(init_Hks,1)
       # Voff_2 = (Hks_updown[atom2_orbits_up,atom2_orbits_down])
              #+ Hks_updown[atom2_orbits_down,atom2_orbits_up]
 
-      Vx_2 = (Voff_2 + conj(Voff_2))/2.0;
-      Vy_2 = (Voff_2 - conj(Voff_2))/(2.0*im);
+      Vx_2 = 0.5*(Voff_2 + conj(Voff_2))/2.0;
+      Vy_2 = 0.5*(Voff_2 - conj(Voff_2))/(2.0*im);
 
       #Plots.heatmap(real(part1))
 
