@@ -28,6 +28,7 @@ orbital_mask_option = DFTcommon.nomask;
 orbital_mask_on = false;
 atom1 = -1;
 atom2 = -1;
+atom12_list = Vector{Tuple{Int64,Int64}}();
 
 if true
   arg_input = parse_input(ARGS)
@@ -35,8 +36,9 @@ if true
   ChemP_delta_ev = arg_input.ChemP_delta_ev
   k_point_num = arg_input.k_point_num
   q_point_num = arg_input.q_point_num
-  atom1 = arg_input.atom1;
-  atom2 = arg_input.atom2;
+  #atom1 = arg_input.atom1;
+  #atom2 = arg_input.atom2;
+  atom12_list = arg_input.atom12_list;
   hdftmpdir = arg_input.hdftmpdir;
 end
 ###
@@ -57,7 +59,7 @@ ChemP_delta_ev = 0.0
 
 ###############################################################################
 
-println((atom1,atom2))
+println(atom12_list)
 
 root_dir = dirname(scf_name)
 scf_name_only = splitext(basename(scf_name))
@@ -88,8 +90,6 @@ DFTforge.pwork(set_current_dftdataset,(scf_name, DFTforge.OpenMX, DFTforge.non_c
 
 k_point_list = kPoint_gen_GammaCenter(k_point_num);
 q_point_list = kPoint_gen_GammaCenter(q_point_num);
-k_point_list = sort(unique(k_point_list))
-q_point_list = sort(unique(q_point_list))
 #q_point_list = unique(q_point_list);
 (kq_point_list,kq_point_int_list) = q_k_unique_points(q_point_list,k_point_list)
 println(string(" kq_point_list ",length(kq_point_list)))
@@ -134,7 +134,7 @@ pwork(init_orbital_mask,orbital_mask_input);
 
 #DFTforge.pwork(Init_SmallHks,(atom1,atom2))
 
-@everywhere function Magnetic_Exchange_J_noncolinear(input::Job_input_kq_atom_Type)
+@everywhere function Magnetic_Exchange_J_noncolinear(input::Job_input_kq_atom_list_Type)
     #global SmallHks;
     ############################################################################
     ## Accessing Data Start
@@ -144,8 +144,10 @@ pwork(init_orbital_mask,orbital_mask_input);
     kq_point::DFTforge.k_point_Tuple =  input.kq_point
     spin_type::DFTforge.SPINtype = input.spin_type;
 
-    atom1::Int = input.atom1;
-    atom2::Int = input.atom2;
+    #atom1::Int = input.atom12[1][1];
+    #atom2::Int = input.atom12[1][2];
+    atom12_list::Vector{Tuple{Int64,Int64}} = input.atom12_list;
+    result_mat = zeros(Complex_my,10,length(atom12_list))
 
     #atom1::Int = input.atom1;
     #atom2::Int = input.atom2;
@@ -174,31 +176,6 @@ pwork(init_orbital_mask,orbital_mask_input);
     #Hks_down = cacheread_Hamiltonian(2,cache_index)
     (orbitalStartIdx,orbitalNums) = cacheread_atomsOrbital_lists(cache_index)
 
-    atom1_orbits_up   = orbitalStartIdx[atom1] + (1:orbitalNums[atom1])
-    atom1_orbits_down = TotalOrbitalNum + atom1_orbits_up
-    atom2_orbits_up   = orbitalStartIdx[atom2] + (1:orbitalNums[atom2])
-    atom2_orbits_down = TotalOrbitalNum + atom2_orbits_up
-    #Plots.heatmap(real(Hks_updown))
-
-    ############################################################################
-    ## Accessing Data End
-    ############################################################################
-    ## Do auctual calucations
-    Vz_1 = 0.5*(Hks_updown[atom1_orbits_up,atom1_orbits_up] -
-      Hks_updown[atom1_orbits_down,atom1_orbits_down])
-    Voff_1 = Hks_updown[atom1_orbits_up,atom1_orbits_down]
-    Vx_1 = 0.5*(Voff_1 + conj(Voff_1))/2.0;
-    Vy_1 = 0.5*(Voff_1 - conj(Voff_1))/(2.0*im);
-    #Plots.heatmap(real(Vz_1))
-    #Plots.heatmap(real(Vy_1))
-
-    Vz_2 = 0.5*(Hks_updown[atom2_orbits_up,atom2_orbits_up] -
-      Hks_updown[atom2_orbits_down,atom2_orbits_down])
-    Voff_2 = Hks_updown[atom2_orbits_up,atom2_orbits_down]
-    Vx_2 = 0.5*(Voff_2 + conj(Voff_2))/2.0;
-    Vy_2 = 0.5*(Voff_2 - conj(Voff_2))/(2.0*im);
-
-
     #En_k_up::Array{Float_my,1} = eigenstate_k_up.Eigenvalues;
     Em_kq = eigenstate_kq.Eigenvalues;
     En_k  = eigenstate_k.Eigenvalues;
@@ -219,15 +196,69 @@ pwork(init_orbital_mask,orbital_mask_input);
     Enk_Emkq += im*0.0001;
 
     part1 = dFnk_Fmkq./(-Enk_Emkq);
-    #Plots.heatmap(real(part1))
 
-    G1V1_z = (Es_n_k[atom1_orbits_down,:]'  *Vz_1* Es_m_kq[atom1_orbits_up,:]);
-    G2V2_z = (Es_m_kq[atom2_orbits_up,:]'   *Vz_2* Es_n_k[atom2_orbits_down,:]);
-    #G2V2_z = (Es_m_kq[atom2_orbits_up,:]' * Vz_2 * Es_n_k[atom2_orbits_down,:]);
+    for (atom12_i,atom12) in enumerate(atom12_list)
+      atom1 = atom12[1]
+      atom2 = atom12[2]
 
-    J_ij::Array{Complex_my,2} =  0.5* part1.* transpose(G1V1_z) .* G2V2_z * Hartree2cm;
-    #J_ij::Array{Complex_my,2} =  0.5* part1.* transpose(G1V1_z) .* G2V2_z;
-    return sum(J_ij[:]);
+      atom1_orbits_up   = orbitalStartIdx[atom1] + (1:orbitalNums[atom1])
+      atom1_orbits_down = TotalOrbitalNum + atom1_orbits_up
+      atom2_orbits_up   = orbitalStartIdx[atom2] + (1:orbitalNums[atom2])
+      atom2_orbits_down = TotalOrbitalNum + atom2_orbits_up
+      #Plots.heatmap(real(Hks_updown))
+
+      ############################################################################
+      ## Accessing Data End
+      ############################################################################
+      ## Do auctual calucations
+      Vz_1 = 0.5*(Hks_updown[atom1_orbits_up,atom1_orbits_up] -
+        Hks_updown[atom1_orbits_down,atom1_orbits_down])
+      Voff_1 = Hks_updown[atom1_orbits_up,atom1_orbits_down]
+      Vx_1 = 1*(Voff_1 + conj(Voff_1))/2.0;
+      Vy_1 = 1*(Voff_1 - conj(Voff_1))/(2.0*im);
+      #Plots.heatmap(real(Vz_1))
+      #Plots.heatmap(real(Vy_1))
+
+      Vz_2 = 0.5*(Hks_updown[atom2_orbits_up,atom2_orbits_up] -
+        Hks_updown[atom2_orbits_down,atom2_orbits_down])
+      Voff_2 = Hks_updown[atom2_orbits_up,atom2_orbits_down]
+      Vx_2 = 1*(Voff_2 + conj(Voff_2))/2.0;
+      Vy_2 = 1*(Voff_2 - conj(Voff_2))/(2.0*im);
+
+      #Plots.heatmap(real(part1))
+
+      G1V1_z = (Es_n_k[atom1_orbits_down,:]'  *Vz_1* Es_m_kq[atom1_orbits_up,:]);
+      G2V2_z = (Es_m_kq[atom2_orbits_up,:]'   *Vz_2* Es_n_k[atom2_orbits_down,:]);
+      #G2V2_z = (Es_m_kq[atom2_orbits_up,:]' * Vz_2 * Es_n_k[atom2_orbits_down,:]);
+      G1V1_x = (Es_n_k[atom1_orbits_down,:]'  *Vx_1* Es_m_kq[atom1_orbits_up,:]);
+      G2V2_x = (Es_m_kq[atom2_orbits_up,:]'   *Vx_2* Es_n_k[atom2_orbits_down,:]);
+
+      G1V1_y = (Es_n_k[atom1_orbits_down,:]'  *Vy_1* Es_m_kq[atom1_orbits_up,:]);
+      G2V2_y = (Es_m_kq[atom2_orbits_up,:]'   *Vy_2* Es_n_k[atom2_orbits_down,:]);
+      #J_ij_zz::Array{Complex_my,2} =  0.5* part1.* transpose(G1V1_z) .* G2V2_z * Hartree2cm;
+
+      J_ij_xx =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_x )* Hartree2cm;
+      J_ij_xy =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_y )* Hartree2cm;
+      J_ij_xz =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_z )* Hartree2cm;
+
+      J_ij_yx =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_x )* Hartree2cm;
+      J_ij_yy =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_y )* Hartree2cm;
+      J_ij_yz =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_z )* Hartree2cm;
+
+      J_ij_zx =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_x )* Hartree2cm;
+      J_ij_zy =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_y )* Hartree2cm;
+      J_ij_zz =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_z )* Hartree2cm;
+
+      X_ij = sum(part1.*
+      transpose(Es_n_k[atom1_orbits_down,:]' * Es_m_kq[atom1_orbits_up,:]) .*
+      (Es_m_kq[atom2_orbits_up,:]' * Es_n_k[atom2_orbits_down,:]));
+
+      result_mat[:,atom12_i] = [
+      J_ij_xx,J_ij_xy,J_ij_xz,
+      J_ij_yx,J_ij_yy,J_ij_yz,
+      J_ij_zx,J_ij_zy,J_ij_zz, X_ij];
+    end
+    return result_mat #sum(J_ij[:]);
   end
 
 
@@ -246,12 +277,27 @@ pwork(init_orbital_mask,orbital_mask_input);
 # Average X_Q results
 ###############################################################################
 #X_Q::Dict{k_point_int_Tuple,Array{Complex_my,1}} = X_succeptability();
-X_Q = Qspace_Ksum_atom_parallel(Magnetic_Exchange_J_noncolinear,q_point_list,k_point_list,atom1,atom2)
-println(typeof(X_Q))
-X_Q_matlab = zeros(Complex128,length(q_point_list),1);
-for (q_i,q_point) in enumerate(q_point_list)
-  q_point_int = k_point_float2int(q_point);
-  X_Q_matlab[q_i] = mean(X_Q[q_point_int])
+#atom12_list =[(atom1,atom2)];
+(X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel_nc(Magnetic_Exchange_J_noncolinear,
+q_point_list,k_point_list,atom12_list)
+println(typeof(X_Q_mean_nc))
+#X_Q_matlab = zeros(Complex128,length(q_point_list),10,length(atom12_list));
+#for (q_i,q_point) in enumerate(q_point_list)
+  #q_point_int = k_point_float2int(q_point);
+  #X_Q_matlab[q_i] = mean(X_Q[q_point_int])
+#end
+Xij_Q_mean_matlab = Array(Array{Complex_my,1},10,length(atom12_list));
+for (atom12_i,atom12) in enumerate(atom12_list)
+  atom1 = atom12[1];
+  atom2 = atom12[2];
+  for xyz_i = 1:10
+    Xij_Q_mean_matlab[xyz_i,atom12_i] = zeros(Complex_my,length(q_point_list));
+    for (q_i,q_point) in enumerate(q_point_list)
+      q_point_int = k_point_float2int(q_point);
+      Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
+        X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
+    end
+  end
 end
 
 
@@ -281,42 +327,46 @@ Gxy = get_dftdataset().scf_r.Gxyz;
 atom_num = get_dftdataset().scf_r.atomnum;
 
 #jq_output_file = "test.mat"
-f_name = string(cal_name,"_meshk_",atom1,"_",atom2,"_[all]","_ChemPdelta_",ChemP_delta_ev);
-if (orbital_mask_on)
-    println(" ", orbital_mask1_inv," : ",orbital_mask2_inv)
-    f_name = string(cal_name,"_meshk_",atom1,"_",atom2);
-    mask_name = string("_atom1m_[",join(orbital_mask1_inv,","),
-    "]_atom2m_[",join(orbital_mask2_inv,","),"]");
-    f_name = string(f_name,mask_name,"_[",orbital_mask_name,"]","_ChemPdelta_",ChemP_delta_ev);
+for (atom12_i,atom12) in enumerate(atom12_list)
+  atom1 = atom12[1];
+  atom2 = atom12[2];
+
+  f_name = string(cal_name,"_meshk_",atom1,"_",atom2,"_[all]","_ChemPdelta_",ChemP_delta_ev);
+  if (orbital_mask_on)
+      println(" ", orbital_mask1_inv," : ",orbital_mask2_inv)
+      f_name = string(cal_name,"_meshk_",atom1,"_",atom2);
+      mask_name = string("_atom1m_[",join(orbital_mask1_inv,","),
+      "]_atom2m_[",join(orbital_mask2_inv,","),"]");
+      f_name = string(f_name,mask_name,"_[",orbital_mask_name,"]","_ChemPdelta_",ChemP_delta_ev);
+  end
+  result_fname = string("jq_",f_name,".mat");
+
+
+  println(jq_output_dir)
+  jq_output_file = joinpath(jq_output_dir,result_fname)
+
+  MAT.matwrite(jq_output_file,Dict("Jij_Q_matlab" =>Xij_Q_mean_matlab[:,atom12_i]
+    #,"Jij_Q_K" => Jij_Q_K_matlab
+    ,"q_point_list" => q_point_int_list_matlab
+    ,"k_point_list" => k_point_int_list_matlab
+    ,"k_point_precision" => k_point_precision
+    ,"tv" => tv
+    ,"rv" => rv
+    ,"Gxyz" => scf_r.Gxyz
+    ,"atomnum" => scf_r.atomnum
+    ,"atom1" => atom1
+    ,"atom2" => atom2
+    ,"scf_name" => scf_name
+    ,"orbital_mask1" => orbital_mask1
+    ,"orbital_mask2" => orbital_mask2
+    #,"Jij_history" => cal_history_dat["Jij_history"]
+    ,"orbital_mask_on" => orbital_mask_on
+    #,"orbital_mask1_inv" => orbital_mask1_inv
+    #,"orbital_mask2_inv" => orbital_mask2_inv
+    ,"ChemP_delta" => 0.0
+    ,"X_VERSION" => string(X_VERSION)
+    ));
 end
-result_fname = string("jq_",f_name,".mat");
-
-
-println(jq_output_dir)
-jq_output_file = joinpath(jq_output_dir,result_fname)
-
-MAT.matwrite(jq_output_file,Dict("Jij_Q_matlab" =>X_Q_matlab
-  #,"Jij_Q_K" => Jij_Q_K_matlab
-  ,"q_point_list" => q_point_int_list_matlab
-  ,"k_point_list" => k_point_int_list_matlab
-  ,"k_point_precision" => k_point_precision
-  ,"tv" => tv
-  ,"rv" => rv
-  ,"Gxyz" => scf_r.Gxyz
-  ,"atomnum" => scf_r.atomnum
-  ,"atom1" => atom1
-  ,"atom2" => atom2
-  ,"scf_name" => scf_name
-  ,"orbital_mask1" => orbital_mask1
-  ,"orbital_mask2" => orbital_mask2
-  #,"Jij_history" => cal_history_dat["Jij_history"]
-  ,"orbital_mask_on" => orbital_mask_on
-  #,"orbital_mask1_inv" => orbital_mask1_inv
-  #,"orbital_mask2_inv" => orbital_mask2_inv
-  ,"ChemP_delta" => 0.0
-  ,"X_VERSION" => string(X_VERSION)
-  ));
-
 ###############################################################################
 # Clear HDF5 cache
 ###############################################################################
