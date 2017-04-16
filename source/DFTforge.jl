@@ -82,7 +82,7 @@ using DFTcommon
 using HDF5
 using ProgressMeter
 
-export set_current_dftdataset,cal_colinear_eigenstate,get_dftdataset
+export set_current_dftdataset,cal_colinear_eigenstate,cal_Hamiltonian,get_dftdataset
 export Job_input_Type,Job_input_kq_Type,Job_input_kq_atom_Type,Job_input_kq_atom_list_Type
 
 export cachecal_all_Qpoint_eigenstats,cacheset,cacheread_eigenstate,cacheread,
@@ -334,7 +334,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
       hdf5_hamiltonian_real[:,:,2] = real(H);
       hdf5_hamiltonian_imag[:,:,2] = imag(H);
     end
-
+    flush(fid_hdf);
     close(fid_hdf);
     #fid_hdf = h5open(hdf_cache_name,"r");
     #q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);

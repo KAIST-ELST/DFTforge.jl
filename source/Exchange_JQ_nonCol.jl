@@ -131,11 +131,18 @@ pwork(init_orbital_mask,orbital_mask_input);
 #    SmallHks =  DFTforge.OpenMXdata.test_SmallHks(atom1,atom2,get_dftdataset(result_index).scf_r);
 #end
 
-
+@everywhere import MAT
 #DFTforge.pwork(Init_SmallHks,(atom1,atom2))
+@everywhere function init_Hks(result_index)
+  global Hks_0;
+    Hks_0  = cal_Hamiltonian(1,result_index)
+  end
+DFTforge.pwork(init_Hks,1)
 
 @everywhere function Magnetic_Exchange_J_noncolinear(input::Job_input_kq_atom_list_Type)
+
     #global SmallHks;
+    #global Hks_0;
     ############################################################################
     ## Accessing Data Start
     ############################################################################
@@ -172,8 +179,12 @@ pwork(init_orbital_mask,orbital_mask_input);
     #eigenstate_kq_down::Kpoint_eigenstate = cacheread_eigenstate(kq_point,2,cache_index)
 
     # Get Hamiltonian
+    #Hks_updown = cacheread_Hamiltonian(1,cache_index)
+    #Hks_updown = cal_Hamiltonian(1,1)
+    #Hks_updown = copy(Hks_0);
+
     Hks_updown = cacheread_Hamiltonian(1,cache_index)
-    #Hks_down = cacheread_Hamiltonian(2,cache_index)
+    #assert( sum(real(Hks_updown - Hks_down2)) < 10.0^-4 )
     (orbitalStartIdx,orbitalNums) = cacheread_atomsOrbital_lists(cache_index)
 
     #En_k_up::Array{Float_my,1} = eigenstate_k_up.Eigenvalues;
@@ -212,18 +223,24 @@ pwork(init_orbital_mask,orbital_mask_input);
       ############################################################################
       ## Do auctual calucations
       Vz_1 = 0.5*(Hks_updown[atom1_orbits_up,atom1_orbits_up] -
-        Hks_updown[atom1_orbits_down,atom1_orbits_down])
-      Voff_1 = Hks_updown[atom1_orbits_up,atom1_orbits_down]
-      Vx_1 = 1*(Voff_1 + conj(Voff_1))/2.0;
-      Vy_1 = 1*(Voff_1 - conj(Voff_1))/(2.0*im);
+      Hks_updown[atom1_orbits_down,atom1_orbits_down])
+      #Voff_1 = Hks_updown[atom1_orbits_up,atom1_orbits_down]
+      Voff_1 = conj(Hks_updown[atom1_orbits_up,atom1_orbits_down]) +
+        Hks_updown[atom1_orbits_down,atom1_orbits_up]
+      Vx_1 = (Voff_1 + conj(Voff_1))/2.0;
+      Vy_1 = (Voff_1 - conj(Voff_1))/(2.0*im);
       #Plots.heatmap(real(Vz_1))
       #Plots.heatmap(real(Vy_1))
 
       Vz_2 = 0.5*(Hks_updown[atom2_orbits_up,atom2_orbits_up] -
-        Hks_updown[atom2_orbits_down,atom2_orbits_down])
-      Voff_2 = Hks_updown[atom2_orbits_up,atom2_orbits_down]
-      Vx_2 = 1*(Voff_2 + conj(Voff_2))/2.0;
-      Vy_2 = 1*(Voff_2 - conj(Voff_2))/(2.0*im);
+      Hks_updown[atom2_orbits_down,atom2_orbits_down])
+      Voff_2 = conj(Hks_updown[atom2_orbits_up,atom2_orbits_down]) +
+        Hks_updown[atom2_orbits_down,atom2_orbits_up]
+      # Voff_2 = (Hks_updown[atom2_orbits_up,atom2_orbits_down])
+             #+ Hks_updown[atom2_orbits_down,atom2_orbits_up]
+
+      Vx_2 = (Voff_2 + conj(Voff_2))/2.0;
+      Vy_2 = (Voff_2 - conj(Voff_2))/(2.0*im);
 
       #Plots.heatmap(real(part1))
 
@@ -235,7 +252,6 @@ pwork(init_orbital_mask,orbital_mask_input);
 
       G1V1_y = (Es_n_k[atom1_orbits_down,:]'  *Vy_1* Es_m_kq[atom1_orbits_up,:]);
       G2V2_y = (Es_m_kq[atom2_orbits_up,:]'   *Vy_2* Es_n_k[atom2_orbits_down,:]);
-      #J_ij_zz::Array{Complex_my,2} =  0.5* part1.* transpose(G1V1_z) .* G2V2_z * Hartree2cm;
 
       J_ij_xx =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_x )* Hartree2cm;
       J_ij_xy =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_y )* Hartree2cm;
@@ -252,12 +268,30 @@ pwork(init_orbital_mask,orbital_mask_input);
       X_ij = sum(part1.*
       transpose(Es_n_k[atom1_orbits_down,:]' * Es_m_kq[atom1_orbits_up,:]) .*
       (Es_m_kq[atom2_orbits_up,:]' * Es_n_k[atom2_orbits_down,:]));
-
-      result_mat[:,atom12_i] = [
+      result_subset = [
       J_ij_xx,J_ij_xy,J_ij_xz,
       J_ij_yx,J_ij_yy,J_ij_yz,
       J_ij_zx,J_ij_zy,J_ij_zz, X_ij];
+      result_mat[:,atom12_i] = result_subset
+      #=
+      println(atom12)
+      println(  result_mat[:,atom12_i])
+      MAT.matwrite(string("/home/users1/bluehope/Dropbox/shared/DFT-forge/source/debug/",atom12_i,".mat")
+        ,Dict("Vz_1" =>Vz_1
+        ,"Vy_1" => Vy_1
+        ,"Vx_1" => Vx_1
+        ,"Voff_1" => Voff_1
+        ,"Hks_updown" => Hks_updown
+        ,"atom1_orbits_up" => collect(atom1_orbits_up)
+        ,"atom1_orbits_down" => collect(atom1_orbits_down)
+        ,"result_subset" => result_subset
+        #,"k_point" => k_point
+        #,"kq_point" => kq_point
+        )
+        );
+        =#
     end
+
     return result_mat #sum(J_ij[:]);
   end
 
