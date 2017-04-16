@@ -426,8 +426,8 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
       TotalOrbitalNum2 = 2*TotalOrbitalNum;
     end
     Hamiltonian = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
-    Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,spin]
-      + im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,spin]
+    Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,spin] +
+      im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,spin]
 
     return Hamiltonian;
   end
