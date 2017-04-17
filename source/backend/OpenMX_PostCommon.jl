@@ -14,7 +14,7 @@ include("OpenMX_read_scf.jl")
 
 #used for all atoms
 #global scf_r = Openmxscf
-@enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
+#@enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
 
 function Overlap_Band!(OLP::Overlap_type,
     S::Array{Complex{Float_my},2},MP::Array{Int,1},k1,k2,k3,scf_r::Openmxscf)
@@ -213,10 +213,12 @@ end
 
 function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
     H::H_type,iH::H_type,MP,k1::Float64,k2::Float64,k3::Float64,
-    H_mode::nc_Hamiltonian_selection,scf_r::Openmxscf)
+    Hmode::nc_Hamiltonian_selection,scf_r::Openmxscf)
     # Essentially same as Overlap_Band!
+	#println(size(H))
     assert(4 == size(H)[1]);
     assert(3 == size(iH)[1]);
+
 
     k_point::Array{Float_my,1} = [k1,k2,k3];
     TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
@@ -255,9 +257,9 @@ function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
                     iH1 =  iH[1][GA_AN][LB_AN][i][j];
                     iH2 =  iH[2][GA_AN][LB_AN][i][j];
                     iH3 =  iH[3][GA_AN][LB_AN][i][j];
-                    if nc_realH_only == H_mode
+                    if DFTcommon.nc_realH_only == Hmode
                         iH1 *= 0 ;iH2 *= 0 ;iH3 *= 0 ;
-                    elseif nc_imagH_only == H_mode
+                    elseif DFTcommon.nc_imagH_only == Hmode
                         RH1 *= 0 ;RH2 *= 0 ;RH3 *= 0 ;RH4 *= 0 ;
                     end
 
@@ -283,7 +285,8 @@ function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
     end
 end
 
-function noncolinear_Hamiltonian(scf_r::Openmxscf)
+function noncolinear_Hamiltonian(scf_r::Openmxscf,
+  Hmode::DFTcommon.nc_Hamiltonian_selection=DFTcommon.nc_allH)
   TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
   assert(3==scf_r.SpinP_switch); # Check if Noncolinear
   TotalOrbitalNum2 = TotalOrbitalNum*2;
@@ -294,7 +297,10 @@ function noncolinear_Hamiltonian(scf_r::Openmxscf)
       orbitalStartIdx += scf_r.Total_NumOrbs[i]
   end
   Hout = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
-  noncolinear_Hamiltonian!(Hout,scf_r.Hks,scf_r.iHks,MPF,0.0,0.0,0.0,nc_allH,scf_r)
+  #Hmode = nc_realH_only;
+  #Hmode = nc_imagH_only;
+  #noncolinear_Hamiltonian!(Hout,scf_r.Hks,scf_r.iHks,MPF,0.0,0.0,0.0,nc_allH,scf_r)
+  noncolinear_Hamiltonian!(Hout,scf_r.Hks,scf_r.iHks,MPF,0.0,0.0,0.0,Hmode,scf_r)
   return Hout;
 end
 
@@ -342,7 +348,7 @@ function cal_noncolinear_eigenstate(k_point,scf_r::Openmxscf)
   H2 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
   # H_orig is updated
   noncolinear_Hamiltonian!(H0,scf_r.Hks,scf_r.iHks,MPF,k_point[1],
-  k_point[2],k_point[3],nc_allH,scf_r);
+  k_point[2],k_point[3],DFTcommon.nc_allH,scf_r);
   # C = M1 Ut H U M1
 
   H1 = copy(H0);
@@ -465,7 +471,7 @@ function update_nc_Energy_testing(k_point::k_point_Tuple,scf_r::Openmxscf)
   H0 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
   # H_orig is updated
   noncolinear_Hamiltonian!(H0,scf_r.Hks,scf_r.iHks,MPF,
-  k_point[1],k_point[2],k_point[3],nc_allH,scf_r);
+  k_point[1],k_point[2],k_point[3],DFTcommon.nc_allH,scf_r);
   # C = M1 Ut H U M1
 
   Enks = zeros(Float_my,2*TotalOrbitalNum);

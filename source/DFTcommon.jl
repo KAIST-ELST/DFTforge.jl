@@ -25,7 +25,8 @@ const Hatree2eV = 27.2114;
 const kB=0.000003166813628;  # Boltzman constant (Hatree/K)
 
 const k_point_precision = 10.0^6;
-
+export nc_Hamiltonian_selection
+@enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
 
 Float_my =  Float64
 Complex_my = Complex128
@@ -78,9 +79,9 @@ end
 function kPoint_gen_GammaCenter(k_point_num)
   k_point_list = Array(k_point_Tuple,0);
 
-  for kx in (0:k_point_num[1])/(1+k_point_num[1]) #- 1/2
-      for ky in (0:k_point_num[2])/(1+k_point_num[2]) #- 1/2
-          for kz in (0:k_point_num[3])/(1+k_point_num[3]) #- 1/2
+  for kx in (0:(k_point_num[1]-1))/(k_point_num[1]) #- 1/2
+      for ky in (0:(k_point_num[2]-1))/(k_point_num[2]) #- 1/2
+          for kz in (0:(k_point_num[3]-1))/(k_point_num[3]) #- 1/2
               push!(k_point_list,
                   kPoint2BrillouinZone_Tuple((kx,ky,kz)) );
           end
@@ -206,7 +207,7 @@ function check_eigmat(A1,eig_mat,eig_val) #A1 orign  eig_mat # eig_val
     diff_A = ((A1+conj(A1'))/2 - real(A1)) ;
 
     #println("")
-    if(maximum(abs.(check_eig)) > 10.0^-3)
+    if (maximum(abs(check_eig)) > 10.0^-3)
       println(" sum ",sum(check_eig)," max ",maximum(abs(check_eig))," Diff ",sum(diff_A),
       " Diff realmax ",maximum(real(diff_A)),
       " Diff imgmax ",maximum(imag(diff_A)));
@@ -230,10 +231,11 @@ type Arg_Inputs
   orbital_mask2
   orbital_mask_option::orbital_mask_enum
   orbital_mask_name
+  Hmode::nc_Hamiltonian_selection
   hdftmpdir
   ChemP_delta_ev::Float64
   Arg_Inputs() = new("",-1,-1,[(-1,-1)],[2,2,2],[2,2,2],
-    Array{Int64,1}(),Array{Int64,1}(),nomask,"All","",0.0)
+    Array{Int64,1}(),Array{Int64,1}(),nomask,"All",nc_allH,"",0.0)
 end
 
 function read_toml(toml_fname)
@@ -267,6 +269,9 @@ function parse_input(args)
         help = "orbital_mask1 ex) 1,2,3"
         "--om2"
         help = "orbital_mask1 ex) 1,2,3"
+        "--soc"
+        help = "spin orbitcoupling ex:) nc_allH=0 nc_realH_only=1 nc_imagH_only=2 "
+        arg_type = Int
         "--ommode"
         help = "0 (default: no orbital control) 1(selected orbitals are unmasked) 2(selected orbitals are masked)"
         arg_type = Int
@@ -322,6 +327,10 @@ function parse_input(args)
             else
                 println("q point should be like 10_10_10")
             end
+        end
+        if (key=="soc" && typeof(val) <: Int)
+          # nc_allH=0 nc_realH_only=1 nc_imagH_only=2
+          input.Hmode = val;
         end
         if(key =="om1" && typeof(val) <: AbstractString)
             println(val)

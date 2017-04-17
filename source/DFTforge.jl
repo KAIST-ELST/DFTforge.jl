@@ -65,9 +65,10 @@ function cal_colinear_Hamiltonian(dfttype::DFTforge.DFTtype,scf_r,spin=1)
   return H
 end
 
-function cal_noncolinear_Hamiltonian(dfttype::DFTforge.DFTtype,scf_r)
+function cal_noncolinear_Hamiltonian(dfttype::DFTforge.DFTtype,
+  Hmode::DFTcommon.nc_Hamiltonian_selection,scf_r)
   if (OpenMX==dfttype)
-    H = OpenMXdata.noncolinear_Hamiltonian(scf_r);
+    H = OpenMXdata.noncolinear_Hamiltonian(scf_r,Hmode);
     return H
   end
 end
@@ -226,14 +227,14 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
       return cal_nonco_linear_Eigenstate(input.k_point,input.result_index)
     end
   end
-  function cal_Hamiltonian(spin=1,result_index=1)
+  function cal_Hamiltonian(spin=1,result_index=1,Hmode::DFTcommon.nc_Hamiltonian_selection=DFTcommon.nc_allH)
     global dftresult;
     spin_type = dftresult[result_index].spin_type;
     dfttype::DFTtype = dftresult[result_index].dfttype;
     if (DFTforge.para_type == spin_type || DFTforge.colinear_type == spin_type)
       return cal_colinear_Hamiltonian(dfttype,dftresult[result_index].scf_r,spin);
     elseif (DFTforge.non_colinear_type == spin_type)
-      return cal_noncolinear_Hamiltonian(dfttype,dftresult[result_index].scf_r)
+      return cal_noncolinear_Hamiltonian(dfttype,Hmode,dftresult[result_index].scf_r)
     end
 
   end

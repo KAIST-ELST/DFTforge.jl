@@ -29,7 +29,9 @@ orbital_mask_on = false;
 atom1 = -1;
 atom2 = -1;
 atom12_list = Vector{Tuple{Int64,Int64}}();
+ChemP_delta_ev = 0.0
 
+global Hmode = DFTcommon.nc_allH;
 if true
   arg_input = parse_input(ARGS)
   scf_name = arg_input.scf_name
@@ -40,6 +42,8 @@ if true
   #atom2 = arg_input.atom2;
   atom12_list = arg_input.atom12_list;
   hdftmpdir = arg_input.hdftmpdir;
+  Hmode = arg_input.Hmode;
+
 end
 ###
 # TOML override (should be merged to DFTcommon.jl)
@@ -55,7 +59,7 @@ scf_name = toml_inputs["scf_fname"];
 k_point_num = [5,5,5]
 q_point_num = [5,5,5]
 =#
-ChemP_delta_ev = 0.0
+
 
 ###############################################################################
 
@@ -65,7 +69,12 @@ root_dir = dirname(scf_name)
 scf_name_only = splitext(basename(scf_name))
 cal_name = scf_name_only[1];
 
-jq_output_dir =  joinpath(root_dir,string("jq_test_", ChemP_delta_ev))
+jq_output_dir =  joinpath(root_dir,string("jq_test", ChemP_delta_ev))
+if DFTcommon.nc_realH_only == Hmode
+  jq_output_dir =  joinpath(root_dir,string("jq_test_real", ChemP_delta_ev))
+elseif DFTcommon.nc_imagH_only == Hmode
+  jq_output_dir =  joinpath(root_dir,string("jq_test_imag", ChemP_delta_ev))
+end
 if (!isdir(jq_output_dir))
   mkdir(jq_output_dir)
 end
@@ -133,14 +142,16 @@ pwork(init_orbital_mask,orbital_mask_input);
 
 @everywhere import MAT
 #DFTforge.pwork(Init_SmallHks,(atom1,atom2))
-@everywhere function init_Hks(result_index)
+@everywhere function init_Hks(input)
   global Hks_0;
-    Hks_0  = cal_Hamiltonian(1,result_index)
+    result_index = input[1]
+    Hmode = input[2]
+    Hks_0  = cal_Hamiltonian(1,result_index,Hmode)
   end
-DFTforge.pwork(init_Hks,1)
+DFTforge.pwork(init_Hks,(1,Hmode))
 
 @everywhere function Magnetic_Exchange_J_noncolinear(input::Job_input_kq_atom_list_Type)
-
+    global Hks_0;
     #global SmallHks;
     #global Hks_0;
     ############################################################################
@@ -183,7 +194,8 @@ DFTforge.pwork(init_Hks,1)
     #Hks_updown = cal_Hamiltonian(1,1)
     #Hks_updown = copy(Hks_0);
 
-    Hks_updown = cacheread_Hamiltonian(1,cache_index)
+    #Hks_updown = cacheread_Hamiltonian(1,cache_index)
+    Hks_updown = copy(Hks_0);
     #assert( sum(real(Hks_updown - Hks_down2)) < 10.0^-4 )
     (orbitalStartIdx,orbitalNums) = cacheread_atomsOrbital_lists(cache_index)
 
