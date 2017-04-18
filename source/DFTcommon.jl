@@ -242,7 +242,24 @@ function read_toml(toml_fname)
   toml_inputs =  TOML.parse(readstring(toml_fname));
 
 end
-
+function parse_int_list(num_str)
+    a = split(num_str,",")
+    intarray = [];
+    for parsedV in a
+        if (contains(parsedV,":"))
+            tmp = split(parsedV,":");
+            int_list = collect(parse(Int,tmp[1]):parse(Int,tmp[2]));
+            for intv in int_list
+              push!(intarray,intv);
+            end
+        else
+            intv = parse(Int,parsedV)
+            push!(intarray,intv);
+        end
+    end
+    intarray = unique(intarray);
+    return intarray;
+end
 
 function parse_input(args)
 
@@ -297,8 +314,10 @@ function parse_input(args)
             atom_str_list = split(val,",")
             atom12_list = Vector{Tuple{Int64,Int64}}();
             for (atom_i, atom12_str) in enumerate(atom_str_list)
-              atom12 =   map(x->parse(Int64,x),split(atom12_str,"_"))
-              push!(atom12_list,(atom12[1],atom12[2]));
+              if contains(atom12_str,"_")
+                atom12 =   map(x->parse(Int64,x),split(atom12_str,"_"))
+                push!(atom12_list,(atom12[1],atom12[2]));
+              end
             end
             input.atom1 = atom12_list[1][1]
             input.atom2 = atom12_list[1][2]
