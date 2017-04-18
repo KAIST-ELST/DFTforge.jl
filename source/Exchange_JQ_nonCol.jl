@@ -26,6 +26,7 @@ orbital_mask2 = Array{Int64,1}();
 orbital_mask_name = "";
 orbital_mask_option = DFTcommon.nomask;
 orbital_mask_on = false;
+
 atom1 = -1;
 atom2 = -1;
 atom12_list = Vector{Tuple{Int64,Int64}}();
@@ -38,6 +39,10 @@ if true
   ChemP_delta_ev = arg_input.ChemP_delta_ev
   k_point_num = arg_input.k_point_num
   q_point_num = arg_input.q_point_num
+  orbital_mask_name = arg_input.orbital_mask_name
+  orbital_mask_option = arg_input.orbital_mask_option;
+  orbital_mask1 = arg_input.orbital_mask1
+  orbital_mask2 = arg_input.orbital_mask2
   #atom1 = arg_input.atom1;
   #atom2 = arg_input.atom2;
   atom12_list = arg_input.atom12_list;
@@ -60,7 +65,8 @@ k_point_num = [5,5,5]
 q_point_num = [5,5,5]
 =#
 
-
+###############################################################################
+# Orbital mask should be added
 ###############################################################################
 
 println(atom12_list)
@@ -69,11 +75,11 @@ root_dir = dirname(scf_name)
 scf_name_only = splitext(basename(scf_name))
 cal_name = scf_name_only[1];
 
-jq_output_dir =  joinpath(root_dir,string("jq_test", ChemP_delta_ev))
+jq_output_dir =  joinpath(root_dir,string("jq_nc", ChemP_delta_ev))
 if DFTcommon.nc_realH_only == Hmode
-  jq_output_dir =  joinpath(root_dir,string("jq_test_real", ChemP_delta_ev))
+  jq_output_dir =  joinpath(root_dir,string("jq_ncreal", ChemP_delta_ev))
 elseif DFTcommon.nc_imagH_only == Hmode
-  jq_output_dir =  joinpath(root_dir,string("jq_test_imag", ChemP_delta_ev))
+  jq_output_dir =  joinpath(root_dir,string("jq_ncimag", ChemP_delta_ev))
 end
 if (!isdir(jq_output_dir))
   mkdir(jq_output_dir)
@@ -124,14 +130,17 @@ toc();
     else
         orbital_mask_on = false;
     end
+    return orbital_mask_on;
     #println(orbital_mask1)
 end
 orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(atom1,atom2),false)
 if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
-    orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(atom1,atom2),true)
+  println( string("Orbital mask on ",orbital_mask1,"  ",orbital_mask2))
+  orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(atom1,atom2),true)
 end
 pwork(init_orbital_mask,orbital_mask_input);
-
+orbital_mask_on = init_orbital_mask(orbital_mask_input);
+println(orbital_mask_on)
 #@everywhere function Init_SmallHks(atom12)
 #    atom1 = atom12[1];
 #    atom2 = atom12[2];
@@ -207,6 +216,12 @@ DFTforge.pwork(init_Hks,(1,Hmode))
     #Es_n_k_up::Array{Complex_my,2} = eigenstate_k_up.Eigenstate;
     Es_m_kq  = eigenstate_kq.Eigenstate;
     Es_n_k  = eigenstate_k.Eigenstate;
+
+
+
+    #for mask2 in orbital_mask2
+    #    Es_m_kq_atom2[mask2,:]=0.0
+    #end
     #Plots.heatmap(real(Es_n_k))
     #Es_m_kq_down::Array{Complex_my,2} = eigenstate_kq_down.Eigenstate;
     Fftn_k  = 1.0./(exp( ((En_k)  - ChemP)/(kB*E_temp)) + 1.0 );
@@ -223,6 +238,26 @@ DFTforge.pwork(init_Hks,(1,Hmode))
     for (atom12_i,atom12) in enumerate(atom12_list)
       atom1 = atom12[1]
       atom2 = atom12[2]
+
+      Es_m_kq_atom1 = copy(Es_m_kq)
+      Es_m_kq_atom2 = copy(Es_m_kq)
+      Es_n_k_atom1 = copy(Es_n_k)
+      Es_n_k_atom2 = copy(Es_n_k)
+      if (length(orbital_mask1)>0)
+        orbital_mask1_tmp = collect(1:orbitalNums[atom1]);
+        for orbit1 in orbital_mask1
+            deleteat!(orbital_mask1_tmp, find(orbital_mask1_tmp.==orbit1))
+        end
+        Es_n_k_atom1[orbitalStartIdx[atom1]+orbital_mask1_tmp,:]=0.0;
+      end
+      if (length(orbital_mask2)>0)
+        orbital_mask2_tmp = collect(1:orbitalNums[atom2]);
+        for orbit2 in orbital_mask2
+            deleteat!(orbital_mask2_tmp, find(orbital_mask2_tmp.==orbit2))
+        end
+        Es_m_kq_atom2[orbitalStartIdx[atom2]+orbital_mask2_tmp,:]=0.0;
+      end
+
 
       atom1_orbits_up   = orbitalStartIdx[atom1] + (1:orbitalNums[atom1])
       atom1_orbits_down = TotalOrbitalNum + atom1_orbits_up
@@ -256,14 +291,14 @@ DFTforge.pwork(init_Hks,(1,Hmode))
 
       #Plots.heatmap(real(part1))
 
-      G1V1_z = (Es_n_k[atom1_orbits_down,:]'  *Vz_1* Es_m_kq[atom1_orbits_up,:]);
-      G2V2_z = (Es_m_kq[atom2_orbits_up,:]'   *Vz_2* Es_n_k[atom2_orbits_down,:]);
+      G1V1_z = (Es_n_k_atom1[atom1_orbits_down,:]'  *Vz_1* Es_m_kq_atom1[atom1_orbits_up,:]);
+      G2V2_z = (Es_m_kq_atom2[atom2_orbits_up,:]'   *Vz_2* Es_n_k_atom2[atom2_orbits_down,:]);
       #G2V2_z = (Es_m_kq[atom2_orbits_up,:]' * Vz_2 * Es_n_k[atom2_orbits_down,:]);
-      G1V1_x = (Es_n_k[atom1_orbits_down,:]'  *Vx_1* Es_m_kq[atom1_orbits_up,:]);
-      G2V2_x = (Es_m_kq[atom2_orbits_up,:]'   *Vx_2* Es_n_k[atom2_orbits_down,:]);
+      G1V1_x = (Es_n_k_atom1[atom1_orbits_down,:]'  *Vx_1* Es_m_kq_atom1[atom1_orbits_up,:]);
+      G2V2_x = (Es_m_kq_atom2[atom2_orbits_up,:]'   *Vx_2* Es_n_k_atom2[atom2_orbits_down,:]);
 
-      G1V1_y = (Es_n_k[atom1_orbits_down,:]'  *Vy_1* Es_m_kq[atom1_orbits_up,:]);
-      G2V2_y = (Es_m_kq[atom2_orbits_up,:]'   *Vy_2* Es_n_k[atom2_orbits_down,:]);
+      G1V1_y = (Es_n_k_atom1[atom1_orbits_down,:]'  *Vy_1* Es_m_kq_atom1[atom1_orbits_up,:]);
+      G2V2_y = (Es_m_kq_atom2[atom2_orbits_up,:]'   *Vy_2* Es_n_k_atom2[atom2_orbits_down,:]);
 
       J_ij_xx =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_x )* Hartree2cm;
       J_ij_xy =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_y )* Hartree2cm;
@@ -379,10 +414,11 @@ for (atom12_i,atom12) in enumerate(atom12_list)
 
   f_name = string(cal_name,"_meshk_",atom1,"_",atom2,"_[all]","_ChemPdelta_",ChemP_delta_ev);
   if (orbital_mask_on)
-      println(" ", orbital_mask1_inv," : ",orbital_mask2_inv)
+      #println(" ", orbital_mask1_inv," : ",orbital_mask2_inv)
       f_name = string(cal_name,"_meshk_",atom1,"_",atom2);
-      mask_name = string("_atom1m_[",join(orbital_mask1_inv,","),
-      "]_atom2m_[",join(orbital_mask2_inv,","),"]");
+      #mask_name = string("_atom1m_[",join(orbital_mask1_inv,","),
+      #"]_atom2m_[",join(orbital_mask2_inv,","),"]");
+      mask_name = string("_atom1m_[",",", "]_atom2m_[",",","]");
       f_name = string(f_name,mask_name,"_[",orbital_mask_name,"]","_ChemPdelta_",ChemP_delta_ev);
   end
   result_fname = string("jq_",f_name,".mat");
