@@ -234,8 +234,9 @@ type Arg_Inputs
   Hmode::nc_Hamiltonian_selection
   hdftmpdir
   ChemP_delta_ev::Float64
+  TOMLinput::AbstractString
   Arg_Inputs() = new("",-1,-1,[(-1,-1)],[2,2,2],[2,2,2],
-    Array{Int64,1}(),Array{Int64,1}(),nomask,"All",nc_allH,"",0.0)
+    Array{Int64,1}(),Array{Int64,1}(),nomask,"All",nc_allH,"",0.0,"")
 end
 
 function read_toml(toml_fname)
@@ -310,7 +311,7 @@ function parse_input(args)
         #println("  $key  =>  $(repr(val))")
         #println("  $key  =>  $val")
 
-        if(key == "atom12" && (Void != typeof(val)))
+        if (key == "atom12" && (Void != typeof(val)))
             atom_str_list = split(val,",")
             atom12_list = Vector{Tuple{Int64,Int64}}();
             for (atom_i, atom12_str) in enumerate(atom_str_list)
@@ -325,13 +326,17 @@ function parse_input(args)
             #input.atom1 = atom12[1];
             #input.atom2 = atom12[2];
         end
-        if(key == "scfname")
-            if(isfile(val) && ".scfout" == splitext(val)[2])
+        if (key == "scfname")
+            if (isfile(val) && ".scfout" == splitext(val)[2])
                 input.scf_name  = val;
                 #println("scf file:$scf_name")
             end
         end
-        if(key == "kpoint" && typeof(val) <: AbstractString)
+        if (key == "TOMLinput" && typeof(val) <: AbstractString)
+          # Check if file name endswith ".toml"
+          input.TOMLinput = val;
+        end
+        if (key == "kpoint" && typeof(val) <: AbstractString)
             k_point_num_tmp =   map(x->parse(Int64,x),split(val,"_"))
             if(3 == length(k_point_num_tmp))
                 input.k_point_num = k_point_num_tmp;
@@ -339,7 +344,7 @@ function parse_input(args)
                 println("k point should be like 10_10_10")
             end
         end
-        if(key == "qpoint" && typeof(val) <: AbstractString)
+        if (key == "qpoint" && typeof(val) <: AbstractString)
             q_point_num_tmp =   map(x->parse(Int64,x),split(val,"_"))
             if(3 == length(q_point_num_tmp))
                 input.q_point_num = q_point_num_tmp;
@@ -351,25 +356,25 @@ function parse_input(args)
           # nc_allH=0 nc_realH_only=1 nc_imagH_only=2
           input.Hmode = val;
         end
-        if(key =="om1" && typeof(val) <: AbstractString)
+        if (key =="om1" && typeof(val) <: AbstractString)
             println(val)
             input.orbital_mask1 = parse_int_list(val)
         end
-        if(key =="om2" && typeof(val) <: AbstractString)
+        if (key =="om2" && typeof(val) <: AbstractString)
             input.orbital_mask2 = parse_int_list(val)
         end
-        if("ommode"==key)
+        if ("ommode"==key)
             if(1 == val)
                input.orbital_mask_option = unmask
             elseif(2 == val)
                input.orbital_mask_option = mask
             end
         end
-        if("omname"==key)
+        if ("omname"==key)
             println(val)
             input.orbital_mask_name = val;
         end
-        if("hdftmpdir" ==key)
+        if ("hdftmpdir" ==key)
             if (nothing!=val)
                 if isdir(val)
                     input.hdftmpdir = val;
@@ -378,8 +383,8 @@ function parse_input(args)
                 end
             end
         end
-        if("chempdelta" == key)
-            if(nothing != val)
+        if ("chempdelta" == key)
+            if (nothing != val)
                 input.ChemP_delta_ev = val;
                 ChemP_delta = val/Hatree2eV;
             end
