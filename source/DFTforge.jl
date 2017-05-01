@@ -8,11 +8,14 @@ export cal_colinear_eigenstate,cal_colinear_Hamiltonian
 export cal_nonco_linear_Eigenstate,cal_noncolinear_Hamiltonian
 
 
-@enum DFTtype OpenMX = 1 Wannier90 = 2
+#@enum DFTtype OpenMX = 1 Wannier90 = 2
 @enum SPINtype para_type = 1 colinear_type = 2 non_colinear_type = 4
 
 module OpenMXdata
 include("backend/OpenMX_PostCommon.jl")
+end
+module Wannierdata
+include("backend/Wannier_PostCommon.jl")
 end
 
 
@@ -23,52 +26,71 @@ end
 #    dfttype::DFTforge.DFTtype
 #end
 
-function read_dftresult(scf_name::AbstractString, dfttype::DFTforge.DFTtype)
-    if (OpenMX == dfttype)
-      scf_r = OpenMXdata.read_scf(scf_name);
+function read_dftresult(scf_r::AbstractString, dfttype::DFTcommon.DFTtype)
+    if (DFTcommon.OpenMX == dfttype)
+      scf_r = OpenMXdata.read_scf(scf_r);
       return scf_r;
-    elseif (Wannier90 == dfttype)
-
     end
 
+end
+
+
+function read_dftresult(wannier_fname::AbstractString,dfttype::DFTcommon.DFTtype,
+  typeof_wannier::AbstractString,atoms_orbitals_list::Vector{Array{Int64}},
+  atomnum::Int,atompos::Array{Float64,2})
+  if (DFTcommon.Wannier90 == dfttype)
+    wannier_r = Wannierdata.read_wannier(wannier_fname,typeof_wannier,
+      atoms_orbitals_list,atomnum,atompos)
+    return wannier_r;
+  end
 end
 
 
 
 
 function cal_colinear_eigenstate(k_point::k_point_Tuple,
-    dfttype::DFTforge.DFTtype,scf_r,spin_list=1)
+    dfttype::DFTcommon.DFTtype,scf_r,spin_list=1)
     Eigenstate::Array{Kpoint_eigenstate,1} = Array{Kpoint_eigenstate,1}();
-    if (OpenMX==dfttype)
+    if (DFTcommon.OpenMX == dfttype)
       #Eigenstate::DFTforge.Kpoint_eigenstate =
       Eigenstate =
        OpenMXdata.cal_colinear_eigenstate(k_point,scf_r,spin_list);
+    elseif (DFTcommon.Wannier90 == dfttype)
+      Eigenstate = Wannierdata.cal_eigenstate(k_point,scf_r,spin_list)
     end
 
     return Eigenstate;
 end
 
 function cal_nonco_linear_Eigenstate(k_point::k_point_Tuple,
-    dfttype::DFTforge.DFTtype,scf_r)
+    dfttype::DFTcommon.DFTtype,scf_r)
     if (OpenMX == dfttype)
       EigenState = OpenMXdata.cal_noncolinear_eigenstate(k_point, scf_r)
+      return EigenState
+    elseif (Wannier90 == dfttype)
+      Eigenstate = Wannierdata.cal_eigenstate(k_point,scf_r,[1])
       return EigenState
     end
 end
 
-function cal_colinear_Hamiltonian(dfttype::DFTforge.DFTtype,scf_r,spin=1)
+function cal_colinear_Hamiltonian(dfttype::DFTcommon.DFTtype,scf_r,spin=1)
 
   H::Hamiltonian_type = zeros(Complex_my,2,2);
-  if (OpenMX==dfttype)
+  if (DFTcommon.OpenMX==dfttype)
     H =  OpenMXdata.colinear_Hamiltonian(spin,scf_r)
+  elseif (DFTcommon.Wannier90 == dfttype)
+    H = Wannierdata.cal_Hamiltonian(scf_r,spin)
   end
   return H
 end
 
-function cal_noncolinear_Hamiltonian(dfttype::DFTforge.DFTtype,
+function cal_noncolinear_Hamiltonian(dfttype::DFTcommon.DFTtype,
   Hmode::DFTcommon.nc_Hamiltonian_selection,scf_r)
-  if (OpenMX==dfttype)
+  if (DFTcommon.OpenMX==dfttype)
     H = OpenMXdata.noncolinear_Hamiltonian(scf_r,Hmode);
+    return H
+  elseif (DFTcommon.Wannier90 == dfttype)
+    H = Wannierdata.cal_Hamiltonian(k_point,scf_r,spin)
     return H
   end
 end
@@ -93,7 +115,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
   Kspace_parallel,Qspace_Ksum_atomlist_parallel_nc
 
   type DFTdataset
-    dfttype::DFTtype
+    dfttype::DFTcommon.DFTtype
     scf_r
     spin_type::SPINtype
     orbitalStartIdx::Array{Int,1}
@@ -173,8 +195,8 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
   global eigenstate_list =  Array{Eigenstate_hdf5}(); #cached Eigenstates
 
   function set_current_dftdataset(scf_name::AbstractString,
-    dfttype::DFTtype,spin_type::SPINtype,result_index=1)
-    if (DFTforge.OpenMX == dfttype)
+    dfttype::DFTcommon.DFTtype,spin_type::SPINtype,result_index=1)
+    if (DFTcommon.OpenMX == dfttype)
       # Read SCF and Set as current dftdata
       scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
       orbitalStartIdx = zeros(Int,scf_r.atomnum);
@@ -186,6 +208,41 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
           orbitalNums[i] = scf_r.Total_NumOrbs[i];
       end
 
+      #assert(0 == scf_r.SpinP_switch - spin_type);
+      dftresult[result_index] =
+      DFTdataset(dfttype, scf_r,spin_type,
+        orbitalStartIdx,orbitalNums);
+      return scf_r;
+    end
+  end
+  function set_current_dftdataset(scf_r,
+    dfttype::DFTcommon.DFTtype,spin_type::SPINtype,result_index=1)
+    if (DFTcommon.OpenMX == dfttype)
+      # Read SCF and Set as current dftdata
+      #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
+      orbitalStartIdx = zeros(Int,scf_r.atomnum);
+      orbitalIdx = 0; #각 atom별로 orbital index시작하는 지점
+      orbitalNums = zeros(Int,scf_r.atomnum)
+      for i = 1:scf_r.atomnum
+          orbitalStartIdx[i] = orbitalIdx;
+          orbitalIdx += scf_r.Total_NumOrbs[i]
+          orbitalNums[i] = scf_r.Total_NumOrbs[i];
+      end
+
+      #assert(0 == scf_r.SpinP_switch - spin_type);
+      dftresult[result_index] =
+      DFTdataset(dfttype, scf_r,spin_type,
+        orbitalStartIdx,orbitalNums);
+      return scf_r;
+    elseif (DFTcommon.Wannier90 == dfttype)
+      orbitalStartIdx = zeros(Int,scf_r.atomnum);
+      orbitalIdx = 0; #각 atom별로 orbital index시작하는 지점
+      orbitalNums = zeros(Int,scf_r.atomnum)
+      for i = 1:scf_r.atomnum
+          orbitalStartIdx[i] = orbitalIdx;
+          orbitalIdx += scf_r.Total_NumOrbs[i]
+          orbitalNums[i] = scf_r.Total_NumOrbs[i];
+      end
       #assert(0 == scf_r.SpinP_switch - spin_type);
       dftresult[result_index] =
       DFTdataset(dfttype, scf_r,spin_type,

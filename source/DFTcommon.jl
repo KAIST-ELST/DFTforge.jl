@@ -16,6 +16,8 @@ export parse_input,Arg_Inputs
 
 
 export eigfact_hermitian,check_eigmat
+export DFTtype
+@enum DFTtype OpenMX = 1 Wannier90 = 2
 
 export Hartree2cm,cm2meV,cm2meV,Hartree2meV,Hatree2eV,kB
 const Hartree2cm = 2.194746*100000.0;
