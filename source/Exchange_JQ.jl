@@ -3,7 +3,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-X_VERSION = VersionNumber("0.2.0-dev+20170501");
+X_VERSION = VersionNumber("0.2.0-dev+20170503");
 println("X_VERSION: ",X_VERSION)
 
 @everywhere import DFTforge
@@ -190,7 +190,7 @@ DFTforge.pwork(init_variables,ChemP_delta_ev)
     TotalOrbitalNum2 = 2*TotalOrbitalNum;
   end
 
-  ChemP = get_dftdataset(result_index).scf_r.ChemP;
+  ChemP = get_dftdataset(result_index).scf_r.ChemP + ChemP_delta_ev;
   E_temp = get_dftdataset(result_index).scf_r.E_Temp;
 
   # Get EigenState
@@ -288,8 +288,8 @@ num_return = 1;
 ## 4.1 Do K,Q sum
 (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Magnetic_Exchange_J_colinear,
 q_point_list,k_point_list,atom12_list,num_return)
-println(typeof(X_Q_mean_nc))
-
+#println(typeof(X_Q_mean_nc))
+println("===================================================")
 ## 4.2 reduce K,Q to Q space
 # Average X_Q results
 Xij_Q_mean_matlab = Array(Array{Complex_my,1},num_return,length(atom12_list));
@@ -376,7 +376,7 @@ for (atom12_i,atom12) in enumerate(atom12_list)
     ,"orbital_mask_on" => orbital_mask_on
     #,"orbital_mask1_inv" => orbital_mask1_inv
     #,"orbital_mask2_inv" => orbital_mask2_inv
-    ,"ChemP_delta" => 0.0
+    ,"ChemP_delta" => ChemP_delta_ev
     ,"X_VERSION" => string(X_VERSION)
     ));
 end

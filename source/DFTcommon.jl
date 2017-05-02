@@ -490,7 +490,6 @@ function parse_input(args)
         if ("chempdelta" == key)
             if (nothing != val)
                 input.ChemP_delta_ev = val;
-                ChemP_delta = val/Hatree2eV;
             end
         end
     end
