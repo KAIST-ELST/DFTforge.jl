@@ -46,7 +46,7 @@ function read_wannier_OpenMX(wannier_fname,atoms_orbitals_list::Vector{Array{Int
 
   rv = 2*pi*inv(tv'); # Check required
 
-  ChemP = parse(Float64,split(lines[9])[end])
+  ChemP = parse(Float64,split(lines[9])[end])*DFTcommon.Hatree2eV
   SpinP_switch  = parse(Int64,split(lines[8])[end])
   # read HWR
   current_line = 10
@@ -105,6 +105,7 @@ function read_wannier_OpenMX(wannier_fname,atoms_orbitals_list::Vector{Array{Int
         HWR_mat[x,y] = value;
       end
     end
+    HWR_mat *= DFTcommon.Hatree2eV;
     push!(Hks_R[spin],HWR_mat);
     cnt += 1;
   end

@@ -20,12 +20,13 @@ export DFTtype, Wannier90type
 @enum DFTtype OpenMX = 1 Wannier90 = 2 NULLDFT = -1
 @enum Wannier90type OpenMXWF = 1 VASPWF = 2 EcalJWF = 3  NULLWANNIER = -1
 
-export Hartree2cm,cm2meV,cm2meV,Hartree2meV,Hatree2eV,kB
+export Hartree2cm,cm2meV,cm2meV,Hartree2meV,Hatree2eV,kBeV
 const Hartree2cm = 2.194746*100000.0;
 const cm2meV = 0.1240;
 const Hartree2meV = Hartree2cm*cm2meV;
-const Hatree2eV = 27.2114;
-const kB=0.000003166813628;  # Boltzman constant (Hatree/K)
+const Hatree2eV = 27.21138602;
+#const kB=0.000003166813628;  # Boltzmann constant (Hatree/K)
+const kBeV = 8.6173303*(10.0^-5);  # Boltzmann constant (eV/K)
 
 const k_point_precision = 10.0^6;
 export nc_Hamiltonian_selection

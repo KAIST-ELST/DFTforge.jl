@@ -224,8 +224,8 @@ DFTforge.pwork(init_Hks,(1,Hmode))
     #end
     #Plots.heatmap(real(Es_n_k))
     #Es_m_kq_down::Array{Complex_my,2} = eigenstate_kq_down.Eigenstate;
-    Fftn_k  = 1.0./(exp( ((En_k)  - ChemP)/(kB*E_temp)) + 1.0 );
-    Fftm_kq = 1.0./(exp( ((Em_kq) - ChemP)/(kB*E_temp)) + 1.0 );
+    Fftn_k  = 1.0./(exp( ((En_k)  - ChemP)/(kBeV*E_temp)) + 1.0 );
+    Fftm_kq = 1.0./(exp( ((Em_kq) - ChemP)/(kBeV*E_temp)) + 1.0 );
     dFnk_Fmkq  =
       Fftn_k*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq' ;
 
@@ -300,17 +300,17 @@ DFTforge.pwork(init_Hks,(1,Hmode))
       G1V1_y = (Es_n_k_atom1[atom1_orbits_down,:]'  *Vy_1* Es_m_kq_atom1[atom1_orbits_up,:]);
       G2V2_y = (Es_m_kq_atom2[atom2_orbits_up,:]'   *Vy_2* Es_n_k_atom2[atom2_orbits_down,:]);
 
-      J_ij_xx =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_x )* Hartree2cm;
-      J_ij_xy =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_y )* Hartree2cm;
-      J_ij_xz =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_z )* Hartree2cm;
+      J_ij_xx =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_x );
+      J_ij_xy =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_y );
+      J_ij_xz =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_z );
 
-      J_ij_yx =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_x )* Hartree2cm;
-      J_ij_yy =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_y )* Hartree2cm;
-      J_ij_yz =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_z )* Hartree2cm;
+      J_ij_yx =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_x );
+      J_ij_yy =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_y );
+      J_ij_yz =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_z );
 
-      J_ij_zx =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_x )* Hartree2cm;
-      J_ij_zy =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_y )* Hartree2cm;
-      J_ij_zz =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_z )* Hartree2cm;
+      J_ij_zx =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_x );
+      J_ij_zy =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_y );
+      J_ij_zz =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_z );
 
       X_ij = sum(part1.*
       transpose(Es_n_k[atom1_orbits_down,:]' * Es_m_kq[atom1_orbits_up,:]) .*

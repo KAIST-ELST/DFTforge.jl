@@ -245,8 +245,8 @@ DFTforge.pwork(init_variables,ChemP_delta_ev)
     end
 
     ## Do auctual calucations
-    Fftn_k::Array{Float_my,1}  = 1.0./(exp( ((En_k_down)  - ChemP)/(kB*E_temp)) + 1.0 );
-    Fftm_kq::Array{Float_my,1} = 1.0./(exp( ((Em_kq_up) - ChemP)/(kB*E_temp)) + 1.0 );
+    Fftn_k::Array{Float_my,1}  = 1.0./(exp( ((En_k_down)  - ChemP)/(kBeV*E_temp)) + 1.0 );
+    Fftm_kq::Array{Float_my,1} = 1.0./(exp( ((Em_kq_up) - ChemP)/(kBeV*E_temp)) + 1.0 );
 
     dFnk_Fmkq::Array{Float_my,2} =
       Fftn_k*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq[:]' ;
@@ -278,7 +278,7 @@ DFTforge.pwork(init_variables,ChemP_delta_ev)
     J_ij::Array{Complex_my,2} =  0.5./(-Enk_Emkq).*dFnk_Fmkq .* Vi_Vj ;
     #return sum(J_ij[:])*Hartree2cm;
     #return sum(J_ij[!isnan(J_ij)] )*Hartree2cm;
-    result_mat[1,atom12_i] = sum(J_ij[!isnan(J_ij)] )*Hartree2cm;
+    result_mat[1,atom12_i] = sum(J_ij[!isnan(J_ij)] );
   end
   return result_mat
 end
@@ -303,6 +303,8 @@ for (atom12_i,atom12) in enumerate(atom12_list)
       Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
         X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
     end
+    println(string(" Gamma point J [",atom1,",",atom2,"]: ",
+      1000.0*mean(Xij_Q_mean_matlab[xyz_i,atom12_i][:])," meV"))
   end
 end
 

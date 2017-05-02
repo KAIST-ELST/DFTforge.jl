@@ -2,7 +2,7 @@
 #using ArrayViews
 
 #scf_name = "/home/users1/bluehope/work/Jx/NiO/4cell/AF2/Ni6.0_O5.0-s2p2d2f1-5.5_0.0-4.180-k10/nio.scfout";
-
+const Hatree2eV = 27.2114;
 macro init_OLPmat(mat)
 :(
     for ct_AN=1:atomnum
@@ -71,7 +71,7 @@ macro read_Hamil(mat,spin,atomnum)
             Gh_AN = natn[ct_AN][h_AN];
             TNO2 = Total_NumOrbs[Gh_AN];
             for i=1:TNO1
-                $mat[$spin][ct_AN][h_AN][i] = read(f,Float64,TNO2)
+                $mat[$spin][ct_AN][h_AN][i] = read(f,Float64,TNO2)*Hatree2eV
                 #for j =1:TNO2
                 #    Hks[spin][ct_AN][h_AN][i][j] = read(f,Float64)
                 #end
@@ -323,7 +323,7 @@ function read_scf(scf_name::AbstractString)
     #############
     Solver = read(f,Int32)
     d_vec = read(f,Float64,10)
-    ChemP  = d_vec[1];
+    ChemP  = d_vec[1] * Hatree2eV;
     E_Temp = d_vec[2];
     dipole_moment_core = zeros(3,)
     dipole_moment_core[1] = d_vec[3];
