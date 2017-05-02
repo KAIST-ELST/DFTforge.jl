@@ -12,12 +12,13 @@ export pwork
 export k_point_precision
 
 export orbital_mask_input_Type,orbital_mask_enum
-export parse_input,Arg_Inputs
+export parse_input,Arg_Inputs,parse_TOML
 
 
 export eigfact_hermitian,check_eigmat
-export DFTtype
-@enum DFTtype OpenMX = 1 Wannier90 = 2
+export DFTtype, Wannier90type
+@enum DFTtype OpenMX = 1 Wannier90 = 2 NULLDFT = -1
+@enum Wannier90type OpenMXWF = 1 VASPWF = 2 EcalJWF = 3  NULLWANNIER = -1
 
 export Hartree2cm,cm2meV,cm2meV,Hartree2meV,Hatree2eV,kB
 const Hartree2cm = 2.194746*100000.0;
@@ -222,8 +223,15 @@ end
 ################################################################################
 # Input parse
 ################################################################################
+type Wannier_OptionalInfo
+  atomnum::Int
+  atompos::Array{Float64,2}
+  atoms_orbitals_list::Array{Array{Int},1}
+  Wannier_OptionalInfo() = new(0,zeros(0,3),Array{Array{Int},1}(0));
+end
+
 type Arg_Inputs
-  scf_name::AbstractString
+  result_file::AbstractString
   atom1::Int
   atom2::Int
   atom12_list::Vector{Tuple{Int64,Int64}}
@@ -237,8 +245,14 @@ type Arg_Inputs
   hdftmpdir
   ChemP_delta_ev::Float64
   TOMLinput::AbstractString
+  k_point_list::Vector{k_point_Tuple};
+  DFT_type::DFTtype
+  Wannier90_type::Wannier90type
+  Wannier_Optional_Info::Wannier_OptionalInfo
+  #Optinal::Dict{AbstractString,Any};
   Arg_Inputs() = new("",-1,-1,[(-1,-1)],[2,2,2],[2,2,2],
-    Array{Int64,1}(),Array{Int64,1}(),nomask,"All",nc_allH,"",0.0,"")
+    Array{Int64,1}(),Array{Int64,1}(),nomask,"All",nc_allH,"",0.0,"",
+    Vector{k_point_Tuple}(0),NULLDFT,NULLWANNIER,Wannier_OptionalInfo())
 end
 
 function read_toml(toml_fname)
@@ -263,7 +277,82 @@ function parse_int_list(num_str)
     intarray = unique(intarray);
     return intarray;
 end
+function parse_TOML(toml_file,input::Arg_Inputs)
+  if (isfile(toml_file))
+    toml_inputs = TOML.parse(readstring(input.TOMLinput))
+    #println(toml_inputs)
+    if (haskey(toml_inputs,"result_file"))
+      input.result_file = toml_inputs["result_file"]
+    end
+    if (haskey(toml_inputs,"DFTtype"))
+      DFT_type::AbstractString = toml_inputs["DFTtype"]
+      if ( lowercase("OpenMX") == lowercase(DFT_type) )
+        input.DFT_type = OpenMX
+      elseif ( lowercase("Wannier90") == lowercase(DFT_type) )
+        input.DFT_type = Wannier90
+      end
+    end
+    if (haskey(toml_inputs,"Wannier90type"))
+      result_type::AbstractString = toml_inputs["Wannier90type"]
+      if ( lowercase("openmxWF") == lowercase(result_type) )
+        input.Wannier90type = OpenMXWF;
+      elseif ( lowercase("vaspWF") == lowercase(result_type))
+        input.Wannier90type = VASPWF;
+      elseif ( lowercase("ecaljWF") == lowercase(result_type))
+        input.Wannier90type = EcalJWF;
+      elseif ( lowercase("wien2kWF") == lowercase(result_type))
 
+      end
+    end
+    if (haskey(toml_inputs,"atom12"))
+      input.atom12_list = Vector{Tuple{Int64,Int64}}(0);
+      for (k,v) in enumerate(toml_inputs["atom12"])
+        push!(input.atom12_list,(v[1],v[2]));
+      end
+    end
+    if (haskey(toml_inputs,"wannier_optional"))
+      wannier_options = Wannier_OptionalInfo()
+
+      atomnum = toml_inputs["wannier_optional"]["atomnum"]
+      atompos = toml_inputs["wannier_optional"]["atompos"]
+      atompos2 = convert(Array{Array{Float64},1},atompos)
+      atompos = zeros(atomnum,3);
+      for i in 1:atomnum
+        atompos[i,:] = atompos2[i]
+      end
+      atoms_orbitals_list2 = toml_inputs["wannier_optional"]["atoms_orbitals_list"]
+      atoms_orbitals_list = convert(Array{Array{Int},1},atoms_orbitals_list2)
+
+      wannier_options.atomnum = atomnum;
+      wannier_options.atompos = atompos;
+      wannier_options.atoms_orbitals_list = atoms_orbitals_list;
+      println(wannier_options)
+      input.Wannier_Optional_Info = wannier_options
+    end
+    if (haskey(toml_inputs,"orbitals"))
+      #println(toml_inputs["orbitals"])
+      if (haskey(toml_inputs["orbitals"],"orbitalselection"))
+        if ("on" == lowercase(toml_inputs["orbitals"]["orbitalselection"]))
+          input.orbital_mask_option = unmask
+          input.orbital_mask_name = "masked"
+          if (haskey(toml_inputs["orbitals"],"orbital_mask_option"))
+            if ("unmask" == lowercase(toml_inputs["orbitals"]["orbital_mask_option"]))
+              input.orbital_mask_option = unmask
+            elseif ("mask" == lowercase(toml_inputs["orbitals"]["orbital_mask_option"]))
+              input.orbital_mask_option = mask
+            end
+          end
+          if (haskey(toml_inputs["orbitals"],"orbital_mask_name"))
+            input.orbital_mask_name = toml_inputs["orbitals"]["orbital_mask_name"]
+          end
+          input.orbital_mask1 = toml_inputs["orbitals"]["orbital_mask1"]
+          input.orbital_mask2 = toml_inputs["orbitals"]["orbital_mask2"]
+        end
+      end
+    end
+  end
+  return input;
+end
 function parse_input(args)
 
     input::Arg_Inputs =  Arg_Inputs()
@@ -276,7 +365,7 @@ function parse_input(args)
         "--TOMLinput","-T"
         help = "input.toml file ex:) nio.toml "
         "--DFTtype","-D"
-        help = "openmx, openmxWF, vaspWF "
+        help = "openmxscf, openmxWF, vaspWF "
         "--atom12"
         help = "target atom1&2 ex:) 1_1,1_2,2_5"     # used by the help screen
         "--kpoint", "-k"
@@ -302,13 +391,15 @@ function parse_input(args)
         "--chempdelta"
         help = "Chemical potential shift in eV(default 0.0 eV)"
         arg_type = Float64
+        "--result_file","-r"
+        help = "result file name ex:) nio.scfout (OpenMX scf), nio.HWR (OpenMX wannier)"
         "scfname"
         help = "scf file name ex:) nio.scfout"
-        required = true        # makes the argument mandatory
+        required = false        # makes the argument mandatory
     end
 
     parsed_args = parse_args(args, s)
-    println("Parsed args:",parsed_args)
+    #println("Parsed args:",parsed_args)
     for (key,val) in parsed_args
         #println("  $key  =>  $(repr(val))")
         #println("  $key  =>  $val")
@@ -328,10 +419,20 @@ function parse_input(args)
             #input.atom1 = atom12[1];
             #input.atom2 = atom12[2];
         end
-        if (key == "scfname")
+        if (key =="result_file")
+          if (typeof(val) <:AbstractString)
             if (isfile(val) && ".scfout" == splitext(val)[2])
-                input.scf_name  = val;
+                input.result_file  = val;
                 #println("scf file:$scf_name")
+            end
+          end
+        end
+        if (key == "scfname")
+            if (typeof(val) <:AbstractString)
+              if (isfile(val) && ".scfout" == splitext(val)[2])
+                  input.result_file  = val;
+                  #println("scf file:$scf_name")
+              end
             end
         end
         if (key == "TOMLinput" && typeof(val) <: AbstractString)

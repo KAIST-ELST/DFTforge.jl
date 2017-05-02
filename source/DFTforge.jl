@@ -112,7 +112,7 @@ export cachecal_all_Qpoint_eigenstats,cacheset,cacheread_eigenstate,cacheread,
   cacheread_lampup,cacheread_atomsOrbital_lists,cacheread_Hamiltonian
 export get_ChempP
 export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
-  Kspace_parallel,Qspace_Ksum_atomlist_parallel_nc
+  Kspace_parallel,Qspace_Ksum_atomlist_parallel,Qspace_Ksum_atomlist_parallel_nc
 
   type DFTdataset
     dfttype::DFTcommon.DFTtype
@@ -593,6 +593,59 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
       end
     end
     return Q_ksum;
+  end
+  function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
+    atom12_list::Vector{Tuple{Int64,Int64}},num_return=1,
+    result_index=1,cache_index=1)
+    batch_size = 2*nprocs();
+    cnt = 1
+    spin_type = get_dftdataset(result_index).spin_type;
+
+    Xij_Q = Array(Dict{k_point_int_Tuple,Array{Complex_my,1}},10,length(atom12_list));
+    Xij_Q_mean = Array(Dict{k_point_int_Tuple,Complex_my},10,length(atom12_list));
+    for xyz_ij = 1:num_return
+        for atom12_i = 1:length(atom12_list)
+            Xij_Q[xyz_ij,atom12_i] = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
+            Xij_Q_mean[xyz_ij,atom12_i] = Dict{k_point_int_Tuple,Complex_my}();
+        end
+    end
+    #Q_ksum = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
+
+    p = Progress( round(Int, length(q_point_list)/6),
+      string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
+    for (q_i,q_point) in enumerate(q_point_list)
+      q_point_int = k_point_float2int(q_point);
+
+      job_list = Array(Job_input_kq_atom_list_Type,0)
+      for k_point in k_point_list
+        kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
+        kq_point = kPoint2BrillouinZone_Tuple(kq_point);
+        kq_point_int = k_point_float2int(kq_point);
+        push!(job_list,Job_input_kq_atom_list_Type(k_point,kq_point,spin_type,atom12_list));
+      end
+      X_temp = pmap(kq_function,job_list);
+      for xyz_ij = 1:num_return
+        for atom12_i = 1:length(atom12_list)
+          tmp = zeros(Complex_my,length(k_point_list))
+          for ii = 1:length(k_point_list)
+              tmp[ii] = X_temp[ii][xyz_ij,atom12_i];
+          end
+          Xij_Q[xyz_ij,atom12_i][q_point_int] = copy(tmp);
+          Xij_Q_mean[xyz_ij,atom12_i][q_point_int] = mean(tmp);
+        end
+      end
+
+      #Q_ksum[q_point_int] = vcat(temp...);
+      ## End of each q_point
+      if (1==rem(q_i,6))
+        next!(p)
+      end
+      if (1==rem(q_i,50))
+        @everywhere gc()
+      end
+    end
+    return (Xij_Q,Xij_Q_mean);
+
   end
   function Qspace_Ksum_atomlist_parallel_nc(kq_function,q_point_list,k_point_list,
     atom12_list::Vector{Tuple{Int64,Int64}},

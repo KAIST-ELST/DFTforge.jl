@@ -35,7 +35,7 @@ function read_wannier_OpenMX(wannier_fname,atoms_orbitals_list::Vector{Array{Int
     push!(Total_NumOrbs,length(atoms_orbitals_list[i]));
   end
 
-  f = open(string(wannier_fname,".HWR"))
+  f = open(wannier_fname)
   lines = readlines(f)
   close(f)
 
@@ -72,7 +72,7 @@ function read_wannier_OpenMX(wannier_fname,atoms_orbitals_list::Vector{Array{Int
     end
   end
   if 2 == SpinP_switch
-    println(length(start_linenums))
+    #println(length(start_linenums))
     assert(0==rem(length(start_linenums),2))
   end
   R_vector_mat = Array{Array{Int,2}}(SpinP_switch)
