@@ -30,10 +30,13 @@ ChemP_delta_ev = 0.0
 DFT_type = DFTcommon.OpenMX
 
 ## 1.2 Read input from argument & TOML file
-arg_input = parse_input(ARGS)
+arg_input = DFTcommon.Arg_Inputs();
+arg_input = parse_input(ARGS,arg_input)
 #arg_input.TOMLinput = "nio_J_wannier.toml" # Debug
 #arg_input.TOMLinput = "nio_J_openmx.toml" # Debug
 arg_input = parse_TOML(arg_input.TOMLinput,arg_input)
+# let argument override
+arg_input = parse_input(ARGS,arg_input)
 
 ## 1.3 Set values from intput (arg_input)
 DFT_type = arg_input.DFT_type

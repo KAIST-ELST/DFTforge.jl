@@ -296,11 +296,11 @@ function parse_TOML(toml_file,input::Arg_Inputs)
     if (haskey(toml_inputs,"Wannier90type"))
       result_type::AbstractString = toml_inputs["Wannier90type"]
       if ( lowercase("openmxWF") == lowercase(result_type) )
-        input.Wannier90type = OpenMXWF;
+        input.Wannier90_type = OpenMXWF;
       elseif ( lowercase("vaspWF") == lowercase(result_type))
-        input.Wannier90type = VASPWF;
+        input.Wannier90_type = VASPWF;
       elseif ( lowercase("ecaljWF") == lowercase(result_type))
-        input.Wannier90type = EcalJWF;
+        input.Wannier90_type = EcalJWF;
       elseif ( lowercase("wien2kWF") == lowercase(result_type))
 
       end
@@ -352,11 +352,12 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       end
     end
   end
+  input_checker(input);
   return input;
 end
-function parse_input(args)
+function parse_input(args,input::Arg_Inputs)
 
-    input::Arg_Inputs =  Arg_Inputs()
+    #input::Arg_Inputs =  Arg_Inputs()
 
     s = ArgParseSettings("Example 2 for argparse.jl: " *  # description
                       "flags, options help, " *
@@ -366,7 +367,9 @@ function parse_input(args)
         "--TOMLinput","-T"
         help = "input.toml file ex:) nio.toml "
         "--DFTtype","-D"
-        help = "openmxscf, openmxWF, vaspWF "
+        help = " OpenMX, Wannier90"
+        "--Wannier90type","-W"
+        help =" Specify Wannier function type. Use with -D Wannier90 option. ex:) openmxWF [openmxWF, vaspWF, ecaljWF, wien2kWF] (openmxWF only supported for now)."
         "--atom12"
         help = "target atom1&2 ex:) 1_1,1_2,2_5"     # used by the help screen
         "--kpoint", "-k"
@@ -388,14 +391,12 @@ function parse_input(args)
         "--omname"
         help = "obital masking name ex) d_d "
         "--hdftmpdir"
-        help = "specify hdf shared mem tmpdir dir (should be visible to all processes). Default: root_dir/jq/*.hdf5"
+        help = "Specify hdf shared mem tmpdir dir (should be visible to all processes). Default: root_dir/jq/*.hdf5"
         "--chempdelta"
         help = "Chemical potential shift in eV(default 0.0 eV)"
         arg_type = Float64
-        "--result_file","-r"
-        help = "result file name ex:) nio.scfout (OpenMX scf), nio.HWR (OpenMX wannier)"
-        "scfname"
-        help = "scf file name ex:) nio.scfout"
+        "result_file"
+        help = "Result file name ex:) nio.scfout (OpenMX scf), nio.HWR (OpenMX wannier)"
         required = false        # makes the argument mandatory
     end
 
@@ -420,21 +421,33 @@ function parse_input(args)
             #input.atom1 = atom12[1];
             #input.atom2 = atom12[2];
         end
-        if (key =="result_file")
-          if (typeof(val) <:AbstractString)
-            if (isfile(val) && ".scfout" == splitext(val)[2])
-                input.result_file  = val;
-                #println("scf file:$scf_name")
-            end
-          end
-        end
-        if (key == "scfname")
+        if (key == "result_file")
             if (typeof(val) <:AbstractString)
-              if (isfile(val) && ".scfout" == splitext(val)[2])
+              #if (isfile(val) && ".scfout" == splitext(val)[2])
                   input.result_file  = val;
                   #println("scf file:$scf_name")
-              end
+              #end
             end
+        end
+        if (key == "DFTtype" && typeof(val) <: AbstractString)
+          DFT_type::AbstractString = val
+          if ( lowercase("OpenMX") == lowercase(DFT_type) )
+            input.DFT_type = OpenMX
+          elseif ( lowercase("Wannier90") == lowercase(DFT_type) )
+            input.DFT_type = Wannier90
+          end
+        end
+        if (key == "Wannier90type" && typeof(val) <: AbstractString)
+          result_type::AbstractString = val
+          if ( lowercase("openmxWF") == lowercase(result_type) )
+            input.Wannier90_type = OpenMXWF;
+          elseif ( lowercase("vaspWF") == lowercase(result_type))
+            input.Wannier90_type = VASPWF;
+          elseif ( lowercase("ecaljWF") == lowercase(result_type))
+            input.Wannier90_type = EcalJWF;
+          elseif ( lowercase("wien2kWF") == lowercase(result_type))
+
+          end
         end
         if (key == "TOMLinput" && typeof(val) <: AbstractString)
           # Check if file name endswith ".toml"
@@ -493,7 +506,33 @@ function parse_input(args)
             end
         end
     end
+    if (""==input.result_file && ""==input.TOMLinput)
+      # no result file
+      println(" NO RESULT FILE SPECIFIED. TRY -h OPTION FOR HELP.")
+      exit(1);
+    end
     return input;
+end
+function input_checker(input::Arg_Inputs)
+  exit_programe = false;
+  if (Wannier90 == input.DFT_type)
+    if (NULLWANNIER == input.Wannier90_type)
+      println(" Set Wannier90type with -W option. TRY -h OPTION FOR HELP.")
+      exit_programe = true;
+    end
+    if (OpenMXWF == input.Wannier90_type)
+      if (input.Wannier_Optional_Info.atomnum <= 0)
+        println(" For OpenMX wannier function, TOML file is need. Set atom position infomation in TOML. TRY -h OPTION FOR HELP.")
+        exit_programe = true;
+      end
+    end
+  end
+  if exit_programe
+    println("=====================================================")
+    println(" Exiting programe. Please set informations" )
+    println("=====================================================")
+    exit(1)
+  end
 end
 
 

@@ -9,8 +9,8 @@ atom12 = [[1,1],[1,2]]
 
 [orbitals]
 orbitalselection = "on" # on, off
-orbital_mask1 = [4,5]
-orbital_mask2 = [4,5]
+orbital_mask1 = [1,2]
+orbital_mask2 = [1,2]
 orbital_mask_option = "unmask" # #mask #unmask
 orbital_mask_name = "eg_eg"
 [wannier_optional]
