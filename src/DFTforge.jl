@@ -6,8 +6,11 @@ export DFTtype, SPINtype
 export k_point_Tuple,k_point_int_Tuple
 export cal_colinear_eigenstate,cal_colinear_Hamiltonian
 export cal_nonco_linear_Eigenstate,cal_noncolinear_Hamiltonian
-
-
+DFTforge_VERSION = VersionNumber("0.2.0-dev+20170506");
+export get_DFTforge_VERSION
+function get_DFTforge_VERSION()
+  return DFTforge_VERSION;
+end
 #@enum DFTtype OpenMX = 1 Wannier90 = 2
 #@enum SPINtype para_type = 1 colinear_type = 2 non_colinear_type = 4
 
