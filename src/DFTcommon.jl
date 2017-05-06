@@ -567,7 +567,7 @@ function parse_input(args,input::Arg_Inputs)
           input.Hmode = val;
         end
         if (key =="om1" && typeof(val) <: AbstractString)
-            println(val)
+            #println(val)
             input.orbital_mask1 = parse_int_list(val)
         end
         if (key =="om2" && typeof(val) <: AbstractString)
@@ -581,7 +581,7 @@ function parse_input(args,input::Arg_Inputs)
             end
         end
         if ("omname"==key)
-            println(val)
+            #println(val)
             input.orbital_mask_name = val;
         end
         if ("hdftmpdir" ==key)
@@ -612,15 +612,16 @@ function parse_input(args,input::Arg_Inputs)
         end
 
     end
-    if (""==input.result_file && ""==input.TOMLinput)
-      # no result file
-      println(" NO RESULT FILE SPECIFIED. TRY -h OPTION FOR HELP.")
-      #exit(1);
-    end
+
     return input;
 end
 function input_checker(input::Arg_Inputs)
   exit_programe = false;
+  if (""==input.result_file)
+    # no result file
+    println(" NO RESULT FILE SPECIFIED. TRY -h OPTION FOR HELP.")
+    exit(1);
+  end
   if (Wannier90 == input.DFT_type)
     if (NULLWANNIER == input.Wannier90_type)
       println(" Set Wannier90type with -W option. TRY -h OPTION FOR HELP.")
@@ -633,6 +634,7 @@ function input_checker(input::Arg_Inputs)
       end
     end
   end
+
   if exit_programe
     println("=====================================================")
     println(" Exiting programe. Please set informations" )
