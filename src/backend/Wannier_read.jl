@@ -21,10 +21,12 @@ immutable Wannierdatatype
   E_Temp::Float64;
 end
 
-function read_wannier(wannier_fname::AbstractString,typeof_wannier::AbstractString,
+function read_wannier(wannier_fname::AbstractString,Wannier90_type::DFTcommon.Wannier90type,
   atoms_orbitals_list::Vector{Array{Int64}},atomnum::Int,atompos::Array{Float64,2})
   assert(atomnum == length(atoms_orbitals_list))
-  return read_wannier_OpenMX(wannier_fname,atoms_orbitals_list,atomnum,atompos);
+  if (DFTcommon.OpenMXWF == Wannier90_type)
+    return read_wannier_OpenMX(wannier_fname,atoms_orbitals_list,atomnum,atompos);
+  end
 end
 
 function read_wannier_OpenMX(wannier_fname,atoms_orbitals_list::Vector{Array{Int64}},

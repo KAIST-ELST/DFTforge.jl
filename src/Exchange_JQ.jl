@@ -40,6 +40,7 @@ arg_input = parse_input(ARGS,arg_input)
 
 ## 1.3 Set values from intput (arg_input)
 DFT_type = arg_input.DFT_type
+Wannier90_type = arg_input.Wannier90_type
 
 result_file = arg_input.result_file
 ChemP_delta_ev = arg_input.ChemP_delta_ev
@@ -102,7 +103,7 @@ elseif (DFTcommon.Wannier90 == DFT_type)
   atompos = arg_input.Wannier_Optional_Info.atompos
   atoms_orbitals_list = arg_input.Wannier_Optional_Info.atoms_orbitals_list
 
-  scf_r = DFTforge.read_dftresult(result_file,DFT_type,"openmx",atoms_orbitals_list,atomnum,atompos)
+  scf_r = DFTforge.read_dftresult(result_file,DFT_type,Wannier90_type,atoms_orbitals_list,atomnum,atompos)
   scf_r = set_current_dftdataset(scf_r, DFT_type, DFTcommon.colinear_type)
 end
 

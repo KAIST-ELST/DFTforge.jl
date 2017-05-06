@@ -36,10 +36,10 @@ end
 
 
 function read_dftresult(wannier_fname::AbstractString,dfttype::DFTcommon.DFTtype,
-  typeof_wannier::AbstractString,atoms_orbitals_list::Vector{Array{Int64}},
+  Wannier90_type::DFTcommon.Wannier90type,atoms_orbitals_list::Vector{Array{Int64}},
   atomnum::Int,atompos::Array{Float64,2})
   if (DFTcommon.Wannier90 == dfttype)
-    wannier_r = Wannierdata.read_wannier(wannier_fname,typeof_wannier,
+    wannier_r = Wannierdata.read_wannier(wannier_fname,Wannier90_type,
       atoms_orbitals_list,atomnum,atompos)
     return wannier_r;
   end

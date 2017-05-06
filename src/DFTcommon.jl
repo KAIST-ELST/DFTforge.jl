@@ -366,13 +366,13 @@ function parse_TOML(toml_file,input::Arg_Inputs)
     end
     if (haskey(toml_inputs,"Wannier90type"))
       result_type::AbstractString = toml_inputs["Wannier90type"]
-      if ( lowercase("openmxWF") == lowercase(result_type) )
+      if ( lowercase("openmx") == lowercase(result_type) )
         input.Wannier90_type = OpenMXWF;
-      elseif ( lowercase("vaspWF") == lowercase(result_type))
+      elseif ( lowercase("vasp") == lowercase(result_type))
         input.Wannier90_type = VASPWF;
-      elseif ( lowercase("ecaljWF") == lowercase(result_type))
+      elseif ( lowercase("ecalj") == lowercase(result_type))
         input.Wannier90_type = EcalJWF;
-      elseif ( lowercase("wien2kWF") == lowercase(result_type))
+      elseif ( lowercase("wien2k") == lowercase(result_type))
 
       end
     end
@@ -532,13 +532,13 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key == "Wannier90type" && typeof(val) <: AbstractString)
           result_type::AbstractString = val
-          if ( lowercase("openmxWF") == lowercase(result_type) )
+          if ( lowercase("openmx") == lowercase(result_type) )
             input.Wannier90_type = OpenMXWF;
-          elseif ( lowercase("vaspWF") == lowercase(result_type))
+          elseif ( lowercase("vasp") == lowercase(result_type))
             input.Wannier90_type = VASPWF;
-          elseif ( lowercase("ecaljWF") == lowercase(result_type))
+          elseif ( lowercase("ecalj") == lowercase(result_type))
             input.Wannier90_type = EcalJWF;
-          elseif ( lowercase("wien2kWF") == lowercase(result_type))
+          elseif ( lowercase("wien2k") == lowercase(result_type))
 
           end
         end
@@ -615,7 +615,7 @@ function parse_input(args,input::Arg_Inputs)
     if (""==input.result_file && ""==input.TOMLinput)
       # no result file
       println(" NO RESULT FILE SPECIFIED. TRY -h OPTION FOR HELP.")
-      exit(1);
+      #exit(1);
     end
     return input;
 end
