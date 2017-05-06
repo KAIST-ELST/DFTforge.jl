@@ -435,6 +435,7 @@ for (atom12_i,atom12) in enumerate(atom12_list)
     #,"orbital_mask2_inv" => orbital_mask2_inv
     ,"ChemP_delta" => 0.0
     ,"X_VERSION" => string(X_VERSION)
+    ,"DFTforge_VERSION" => string(DFTforge.get_DFTforge_VERSION())
     ));
 end
 ###############################################################################
