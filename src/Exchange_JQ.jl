@@ -96,17 +96,17 @@ println("===================================================")
 ## 2.1 Set Input info
 scf_r = [];
 if (DFTcommon.OpenMX == DFT_type)
-  scf_r = set_current_dftdataset(result_file, DFTcommon.OpenMX, DFTforge.colinear_type)
+  scf_r = set_current_dftdataset(result_file, DFTcommon.OpenMX, DFTcommon.colinear_type)
 elseif (DFTcommon.Wannier90 == DFT_type)
   atomnum = arg_input.Wannier_Optional_Info.atomnum
   atompos = arg_input.Wannier_Optional_Info.atompos
   atoms_orbitals_list = arg_input.Wannier_Optional_Info.atoms_orbitals_list
 
   scf_r = DFTforge.read_dftresult(result_file,DFT_type,"openmx",atoms_orbitals_list,atomnum,atompos)
-  scf_r = set_current_dftdataset(scf_r, DFT_type, DFTforge.colinear_type)
+  scf_r = set_current_dftdataset(scf_r, DFT_type, DFTcommon.colinear_type)
 end
 
-DFTforge.pwork(set_current_dftdataset,(scf_r, DFT_type, DFTforge.colinear_type,1));
+DFTforge.pwork(set_current_dftdataset,(scf_r, DFT_type, DFTcommon.colinear_type,1));
 
 ## 2.2 Generate k,q points
 k_point_list = kPoint_gen_GammaCenter(k_point_num);
@@ -189,7 +189,7 @@ DFTforge.pwork(init_variables,ChemP_delta_ev)
   # Get Chemp, E_temp
   TotalOrbitalNum = cacheread(cache_index).TotalOrbitalNum;
   TotalOrbitalNum2 = TotalOrbitalNum;
-  if (DFTforge.non_colinear_type == spin_type)
+  if (DFTcommon.non_colinear_type == spin_type)
     TotalOrbitalNum2 = 2*TotalOrbitalNum;
   end
 

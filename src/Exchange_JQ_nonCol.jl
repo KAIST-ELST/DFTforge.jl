@@ -33,37 +33,25 @@ atom12_list = Vector{Tuple{Int64,Int64}}();
 ChemP_delta_ev = 0.0
 
 global Hmode = DFTcommon.nc_allH;
-if true
-  arg_input = parse_input(ARGS)
-  scf_name = arg_input.scf_name
-  ChemP_delta_ev = arg_input.ChemP_delta_ev
-  k_point_num = arg_input.k_point_num
-  q_point_num = arg_input.q_point_num
-  orbital_mask_name = arg_input.orbital_mask_name
-  orbital_mask_option = arg_input.orbital_mask_option;
-  orbital_mask1 = arg_input.orbital_mask1
-  orbital_mask2 = arg_input.orbital_mask2
-  #atom1 = arg_input.atom1;
-  #atom2 = arg_input.atom2;
-  atom12_list = arg_input.atom12_list;
-  hdftmpdir = arg_input.hdftmpdir;
-  Hmode = arg_input.Hmode;
 
-end
-###
-# TOML override (should be merged to DFTcommon.jl)
-###
-#=
-import TOML
-toml_inputs = TOML.parse(readstring("nio_J.toml"))
-atom1 = toml_inputs["atom12"][1][1];
-atom2 = toml_inputs["atom12"][1][2];
-scf_name = toml_inputs["scf_fname"];
-#k_point_num = [3,3,3]
-#q_point_num = [3,3,3]
-k_point_num = [5,5,5]
-q_point_num = [5,5,5]
-=#
+arg_input = DFTcommon.Arg_Inputs();
+arg_input = parse_input(ARGS,arg_input)
+arg_input = parse_TOML(arg_input.TOMLinput,arg_input)
+arg_input = parse_input(ARGS,arg_input) # let argument override
+scf_name = arg_input.scf_name
+ChemP_delta_ev = arg_input.ChemP_delta_ev
+k_point_num = arg_input.k_point_num
+q_point_num = arg_input.q_point_num
+orbital_mask_name = arg_input.orbital_mask_name
+orbital_mask_option = arg_input.orbital_mask_option;
+orbital_mask1 = arg_input.orbital_mask1
+orbital_mask2 = arg_input.orbital_mask2
+#atom1 = arg_input.atom1;
+#atom2 = arg_input.atom2;
+atom12_list = arg_input.atom12_list;
+hdftmpdir = arg_input.hdftmpdir;
+Hmode = arg_input.Hmode;
+
 
 ###############################################################################
 # Orbital mask should be added
@@ -95,8 +83,8 @@ scf_test = DFTforge.OpenMXdata.read_scf(scf_name);
 
 #scf_r = set_current_dftdataset(scf_name, DFTforge.OpenMX, DFTforge.colinear_type)
 #DFTforge.pwork(set_current_dftdataset,(scf_name, DFTforge.OpenMX, DFTforge.colinear_type,1));
-scf_r = set_current_dftdataset(scf_name, DFTforge.OpenMX, DFTforge.non_colinear_type)
-DFTforge.pwork(set_current_dftdataset,(scf_name, DFTforge.OpenMX, DFTforge.non_colinear_type,1));
+scf_r = set_current_dftdataset(scf_name, DFTforge.OpenMX, DFTcommon.non_colinear_type)
+DFTforge.pwork(set_current_dftdataset,(scf_name, DFTforge.OpenMX, DFTcommon.non_colinear_type,1));
 ##
 
 
@@ -185,7 +173,7 @@ DFTforge.pwork(init_Hks,(1,Hmode))
     # Get Chemp, E_temp
     TotalOrbitalNum = cacheread(cache_index).TotalOrbitalNum;
     TotalOrbitalNum2 = TotalOrbitalNum;
-    if (DFTforge.non_colinear_type == spin_type)
+    if (DFTcommon.non_colinear_type == spin_type)
       TotalOrbitalNum2 = 2*TotalOrbitalNum;
     end
 
@@ -390,7 +378,7 @@ k_point_int_list = Array{k_point_int_Tuple,1}();
 for (q_i,q_point) in enumerate(q_point_list)
   push!(q_point_int_list,k_point_float2int(q_point))
 end
-for (k_i,k_point) in enumerate(k_point_int_list)
+for (k_i,k_point) in enumerate(k_point_list)
   push!(k_point_int_list,k_point_float2int(k_point))
 end
 
