@@ -49,7 +49,7 @@ function export2mat_K_Q(Xij_Q_mean_matlab,scf_r,
     jq_output_file = joinpath(jq_output_dir,result_fname)
 
   ## .2 Write to MAT
-    println(jq_output_file)
+    println(basename(jq_output_file))
     outputDict = Dict("Jij_Q_matlab" =>Xij_Q_mean_matlab[:,atom12_i]
       #,"Jij_Q_K" => Jij_Q_K_matlab
       ,"q_point_list" => q_point_int_list_matlab
