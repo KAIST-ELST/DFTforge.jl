@@ -7,6 +7,9 @@ export k_point_Tuple,k_point_int_Tuple
 export cal_colinear_eigenstate,cal_colinear_Hamiltonian
 export cal_nonco_linear_Eigenstate,cal_noncolinear_Hamiltonian
 DFTforge_VERSION = VersionNumber("0.2.0-dev+20170506");
+if 1 == myid()
+  println(" DFTforge Version :",string(DFTforge_VERSION))
+end
 export get_DFTforge_VERSION
 function get_DFTforge_VERSION()
   return DFTforge_VERSION;
@@ -107,6 +110,8 @@ using DFTforge
 using DFTcommon
 using HDF5
 using ProgressMeter
+include("resultExport.jl")
+export export2mat_K_Q
 
 export set_current_dftdataset,cal_colinear_eigenstate,cal_nonco_linear_Eigenstate,
   cal_Hamiltonian,get_dftdataset

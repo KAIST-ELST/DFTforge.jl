@@ -569,6 +569,7 @@ function parse_input(args,input::Arg_Inputs)
         if (key =="om1" && typeof(val) <: AbstractString)
             #println(val)
             input.orbital_mask1 = parse_int_list(val)
+
         end
         if (key =="om2" && typeof(val) <: AbstractString)
             input.orbital_mask2 = parse_int_list(val)
