@@ -19,10 +19,14 @@ end
 ## 1.4 Set caluations type and ouput folder
 ##############################################################################
 hdftmpdir = ""
-## 1.1 Set Default values
-orbital_mask1 = Array{Int64,1}();
-orbital_mask2 = Array{Int64,1}();
-orbital_mask_name = "";
+## 1.1 Set DeDFTcommon.bar_string
+#orbital_mask1 = Array{Int64,1}();
+#orbital_mask2 = Array{Int64,1}();
+orbital_mask1_list = Array{Array{Int}}(0);
+orbital_mask1_names = Array{AbstractString}(0);
+orbital_mask2_list = Array{Array{Int}}(0);
+orbital_mask2_names = Array{AbstractString}(0);
+
 orbital_mask_option = DFTcommon.nomask;
 orbital_mask_on = false;
 
@@ -60,17 +64,23 @@ Wannier90_type = arg_input.Wannier90_type
  # orbital mask
 orbital_mask_option = arg_input.orbital_mask_option;
 if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
-  orbital_mask_name = arg_input.orbital_mask_name
-  orbital_mask1 = arg_input.orbital_mask1;
-  orbital_mask2 = arg_input.orbital_mask2;
+  #orbital_mask_name = arg_input.orbital_mask_name
+  orbital_mask1_list = arg_input.orbital_mask1_list;
+  orbital_mask1_names = arg_input.orbital_mask1_names;
+  orbital_mask2_list = arg_input.orbital_mask2_list;
+  orbital_mask2_names = arg_input.orbital_mask2_names;
+
+  println(orbital_mask2_list," ",orbital_mask2_names)
+  assert(length(orbital_mask1_list) == length(orbital_mask1_names));
+  assert(length(orbital_mask2_list) == length(orbital_mask2_names));
   orbital_mask_on = true
 end
 
-println("===================================================")
+println(DFTcommon.bar_string) # print ====...====
 println(atom12_list)
 println(string("DFT_type ",DFT_type))
-println(string("orbital_mask_option ",orbital_mask_option,"\t",orbital_mask_name))
-println("mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2)
+println(string("orbital_mask_option ",orbital_mask_option))
+println("mask1list ",orbital_mask1_list,"\tmask2list ",orbital_mask2_list)
 
 ## 1.4 Set caluations type and ouput folder
 cal_type = "jq.orbital" # xq, ...
@@ -90,7 +100,7 @@ if ("" == hdftmpdir || !isdir(hdftmpdir) )
 end
 hdf_cache_name = joinpath(hdftmpdir,string(cal_name,".hdf5"))
 println(hdf_cache_name)
-println("===================================================")
+println(DFTcommon.bar_string) # print ====...====
 ##############################################################################
 ## 2. Calculate & Store k,q points information
 ## 2.1 Set Input info
@@ -155,10 +165,6 @@ end
 @everywhere function init_variables(Input_ChemP_delta_ev)
   global ChemP_delta_ev
   ChemP_delta_ev = Input_ChemP_delta_ev;
-end
-orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),false)
-if (orbital_mask_on)
-    orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),true)
 end
 
 
@@ -353,55 +359,66 @@ end
 
 num_return = 3;
 
-
-
 ## 4.1 Do K,Q sum
-# setup extra info
-DFTforge.pwork(init_orbital_mask,orbital_mask_input)
-DFTforge.pwork(init_variables,ChemP_delta_ev)
-# Do K,Q sum
-(X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Orbital_Exchange_J_colinear,
-q_point_list,k_point_list,atom12_list,num_return)
+# for orbital_mask1_list,orbital_mask2_list combinations
 
-
-#println(typeof(X_Q_mean_nc))
-println("===================================================")
-## 4.2 reduce K,Q to Q space
-# Average X_Q results
-Xij_Q_mean_matlab = Array(Array{Complex_my,1},num_return,length(atom12_list));
-for (atom12_i,atom12) in enumerate(atom12_list)
-  atom1 = atom12[1];
-  atom2 = atom12[2];
-  for xyz_i = 1:num_return
-    Xij_Q_mean_matlab[xyz_i,atom12_i] = zeros(Complex_my,length(q_point_list));
-    for (q_i,q_point) in enumerate(q_point_list)
-      q_point_int = k_point_float2int(q_point);
-      Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
-        X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
+for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
+  for (orbital2_i,orbital_mask2) in enumerate(orbital_mask2_list)
+    orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),false)
+    if (orbital_mask_on)
+        orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),true)
     end
-    println(string(" Gamma point J [",atom1,",",atom2,"]: ",
-      1000.0*mean(Xij_Q_mean_matlab[xyz_i,atom12_i][:])," meV"))
-  end
+    orbital_mask_name = "";
+    orbital_mask_name = orbital_mask1_names[orbital1_i]*"_"*orbital_mask2_names[orbital2_i];
+    println(DFTcommon.bar_string) # print ====...====
+    println("mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2)
+
+    # setup extra info
+    DFTforge.pwork(init_orbital_mask,orbital_mask_input)
+    DFTforge.pwork(init_variables,ChemP_delta_ev)
+    # Do K,Q sum
+    (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Orbital_Exchange_J_colinear,
+    q_point_list,k_point_list,atom12_list,num_return)
+
+    #println(typeof(X_Q_mean_nc))
+
+    ## 4.2 reduce K,Q to Q space
+    # Average X_Q results
+    Xij_Q_mean_matlab = Array(Array{Complex_my,1},num_return,length(atom12_list));
+    for (atom12_i,atom12) in enumerate(atom12_list)
+      atom1 = atom12[1];
+      atom2 = atom12[2];
+      for xyz_i = 1:num_return
+        Xij_Q_mean_matlab[xyz_i,atom12_i] = zeros(Complex_my,length(q_point_list));
+        for (q_i,q_point) in enumerate(q_point_list)
+          q_point_int = k_point_float2int(q_point);
+          Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
+            X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
+        end
+        println(string(" Gamma point J [",atom1,",",atom2,"]: ",
+          1000.0*mean(Xij_Q_mean_matlab[xyz_i,atom12_i][:])," meV"))
+      end
+    end
+    ###############################################################################
+    ## 5. Save results and clear hdf5 file
+    ## 5.1 Prepaire infomations for outout
+    ## 5.2 Write to MAT
+    ###############################################################################
+    optionalOutputDict = Dict{AbstractString,Any}()
+    optionalOutputDict["num_return"] = num_return;
+    optionalOutputDict["VERSION_Orbital_Exchange"] = string(X_VERSION);
+
+    export2mat_K_Q(Xij_Q_mean_matlab,scf_r,q_point_list,k_point_list,atom12_list,
+    orbital_mask_on,orbital_mask1,orbital_mask2,ChemP_delta_ev,
+    optionalOutputDict,
+    jq_output_dir,cal_name,
+    orbital_mask_name,cal_type);
+    end
 end
 
 
-###############################################################################
-## 5. Save results and clear hdf5 file
-## 5.1 Prepaire infomations for outout
-## 5.2 Write to MAT
-###############################################################################
-optionalOutputDict = Dict{AbstractString,Any}()
-optionalOutputDict["num_return"] = num_return;
-optionalOutputDict["VERSION_Orbital_Exchange"] = string(X_VERSION);
-
-export2mat_K_Q(Xij_Q_mean_matlab,scf_r,q_point_list,k_point_list,atom12_list,
-orbital_mask_on,orbital_mask1,orbital_mask2,ChemP_delta_ev,
-optionalOutputDict,
-jq_output_dir,cal_name,
-orbital_mask_name,cal_type);
-
-
 ## 6.1 Cleanup HDF5 cache file
+println(DFTcommon.bar_string) # print ====...====
 println("hdf_cache_name:",hdf_cache_name)
 if (isfile(hdf_cache_name))
   rm(hdf_cache_name)

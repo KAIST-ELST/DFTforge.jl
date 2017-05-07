@@ -19,6 +19,9 @@ export kPath_band,Arg_Inputs_Band
 export eigfact_hermitian,check_eigmat
 export SPINtype, DFTtype, Wannier90type
 
+bar_string = "================================================================"
+export bar_string;
+
 @enum SPINtype para_type = 1 colinear_type = 2 non_colinear_type = 4
 @enum DFTtype OpenMX = 1 Wannier90 = 2 NULLDFT = -1
 @enum Wannier90type OpenMXWF = 1 VASPWF = 2 EcalJWF = 3  NULLWANNIER = -1
@@ -139,7 +142,7 @@ type orbital_mask_input_Type
     orbital_mask_on::Bool
 end
 
-function orbital_mask_inv(orbital_mask1,atom1_orbitalNum,orbital_mask_option)
+function orbital_mask_inv(orbital_mask1,atom1_orbitalNum,)
   orbital_mask1_inv = Array{Int64,1}();
   if(nomask == orbital_mask_option)
       if( 0 < length(orbital_mask1))
@@ -242,10 +245,14 @@ type Arg_Inputs
   atom12_list::Vector{Tuple{Int64,Int64}}
   k_point_num::Array{Int,1}
   q_point_num::Array{Int,1}
-  orbital_mask1
-  orbital_mask2
+  orbital_mask1_list::Array{Array{Int}}
+  orbital_mask1_names::Array{AbstractString,1}
+  orbital_mask2_list::Array{Array{Int}}
+  orbital_mask2_names::Array{AbstractString,1}
   orbital_mask_option::orbital_mask_enum
-  orbital_mask_name
+  #orbital_mask_name
+
+
   Hmode::nc_Hamiltonian_selection
   hdftmpdir
   ChemP_delta_ev::Float64
@@ -258,7 +265,9 @@ type Arg_Inputs
   spin_type::SPINtype;
   Optional::Dict{AbstractString,Any};
   Arg_Inputs() = new("",-1,-1,[(-1,-1)],[2,2,2],[2,2,2],
-    Array{Int64,1}(),Array{Int64,1}(),nomask,"All",nc_allH,"",0.0,"",
+    convert(Array{Array{Int}}, [[]]),["all"],
+    convert(Array{Array{Int}}, [[]]),["all"],
+    nomask,nc_allH,"",0.0,"",
     Vector{k_point_Tuple}(0),NULLDFT,NULLWANNIER,Wannier_OptionalInfo(),
     colinear_type,
     Dict{AbstractString,Any}())
@@ -406,7 +415,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       if (haskey(toml_inputs["orbitals"],"orbitalselection"))
         if ("on" == lowercase(toml_inputs["orbitals"]["orbitalselection"]))
           input.orbital_mask_option = unmask
-          input.orbital_mask_name = "masked"
+          #input.orbital_mask_name = "masked"
           if (haskey(toml_inputs["orbitals"],"orbital_mask_option"))
             if ("unmask" == lowercase(toml_inputs["orbitals"]["orbital_mask_option"]))
               input.orbital_mask_option = unmask
@@ -414,11 +423,13 @@ function parse_TOML(toml_file,input::Arg_Inputs)
               input.orbital_mask_option = mask
             end
           end
-          if (haskey(toml_inputs["orbitals"],"orbital_mask_name"))
-            input.orbital_mask_name = toml_inputs["orbitals"]["orbital_mask_name"]
-          end
-          input.orbital_mask1 = toml_inputs["orbitals"]["orbital_mask1"]
-          input.orbital_mask2 = toml_inputs["orbitals"]["orbital_mask2"]
+          #if (haskey(toml_inputs["orbitals"],"orbital_mask_name"))
+          #  input.orbital_mask_name = toml_inputs["orbitals"]["orbital_mask_name"]
+          #end
+          input.orbital_mask1_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask1_list"])
+          input.orbital_mask1_names = split(toml_inputs["orbitals"]["orbital_mask1_names"],r"\[|\]|,",keep=false)
+          input.orbital_mask2_list = convert(Array{Array{Int}},toml_inputs["orbitals"]["orbital_mask2_list"])
+          input.orbital_mask2_names = split(toml_inputs["orbitals"]["orbital_mask2_names"],r"\[|\]|,",keep=false)
         end
       end
     end
@@ -470,17 +481,23 @@ function parse_input(args,input::Arg_Inputs)
         #action = :store_true   # this makes it a flag
         help = "q_point ex:) 5_5_5"
         "--om1"
-        help = "orbital_mask1 ex) 1,2,3"
+        help = "orbital_mask1_list ex) [[],[9,10,11,12,13],[9]] <= [all,d-only,z2]"
+        "--om1names"
+        help = "obital mask1 names ex) [all,d,z2]]"
+
         "--om2"
-        help = "orbital_mask1 ex) 1,2,3"
+        help = "orbital_mask2_list ex) [[],[9,10],[11]] <= [all,eg,xy]"
+        "--om2names"
+        help = "obital mask2 names ex) [all,eg,xy]"
+
         "--soc"
         help = "spin orbitcoupling ex:) nc_allH=0 nc_realH_only=1 nc_imagH_only=2 "
         arg_type = Int
         "--ommode"
         help = "0 (default: no orbital control) 1(selected orbitals are unmasked) 2(selected orbitals are masked)"
         arg_type = Int
-        "--omname"
-        help = "obital masking name ex) d_d "
+        #"--omname"
+        #help = "obital masking name ex) d_d "
         "--hdftmpdir"
         help = "Specify hdf shared mem tmpdir dir (should be visible to all processes). Default: root_dir/jq/*.hdf5"
         "--chempdelta"
@@ -567,12 +584,24 @@ function parse_input(args,input::Arg_Inputs)
           input.Hmode = val;
         end
         if (key =="om1" && typeof(val) <: AbstractString)
+            #input.orbital_mask1 = parse_int_list(val)
+            orbital_mask1_list = string("orbital_mask1_list = ",val);
+            v = TOML.parse(orbital_mask1_list);
+            input.orbital_mask1_list = convert(Array{Array{Int}},v["orbital_mask1_list"])
+        end
+        if (key =="om1names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask1 = parse_int_list(val)
-
+            input.orbital_mask1_names = split(val,r"\[|\]|,",keep=false)
         end
         if (key =="om2" && typeof(val) <: AbstractString)
-            input.orbital_mask2 = parse_int_list(val)
+            #input.orbital_mask2 = parse_int_list(val)
+            orbital_mask2_list = string("orbital_mask2_list = ",val);
+            v = TOML.parse(orbital_mask2_list);
+            input.orbital_mask2_list =  convert(Array{Array{Int}},v["orbital_mask2_list"])
+        end
+        if (key =="om2names" && typeof(val) <: AbstractString)
+            #println(val)
+            input.orbital_mask2_names = split(val,r"\[|\]|,",keep=false)
         end
         if ("ommode"==key)
             if(1 == val)
@@ -623,6 +652,7 @@ function input_checker(input::Arg_Inputs)
     println(" NO RESULT FILE SPECIFIED. TRY -h OPTION FOR HELP.")
     exit(1);
   end
+  # Check Wannier90 properties
   if (Wannier90 == input.DFT_type)
     if (NULLWANNIER == input.Wannier90_type)
       println(" Set Wannier90type with -W option. TRY -h OPTION FOR HELP.")
@@ -635,11 +665,26 @@ function input_checker(input::Arg_Inputs)
       end
     end
   end
+  # Check orbital_selection properties
+  if (nomask != input.orbital_mask_option)
+    if (0 == length(input.orbital_mask1_list)|| 0 == length(input.orbital_mask2_list) )
+      println(" orbital_mask1_list or orbital_mask2 is not set. ");
+      exit_programe = true;
+    end
+    if (length(input.orbital_mask1_list) != length(input.orbital_mask1_names))
+      println(" Length of orbital_mask1_list  orbital_mask1_names is not same. ");
+      exit_programe = true;
+    end
+    if (length(input.orbital_mask2_list) != length(input.orbital_mask2_names))
+      println(" Length of orbital_mask1_list  orbital_mask2_names is not same. ");
+      exit_programe = true;
+    end
+  end
 
   if exit_programe
-    println("=====================================================")
+    println(DFTcommon.bar_string) # print ====...====
     println(" Exiting programe. Please set informations" )
-    println("=====================================================")
+    println(DFTcommon.bar_string) # print ====...====
     exit(1)
   end
 end
