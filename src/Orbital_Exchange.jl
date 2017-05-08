@@ -61,20 +61,20 @@ atom2 = arg_input.atom2;
 atom12_list = arg_input.atom12_list;
 hdftmpdir = arg_input.hdftmpdir;
 Wannier90_type = arg_input.Wannier90_type
- # orbital mask
-orbital_mask_option = arg_input.orbital_mask_option;
-if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
-  #orbital_mask_name = arg_input.orbital_mask_name
-  orbital_mask1_list = arg_input.orbital_mask1_list;
-  orbital_mask1_names = arg_input.orbital_mask1_names;
-  orbital_mask2_list = arg_input.orbital_mask2_list;
-  orbital_mask2_names = arg_input.orbital_mask2_names;
+  # orbital mask
+ orbital_mask_option = arg_input.orbital_mask_option;
 
-  println(orbital_mask2_list," ",orbital_mask2_names)
-  assert(length(orbital_mask1_list) == length(orbital_mask1_names));
-  assert(length(orbital_mask2_list) == length(orbital_mask2_names));
-  orbital_mask_on = true
-end
+ orbital_mask1_list = arg_input.orbital_mask1_list;
+ orbital_mask1_names = arg_input.orbital_mask1_names;
+ orbital_mask2_list = arg_input.orbital_mask2_list;
+ orbital_mask2_names = arg_input.orbital_mask2_names;
+ println(orbital_mask2_list," ",orbital_mask2_names)
+ assert(length(orbital_mask1_list) == length(orbital_mask1_names));
+ assert(length(orbital_mask2_list) == length(orbital_mask2_names));
+ if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
+   #orbital_mask_name = arg_input.orbital_mask_name
+   orbital_mask_on = true
+ end
 
 println(DFTcommon.bar_string) # print ====...====
 println(atom12_list)
@@ -368,10 +368,9 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
     if (orbital_mask_on)
         orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),true)
     end
-    orbital_mask_name = "";
     orbital_mask_name = orbital_mask1_names[orbital1_i]*"_"*orbital_mask2_names[orbital2_i];
     println(DFTcommon.bar_string) # print ====...====
-    println("mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2)
+    println(orbital_mask_name," mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2)
 
     # setup extra info
     DFTforge.pwork(init_orbital_mask,orbital_mask_input)
@@ -395,7 +394,7 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
           Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
             X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
         end
-        println(string(" Gamma point J [",atom1,",",atom2,"]: ",
+        println(string(" Gamma point J [",atom1,",",atom2,"] ",xyz_i," :",
           1000.0*mean(Xij_Q_mean_matlab[xyz_i,atom12_i][:])," meV"))
       end
     end
