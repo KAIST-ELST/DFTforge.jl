@@ -453,6 +453,19 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         end
       end
     end
+    if (haskey(toml_inputs,"soc"))
+      val = toml_inputs["soc"]
+      if (0==val)
+        input.Hmode = nc_allH;
+      elseif 1==val
+        input.Hmode = nc_realH_only;
+      elseif 2==val
+        input.Hmode = nc_imagH_only;
+      else
+        println(" soc must be on of number ex:)[nc_allH=0 nc_realH_only=1 nc_imagH_only=2].")
+        exit(1);
+      end
+    end
   end
   input_checker(input);
   return input;
@@ -581,7 +594,18 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key=="soc" && typeof(val) <: Int)
           # nc_allH=0 nc_realH_only=1 nc_imagH_only=2
-          input.Hmode = val;
+          if (0==val)
+            input.Hmode = nc_allH;
+          elseif 1==val
+            input.Hmode = nc_realH_only;
+          elseif 2==val
+            input.Hmode = nc_imagH_only;
+          else
+            println(" soc must be on of number ex:)[nc_allH=0 nc_realH_only=1 nc_imagH_only=2].")
+            exit(1);
+          end
+
+
         end
         if (key =="om1" && typeof(val) <: AbstractString)
             #input.orbital_mask1 = parse_int_list(val)
