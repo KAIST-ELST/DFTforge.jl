@@ -70,10 +70,10 @@ end
 
 function cal_nonco_linear_Eigenstate(k_point::k_point_Tuple,
     dfttype::DFTcommon.DFTtype,scf_r)
-    if (OpenMX == dfttype)
+    if (DFTcommon.OpenMX == dfttype)
       EigenState = OpenMXdata.cal_noncolinear_eigenstate(k_point, scf_r)
       return EigenState
-    elseif (Wannier90 == dfttype)
+    elseif (DFTcommon.Wannier90 == dfttype)
       Eigenstate = Wannierdata.cal_eigenstate(k_point,scf_r,[1])
       return EigenState
     end

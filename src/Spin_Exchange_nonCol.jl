@@ -1,74 +1,98 @@
 ################################################################################
-
 using ProgressMeter
 import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-
-
-X_VERSION = VersionNumber("0.1.0-dev+20170401");
-println("X_VERSION: ",X_VERSION)
-
+X_VERSION = VersionNumber("0.1.0-dev+20170509");
+println(" X_VERSION: ",X_VERSION)
 @everywhere import DFTforge
 @everywhere using DFTforge.DFTrefinery
 @everywhere using DFTcommon
 
-scf_name = "../examples/NiO/4cell/Ni6.0_O5.0-s2p2d2f1-4.25_0.0-4.180-k10/nio.scfout"
-#scf_name = "/home/users1/bluehope/work_local/GaVS/LDA_FS_rhom/GaV4S8.scfout"
-#scf_name = "/home/users1/bluehope/work_local/GaVS/LDA_FS_cubic/GaV4S8.scfout"
-#scf_name = "/home/users1/bluehope/work/Jx/X0/FeTe/global/FeTe_PM_root2xroot2_AF_s2p2d2f1_expstr_U0.0.LDA/feTe.scfout"
-#scf_name = "/home/users1/bluehope/work/Jx/X0/SRO/1x1/SRO_ortho.scfout"
-
 ##############################################################################
-orbital_mask1 = Array{Int64,1}();
-orbital_mask2 = Array{Int64,1}();
-orbital_mask_name = "";
+## 1. Read INPUT
+## 1.1 Set Default values
+## 1.2 Read input from argument & TOML file
+## 1.3 Set values from intput (arg_input)
+## 1.4 Set caluations type and ouput folder
+##############################################################################
+hdftmpdir = ""
+## 1.1 Set Default values
+#orbital_mask1 = Array{Int64,1}();
+#orbital_mask2 = Array{Int64,1}();
+orbital_mask1_list = Array{Array{Int}}(0);
+orbital_mask1_names = Array{AbstractString}(0);
+orbital_mask2_list = Array{Array{Int}}(0);
+orbital_mask2_names = Array{AbstractString}(0);
+
 orbital_mask_option = DFTcommon.nomask;
 orbital_mask_on = false;
 
-atom1 = -1;
-atom2 = -1;
-atom12_list = Vector{Tuple{Int64,Int64}}();
+k_point_num = [3,3,3]
+q_point_num = [3,3,3]
 ChemP_delta_ev = 0.0
+DFT_type = DFTcommon.OpenMX
 
-global Hmode = DFTcommon.nc_allH;
-
+## 1.2 Read input from argument & TOML file
 arg_input = DFTcommon.Arg_Inputs();
 arg_input = parse_input(ARGS,arg_input)
+#arg_input.TOMLinput = "nio_J_wannier.toml" # Debug
+#arg_input.TOMLinput = "nio_J_openmx.toml" # Debug
 arg_input = parse_TOML(arg_input.TOMLinput,arg_input)
-arg_input = parse_input(ARGS,arg_input) # let argument override
-scf_name = arg_input.scf_name
+# let argument override
+arg_input = parse_input(ARGS,arg_input)
+
+## 1.3 Set values from intput (arg_input)
+DFT_type = arg_input.DFT_type
+Wannier90_type = arg_input.Wannier90_type
+
+result_file = arg_input.result_file
 ChemP_delta_ev = arg_input.ChemP_delta_ev
+ # k,q point num
 k_point_num = arg_input.k_point_num
 q_point_num = arg_input.q_point_num
-orbital_mask_name = arg_input.orbital_mask_name
-orbital_mask_option = arg_input.orbital_mask_option;
-orbital_mask1 = arg_input.orbital_mask1
-orbital_mask2 = arg_input.orbital_mask2
-#atom1 = arg_input.atom1;
-#atom2 = arg_input.atom2;
+ # atom 12
+atom1 = arg_input.atom1;
+atom2 = arg_input.atom2;
 atom12_list = arg_input.atom12_list;
 hdftmpdir = arg_input.hdftmpdir;
+
 Hmode = arg_input.Hmode;
+ # orbital mask
+orbital_mask_option = arg_input.orbital_mask_option;
 
-
-###############################################################################
-# Orbital mask should be added
-###############################################################################
-
-println(atom12_list)
-
-root_dir = dirname(scf_name)
-scf_name_only = splitext(basename(scf_name))
-cal_name = scf_name_only[1];
-
-jq_output_dir =  joinpath(root_dir,string("jq_nc", ChemP_delta_ev))
-if DFTcommon.nc_realH_only == Hmode
-  jq_output_dir =  joinpath(root_dir,string("jq_ncreal", ChemP_delta_ev))
-elseif DFTcommon.nc_imagH_only == Hmode
-  jq_output_dir =  joinpath(root_dir,string("jq_ncimag", ChemP_delta_ev))
+orbital_mask1_list = arg_input.orbital_mask1_list;
+orbital_mask1_names = arg_input.orbital_mask1_names;
+orbital_mask2_list = arg_input.orbital_mask2_list;
+orbital_mask2_names = arg_input.orbital_mask2_names;
+println(orbital_mask2_list," ",orbital_mask2_names)
+assert(length(orbital_mask1_list) == length(orbital_mask1_names));
+assert(length(orbital_mask2_list) == length(orbital_mask2_names));
+if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
+  #orbital_mask_name = arg_input.orbital_mask_name
+  orbital_mask_on = true
 end
+if (0==length(orbital_mask1_list) || 0==length(orbital_mask2_list))
+  println(" orbital_mask is empty!")
+  exit(1);
+end
+
+println(DFTcommon.bar_string) # print ====...====
+println(atom12_list)
+println(string("DFT_type ",DFT_type))
+println("mask1list ",orbital_mask1_list,"\tmask2list ",orbital_mask2_list)
+
+## 1.4 Set caluations type and ouput folder
+cal_type = "jq.ncspin" # xq, ...
+
+if (DFTcommon.Wannier90 == DFT_type)
+  cal_type = string(cal_type,".wannier")
+end
+root_dir = dirname(result_file)
+result_file_only = splitext(basename(result_file))
+cal_name = result_file_only[1];
+jq_output_dir =  joinpath(root_dir,string(cal_type,"_" ,ChemP_delta_ev))
 if (!isdir(jq_output_dir))
   mkdir(jq_output_dir)
 end
@@ -77,35 +101,54 @@ if ("" == hdftmpdir || !isdir(hdftmpdir) )
 end
 hdf_cache_name = joinpath(hdftmpdir,string(cal_name,".hdf5"))
 println(hdf_cache_name)
-
+println(DFTcommon.bar_string) # print ====...====
 ##############################################################################
-scf_test = DFTforge.OpenMXdata.read_scf(scf_name);
+## 2. Calculate & Store k,q points information
+## 2.1 Set Input info
+## 2.2 Generate k,q points
+## 2.3 Calculate Eigenstate & Store Eigenstate into file in HDF5 format
+## 2.4 Send Eigenstate info to child processes
+##############################################################################
 
-#scf_r = set_current_dftdataset(scf_name, DFTforge.OpenMX, DFTforge.colinear_type)
-#DFTforge.pwork(set_current_dftdataset,(scf_name, DFTforge.OpenMX, DFTforge.colinear_type,1));
-scf_r = set_current_dftdataset(scf_name, DFTforge.OpenMX, DFTcommon.non_colinear_type)
-DFTforge.pwork(set_current_dftdataset,(scf_name, DFTforge.OpenMX, DFTcommon.non_colinear_type,1));
-##
+## 2.1 Set Input info
+scf_r = [];
+if (DFTcommon.OpenMX == DFT_type)
+  scf_r = set_current_dftdataset(result_file, DFTcommon.OpenMX, DFTcommon.non_colinear_type)
+elseif (DFTcommon.Wannier90 == DFT_type)
+  atomnum = arg_input.Wannier_Optional_Info.atomnum
+  atompos = arg_input.Wannier_Optional_Info.atompos
+  atoms_orbitals_list = arg_input.Wannier_Optional_Info.atoms_orbitals_list
 
+  scf_r = DFTforge.read_dftresult(result_file,DFT_type,Wannier90_type,atoms_orbitals_list,atomnum,atompos)
+  scf_r = set_current_dftdataset(scf_r, DFT_type, DFTcommon.non_colinear_type)
+end
 
-#k_point_num = [2,2,2]
-#q_point_num = [2,2,2]
+DFTforge.pwork(set_current_dftdataset,(scf_r, DFT_type, DFTcommon.non_colinear_type,1));
 
+## 2.2 Generate k,q points
 k_point_list = kPoint_gen_GammaCenter(k_point_num);
 q_point_list = kPoint_gen_GammaCenter(q_point_num);
-#q_point_list = unique(q_point_list);
+
+#k_point_list = kPoint_gen_EquallySpaced(k_point_num);
+#q_point_list = kPoint_gen_EquallySpaced(q_point_num);
+
 (kq_point_list,kq_point_int_list) = q_k_unique_points(q_point_list,k_point_list)
 println(string(" kq_point_list ",length(kq_point_list)))
 println(string(" q point ",length(q_point_list) ," k point ",length(k_point_list)))
 
+## 2.3 Calculate Eigenstate & Store Eigenstate into file in HDF5 format
 eigenstate_cache = cachecal_all_Qpoint_eigenstats(kq_point_list,hdf_cache_name);
 gc();
+
+## 2.4 Send Eigenstate info to child processes
 DFTforge.pwork(cacheset,eigenstate_cache)
 tic();
 DFTforge.pwork(cacheread_lampup,kq_point_list)
 toc();
-#DFTforge.pwork(cacheread_eigenstate,1,(0.0,0.0,0.0))
+################################################################################
 
+##############################################################################
+## 3. Setup extra infos (orbital, chemp shift)
 ##############################################################################
 @everywhere function init_orbital_mask(orbital_mask_input::orbital_mask_input_Type)
     global orbital_mask1,orbital_mask2,orbital_mask_on
@@ -118,24 +161,13 @@ toc();
     else
         orbital_mask_on = false;
     end
-    return orbital_mask_on;
     #println(orbital_mask1)
 end
-orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(atom1,atom2),false)
-if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
-  println( string("Orbital mask on ",orbital_mask1,"  ",orbital_mask2))
-  orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(atom1,atom2),true)
+@everywhere function init_variables(Input_ChemP_delta_ev)
+  global ChemP_delta_ev
+  ChemP_delta_ev = Input_ChemP_delta_ev;
 end
-pwork(init_orbital_mask,orbital_mask_input);
-orbital_mask_on = init_orbital_mask(orbital_mask_input);
-println(orbital_mask_on)
-#@everywhere function Init_SmallHks(atom12)
-#    atom1 = atom12[1];
-#    atom2 = atom12[2];
-#    global SmallHks;
-#    result_index = 1;
-#    SmallHks =  DFTforge.OpenMXdata.test_SmallHks(atom1,atom2,get_dftdataset(result_index).scf_r);
-#end
+
 
 @everywhere import MAT
 #DFTforge.pwork(Init_SmallHks,(atom1,atom2))
@@ -147,6 +179,14 @@ println(orbital_mask_on)
   end
 DFTforge.pwork(init_Hks,(1,Hmode))
 
+##############################################################################
+## Physical properties calculation define section
+## 4. Magnetic exchange function define
+## 4.1 Do K,Q sum
+## 4.2 reduce K,Q to Q space
+##############################################################################
+
+## 4. Magnetic exchange function define
 @everywhere function Magnetic_Exchange_J_noncolinear(input::Job_input_kq_atom_list_Type)
     global Hks_0;
     #global SmallHks;
@@ -331,116 +371,65 @@ DFTforge.pwork(init_Hks,(1,Hmode))
   end
 
 
+  num_return = 10;
 
-##############################
-#DEBUG
-##############################
-#cacheset(eigenstate_cache)
+  ## 4.1 Do K,Q sum
+  # for orbital_mask1_list,orbital_mask2_list combinations
 
-##############################
-#DEBUG END
-##############################
-
-
-###############################################################################
-# Average X_Q results
-###############################################################################
-#X_Q::Dict{k_point_int_Tuple,Array{Complex_my,1}} = X_succeptability();
-#atom12_list =[(atom1,atom2)];
-(X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel_nc(Magnetic_Exchange_J_noncolinear,
-q_point_list,k_point_list,atom12_list)
-println(typeof(X_Q_mean_nc))
-#X_Q_matlab = zeros(Complex128,length(q_point_list),10,length(atom12_list));
-#for (q_i,q_point) in enumerate(q_point_list)
-  #q_point_int = k_point_float2int(q_point);
-  #X_Q_matlab[q_i] = mean(X_Q[q_point_int])
-#end
-Xij_Q_mean_matlab = Array(Array{Complex_my,1},10,length(atom12_list));
-for (atom12_i,atom12) in enumerate(atom12_list)
-  atom1 = atom12[1];
-  atom2 = atom12[2];
-  for xyz_i = 1:10
-    Xij_Q_mean_matlab[xyz_i,atom12_i] = zeros(Complex_my,length(q_point_list));
-    for (q_i,q_point) in enumerate(q_point_list)
-      q_point_int = k_point_float2int(q_point);
-      Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
-        X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
+for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
+  for (orbital2_i,orbital_mask2) in enumerate(orbital_mask2_list)
+    orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),false)
+    if (orbital_mask_on)
+        orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),true)
     end
+    orbital_mask_name = orbital_mask1_names[orbital1_i]*"_"*orbital_mask2_names[orbital2_i];
+    println(DFTcommon.bar_string) # print ====...====
+    println(orbital_mask_name," mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2)
+
+    # setup extra info
+    DFTforge.pwork(init_orbital_mask,orbital_mask_input)
+    DFTforge.pwork(init_variables,ChemP_delta_ev)
+
+    (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Magnetic_Exchange_J_noncolinear,
+    q_point_list,k_point_list,atom12_list,num_return)
+    #println(typeof(X_Q_mean_nc))
+    println("===================================================")
+    ## 4.2 reduce K,Q to Q space
+    # Average X_Q results
+    Xij_Q_mean_matlab = Array(Array{Complex_my,1},num_return,length(atom12_list));
+    for (atom12_i,atom12) in enumerate(atom12_list)
+      atom1 = atom12[1];
+      atom2 = atom12[2];
+      for xyz_i = 1:num_return
+        Xij_Q_mean_matlab[xyz_i,atom12_i] = zeros(Complex_my,length(q_point_list));
+        for (q_i,q_point) in enumerate(q_point_list)
+          q_point_int = k_point_float2int(q_point);
+          Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
+            X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
+        end
+        println(string(" Gamma point J [",atom1,",",atom2,"] ",xyz_i," :",
+          1000.0*mean(Xij_Q_mean_matlab[xyz_i,atom12_i][:])," meV"))
+      end
+    end
+    ###############################################################################
+    ## 5. Save results and clear hdf5 file
+    ## 5.1 Prepaire infomations for outout
+    ## 5.2 Write to MAT
+    ###############################################################################
+    optionalOutputDict = Dict{AbstractString,Any}()
+    optionalOutputDict["num_return"] = num_return;
+    optionalOutputDict["VERSION_Spin_Exchange"] = string(X_VERSION);
+
+    export2mat_K_Q(Xij_Q_mean_matlab,scf_r,q_point_list,k_point_list,atom12_list,
+    orbital_mask_on,orbital_mask1,orbital_mask2,ChemP_delta_ev,
+    optionalOutputDict,
+    jq_output_dir,cal_name,
+    orbital_mask_name,cal_type);
   end
 end
 
-
-###############################################################################
-# Prepaire infomations for outout
-###############################################################################
-q_point_int_list = Array{k_point_int_Tuple,1}();
-k_point_int_list = Array{k_point_int_Tuple,1}();
-for (q_i,q_point) in enumerate(q_point_list)
-  push!(q_point_int_list,k_point_float2int(q_point))
-end
-for (k_i,k_point) in enumerate(k_point_list)
-  push!(k_point_int_list,k_point_float2int(k_point))
-end
-
-q_point_int_list_matlab = reinterpret(Int64,q_point_int_list,(3,length(q_point_int_list)))';
-k_point_int_list_matlab = reinterpret(Int64,k_point_int_list,(3,length(k_point_int_list)))';
-
-
-
-###############################################################################
-# Write to MAT
-###############################################################################
-tv = get_dftdataset().scf_r.tv;
-rv = get_dftdataset().scf_r.rv;
-Gxy = get_dftdataset().scf_r.Gxyz;
-atom_num = get_dftdataset().scf_r.atomnum;
-
-#jq_output_file = "test.mat"
-for (atom12_i,atom12) in enumerate(atom12_list)
-  atom1 = atom12[1];
-  atom2 = atom12[2];
-
-  f_name = string(cal_name,"_meshk_",atom1,"_",atom2,"_[all]","_ChemPdelta_",ChemP_delta_ev);
-  if (orbital_mask_on)
-      #println(" ", orbital_mask1_inv," : ",orbital_mask2_inv)
-      f_name = string(cal_name,"_meshk_",atom1,"_",atom2);
-      #mask_name = string("_atom1m_[",join(orbital_mask1_inv,","),
-      #"]_atom2m_[",join(orbital_mask2_inv,","),"]");
-      mask_name = string("_atom1m_[",",", "]_atom2m_[",",","]");
-      f_name = string(f_name,mask_name,"_[",orbital_mask_name,"]","_ChemPdelta_",ChemP_delta_ev);
-  end
-  result_fname = string("jq_",f_name,".mat");
-
-
-  println(jq_output_dir)
-  jq_output_file = joinpath(jq_output_dir,result_fname)
-
-  MAT.matwrite(jq_output_file,Dict("Jij_Q_matlab" =>Xij_Q_mean_matlab[:,atom12_i]
-    #,"Jij_Q_K" => Jij_Q_K_matlab
-    ,"q_point_list" => q_point_int_list_matlab
-    ,"k_point_list" => k_point_int_list_matlab
-    ,"k_point_precision" => k_point_precision
-    ,"tv" => tv
-    ,"rv" => rv
-    ,"Gxyz" => scf_r.Gxyz
-    ,"atomnum" => scf_r.atomnum
-    ,"atom1" => atom1
-    ,"atom2" => atom2
-    ,"scf_name" => scf_name
-    ,"orbital_mask1" => orbital_mask1
-    ,"orbital_mask2" => orbital_mask2
-    #,"Jij_history" => cal_history_dat["Jij_history"]
-    ,"orbital_mask_on" => orbital_mask_on
-    #,"orbital_mask1_inv" => orbital_mask1_inv
-    #,"orbital_mask2_inv" => orbital_mask2_inv
-    ,"ChemP_delta" => 0.0
-    ,"X_VERSION" => string(X_VERSION)
-    ,"DFTforge_VERSION" => string(DFTforge.get_DFTforge_VERSION())
-    ));
-end
-###############################################################################
-# Clear HDF5 cache
-###############################################################################
+## 5.3 Cleanup HDF5 cache file
+println(DFTcommon.bar_string) # print ====...====
 println("hdf_cache_name:",hdf_cache_name)
 if (isfile(hdf_cache_name))
   rm(hdf_cache_name)
