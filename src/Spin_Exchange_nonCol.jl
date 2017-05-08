@@ -84,7 +84,14 @@ println(string("DFT_type ",DFT_type))
 println("mask1list ",orbital_mask1_list,"\tmask2list ",orbital_mask2_list)
 
 ## 1.4 Set caluations type and ouput folder
-cal_type = "jq.ncspin" # xq, ...
+cal_type = "jq" # xq, ...
+if (DFTcommon.nc_allH == Hmode)
+  cal_type = string(cal_type,".nc_allH")
+elseif (DFTcommon.nc_realH_only == Hmode)
+  cal_type = string(cal_type,".nc_readH_only")
+elseif (DFTcommon.nc_imagH_only == Hmode)
+  cal_type = string(cal_type,".nc_imagH_only")
+end
 
 if (DFTcommon.Wannier90 == DFT_type)
   cal_type = string(cal_type,".wannier")
@@ -393,7 +400,10 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
     (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Magnetic_Exchange_J_noncolinear,
     q_point_list,k_point_list,atom12_list,num_return)
     #println(typeof(X_Q_mean_nc))
-    println("===================================================")
+    println(DFTcommon.bar_string) # print ====...====
+    println("[1:Jxx, 2:Jxy, 3:Jyy]")
+    println("[4:Jyx, 5:Jyy, 6:Jyz]")
+    println("[7:Jzx, 8:Jzy, 9:Jzz] 10:X")
     ## 4.2 reduce K,Q to Q space
     # Average X_Q results
     Xij_Q_mean_matlab = Array(Array{Complex_my,1},num_return,length(atom12_list));

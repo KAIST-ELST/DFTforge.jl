@@ -313,7 +313,7 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
     (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Magnetic_Exchange_J_colinear,
     q_point_list,k_point_list,atom12_list,num_return)
     #println(typeof(X_Q_mean_nc))
-    println("===================================================")
+    println(DFTcommon.bar_string) # print ====...====
     ## 4.2 reduce K,Q to Q space
     # Average X_Q results
     Xij_Q_mean_matlab = Array(Array{Complex_my,1},num_return,length(atom12_list));
