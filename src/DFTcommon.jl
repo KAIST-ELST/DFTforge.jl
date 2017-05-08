@@ -652,6 +652,16 @@ function input_checker(input::Arg_Inputs)
     println(" NO RESULT FILE SPECIFIED. TRY -h OPTION FOR HELP.")
     exit(1);
   end
+  if (DFTcommon.OpenMX == input.DFT_type)
+  elseif (DFTcommon.Wannier90 == input.DFT_type)
+  else
+    println(" Set DFTresult type with -D option. TRY -h OPTION FOR HELP.")
+    exit_programe = true;
+  end
+
+  if (0==length(input.atom12_list))
+    println(" WARNNING: Set atom12 list with -atom12 option. TRY -h OPTION FOR HELP.")
+  end
   # Check Wannier90 properties
   if (Wannier90 == input.DFT_type)
     if (NULLWANNIER == input.Wannier90_type)
