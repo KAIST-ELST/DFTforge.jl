@@ -88,7 +88,7 @@ cal_type = "jq" # xq, ...
 if (DFTcommon.nc_allH == Hmode)
   cal_type = string(cal_type,".nc_allH")
 elseif (DFTcommon.nc_realH_only == Hmode)
-  cal_type = string(cal_type,".nc_readH_only")
+  cal_type = string(cal_type,".nc_realH_only")
 elseif (DFTcommon.nc_imagH_only == Hmode)
   cal_type = string(cal_type,".nc_imagH_only")
 end

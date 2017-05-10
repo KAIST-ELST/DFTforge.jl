@@ -356,7 +356,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
     batch_size = 2*nprocs();
     cnt = 1;
 
-    p = Progress(floor(Int, length(q_point_list)/batch_size),
+    p = Progress(ceil(Int, length(q_point_list)/batch_size),
     "Computing Eigenstates(q)...");
 
     while cnt <= Total_q_point_num
@@ -674,7 +674,7 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
     end
     #Q_ksum = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
 
-    p = Progress( round(Int, length(q_point_list)/6),
+    p = Progress( ceil(Int, length(q_point_list)/2),
       string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
     for (q_i,q_point) in enumerate(q_point_list)
       q_point_int = k_point_float2int(q_point);
@@ -700,11 +700,12 @@ export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
 
       #Q_ksum[q_point_int] = vcat(temp...);
       ## End of each q_point
-      if (1==rem(q_i,6))
+      if (1==rem(q_i,2))
         next!(p)
       end
       if (1==rem(q_i,50))
         @everywhere gc()
+        gc()
       end
     end
     return (Xij_Q,Xij_Q_mean);
