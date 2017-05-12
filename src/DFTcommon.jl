@@ -118,6 +118,8 @@ end
 function q_k_unique_points(q_point_list,k_point_list)
   kq_point_dict = Dict{k_point_int_Tuple,k_point_Tuple}();
   p = Progress( length(q_point_list),"Computing unique K points from K,K+Q... ");
+  p.barglyphs=BarGlyphs("[=> ]")
+  p.output = STDOUT
   for q_point in q_point_list
       for k_point in k_point_list
         kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
