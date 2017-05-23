@@ -1,6 +1,6 @@
 
 import MAT
-function export2mat_K_Q(Xij_Q_mean_matlab,scf_r,
+function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
   q_point_list::Array{k_point_Tuple},
   k_point_list::Array{k_point_Tuple},atom12_list::Vector{Tuple{Int64,Int64}},
   orbital_mask_on::Bool,orbital_mask1,orbital_mask2,ChemP_delta_ev::Float64,
@@ -8,6 +8,8 @@ function export2mat_K_Q(Xij_Q_mean_matlab,scf_r,
   jq_output_dir::AbstractString,cal_name::AbstractString,
   orbital_mask_name::AbstractString,
   cal_type::AbstractString)
+
+  scf_r = hamiltonian_info.scf_r;
 ## .1 Prepaire infomations for outout
   q_point_int_list = Array{k_point_int_Tuple,1}();
   k_point_int_list = Array{k_point_int_Tuple,1}();

@@ -35,7 +35,8 @@ function cal_Hamiltonian(k_point::k_point_Tuple,wannier_r::Wannierdatatype,spin:
   Overlap_Band!(wannier_r,spin,Hout,TotalOrbitalNum,k_point[1],k_point[2],k_point[3])
   return Hout;
 end
-function cal_eigenstate(k_point::k_point_Tuple,wannier_r::Wannierdatatype,spin_list::Array{Int})
+function cal_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamiltonian_info_type,spin_list::Array{Int})
+  wannier_r = hamiltonian_info.scf_r;
   TotalOrbitalNum::Int = sum(wannier_r.Total_NumOrbs[:])
   kpoint_common_list = Array{Kpoint_eigenstate}(0);
   for spin in spin_list
@@ -43,7 +44,7 @@ function cal_eigenstate(k_point::k_point_Tuple,wannier_r::Wannierdatatype,spin_l
     eigvals = zeros(Float_my, TotalOrbitalNum);
     eigstate = copy(Hout)
     DFTcommon.eigfact_hermitian(eigstate,eigvals)
-    kpoint_common = Kpoint_eigenstate(eigstate,eigvals,k_point);
+    kpoint_common = Kpoint_eigenstate(eigstate,eigvals,k_point,Hout);
     #kpoint_common = Kpoint_eigenstate(Hout,eigvals,k_point);
     push!(kpoint_common_list,kpoint_common)
   end

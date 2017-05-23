@@ -207,20 +207,61 @@ function parse_TOML(toml_file,input::Arg_Inputs)
     end
 
     if (haskey(toml_inputs,"orbital_reassign"))
-      if (haskey(toml_inputs["orbital_reassign"],"d_orbital_rot"))
-        orbital_rot_d_dict = Dict{Int,orbital_rot_d_type}()
-        for (k,v) in enumerate(toml_inputs["orbital_reassign"]["d_orbital_rot"])
-        # orbital_rot_d_type
-        atomnum = convert(Int, v[1][1])
-        Z_vect = convert(Vector{Float64},v[2]);
-        X_vect = convert(Vector{Float64},v[3]);
-        d_orbital_list = convert(Array{Array{Int}},v[4+0:4+4]);
-        orbital_rot_d_dict[atomnum] =
-          orbital_rot_d_type(atomnum,Z_vect,X_vect,d_orbital_list);
-        end
-        #TODO: migrate into Arg_Inputs
-        input.Optional["orbital_rot_d_dict"] = orbital_rot_d_dict;
+
+      orbital_rot_on = false
+      orbital_rot_rules = Dict{Int,orbital_rot_type}()
+      if (haskey(toml_inputs["orbital_reassign"],"orbital_rot_on"))
+        orbital_rot_on = toml_inputs["orbital_reassign"]["orbital_rot_on"]
       end
+      if orbital_rot_on
+        if (haskey(toml_inputs["orbital_reassign"],"d_orbital_rot"))
+          #orbital_rot_d_dict = Dict{Int,orbital_rot_d_type}()
+          for (k,v) in enumerate(toml_inputs["orbital_reassign"]["d_orbital_rot"])
+            # orbital_rot_d_type
+            atom1 = convert(Int, v[1][1])
+            Z_vect = convert(Vector{Float64},v[2]);
+            X_vect = convert(Vector{Float64},v[3]);
+            d_orbital_list = convert(Array{Array{Int}},v[4+0:4+4]);
+            orbital_rot_rules[atom1] =
+              orbital_rot_type(atom1,Z_vect,X_vect,d_orbital_list,5);
+          end
+            #TODO: migrate into Arg_Inputs
+          #input.Optional["orbital_rot_d_dict"] = orbital_rot_d_dict;
+        end
+      end
+      orbital_merge_on = false;
+      if (haskey(toml_inputs["orbital_reassign"],"orbital_merge_on"))
+        orbital_merge_on = toml_inputs["orbital_reassign"]["orbital_merge_on"]
+      end
+      orbital_merge_rules = Dict{Int,orbital_merge_type}()
+      keep_unmerged_atoms = true;
+      keep_unmerged_orbitals = true;
+      if orbital_merge_on
+        if (haskey(toml_inputs["orbital_reassign"],"keep_unmerged_atoms"))
+          keep_unmerged_atoms = toml_inputs["orbital_reassign"]["keep_unmerged_atoms"]
+        end
+        if (haskey(toml_inputs["orbital_reassign"],"keep_unmerged_orbitals"))
+          keep_unmerged_orbitals = toml_inputs["orbital_reassign"]["keep_unmerged_orbitals"]
+        end
+        if (haskey(toml_inputs["orbital_reassign"],"orbital_merge_downfolding"))
+
+
+          for (k,v) in enumerate(toml_inputs["orbital_reassign"]["orbital_merge_downfolding"])
+            # orbital_rot_d_type
+            atom1 = convert(Int, v[1][1])
+            orbital_list = convert(Array{Array{Int}},v[2:end]);
+            assert(issorted( map(v->v[1],orbital_list) ));
+            orbital_merge_rules[atom1] =
+              orbital_merge_type(atom1,orbital_list);
+          end
+            #TODO: migrate into Arg_Inputs
+
+        end
+        basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+          orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals);
+        input.Optional["basisTransform"] = basisTransform;
+      end
+
     end
 
     if (haskey(toml_inputs,"bandplot"))

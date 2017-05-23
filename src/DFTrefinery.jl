@@ -15,6 +15,7 @@ export get_ChempP
 export Qspace_Ksum_parallel,Qspace_Ksum_atom_parallel,
 Kspace_parallel,Qspace_Ksum_atomlist_parallel,Qspace_Ksum_atomlist_parallel_nc
 
+#=
 type DFTdataset
   dfttype::DFTcommon.DFTtype
   scf_r
@@ -22,6 +23,7 @@ type DFTdataset
   orbitalStartIdx::Array{Int,1}
   orbitalNums::Array{Int,1}
 end
+=#
 
 type Eigenstate_hdf5
   hdf_cache_name::AbstractString
@@ -31,12 +33,12 @@ type Eigenstate_hdf5
   q_points_intdic::Dict{k_point_int_Tuple,Int};
   spin_type::SPINtype
   TotalOrbitalNum::Int
-  dftresult::DFTdataset
+  dftresult::Hamiltonian_info_type
   Eigenvect_real::Array{Float64,4}
   Eigenvect_imag::Array{Float64,4}
   Eigenvalues::Array{Float64,3}
-  Hamiltonian_real::Array{Float64,3}
-  Hamiltonian_imag::Array{Float64,3}
+  Hamiltonian_real::Array{Float64,4}
+  Hamiltonian_imag::Array{Float64,4}
 
 
   Eigenstate_hdf5(hdf_cache_name,fid_hdf,q_points,q_points_int,
@@ -92,14 +94,18 @@ type Job_input_kq_atom_list_Type
     new(k_point,kq_point,spin_type,atom12,result_index,cache_index)
 end
 
-global dftresult = Array{DFTdataset}();
+global dftresult = Array{Hamiltonian_info_type}();
 global eigenstate_list =  Array{Eigenstate_hdf5}(); #cached Eigenstates
 
 function set_current_dftdataset(scf_name::AbstractString,
-  dfttype::DFTcommon.DFTtype,spin_type::SPINtype,result_index=1)
+  dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
+    basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),result_index=1)
+  global dftresult;
   if (DFTcommon.OpenMX == dfttype)
     # Read SCF and Set as current dftdata
-    scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
+    #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
+    hamiltonian_info = read_dftresult(scf_name,dfttype,spin_type,basisTransform_rule)
+    #=
     orbitalStartIdx = zeros(Int,scf_r.atomnum);
     orbitalIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
     orbitalNums = zeros(Int,scf_r.atomnum)
@@ -113,11 +119,29 @@ function set_current_dftdataset(scf_name::AbstractString,
     dftresult[result_index] =
     DFTdataset(dfttype, scf_r,spin_type,
       orbitalStartIdx,orbitalNums);
-    return scf_r;
+
+    =#
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  end
+end
+function set_current_dftdataset(wannier_fname::AbstractString,dfttype::DFTcommon.DFTtype,
+    Wannier90_type::DFTcommon.Wannier90type,spin_type::DFTcommon.SPINtype,
+      atoms_orbitals_list::Vector{Array{Int64}},
+    atomnum::Int,atompos::Array{Float64,2},basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),
+    result_index=1)
+  global dftresult;
+  if (DFTcommon.Wannier90 ==dfttype)
+    hamiltonian_info = read_dftresult(  wannier_fname,dfttype,
+        Wannier90_type,spin_type,
+          atoms_orbitals_list,
+        atomnum,atompos,basisTransform_rule)
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
   end
 end
 function set_current_dftdataset(scf_r,
-  dfttype::DFTcommon.DFTtype,spin_type::SPINtype,result_index=1)
+  dfttype::DFTcommon.DFTtype,spin_type::DFTcommon.SPINtype,result_index=1)
   if (DFTcommon.OpenMX == dfttype)
     # Read SCF and Set as current dftdata
     #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
@@ -152,8 +176,11 @@ function set_current_dftdataset(scf_r,
   end
 end
 function set_current_dftdataset(input)
+  hamiltonian_info::Hamiltonian_info_type = input[1]
+  result_index::Int = input[2]
 
-  set_current_dftdataset(input[1],input[2],input[3],input[4])
+  dftresult[result_index] = hamiltonian_info;
+  #set_current_dftdataset(input[1],input[2],input[3],input[4])
 end
 function get_dftdataset(result_index=1)
   global dftresult
@@ -161,8 +188,7 @@ function get_dftdataset(result_index=1)
 end
 function cal_colinear_eigenstate(Kpoint::k_point_Tuple, spin_list=1,result_index=1)
   global dftresult
-  return DFTforge.cal_colinear_eigenstate(Kpoint,
-  dftresult[result_index].dfttype,dftresult[result_index].scf_r,spin_list )
+  return DFTforge.cal_colinear_eigenstate(Kpoint,dftresult[result_index],spin_list)
 end
 function cal_nonco_linear_Eigenstate(Kpoint::k_point_Tuple,result_index=1)
   global dftresult
@@ -185,6 +211,7 @@ function cal_eigenstate(input::Job_input_Type,result_index=1)
     return cal_nonco_linear_Eigenstate(input.k_point,input.result_index)
   end
 end
+#=
 function cal_Hamiltonian(spin=1,result_index=1,Hmode::DFTcommon.nc_Hamiltonian_selection=DFTcommon.nc_allH)
   global dftresult;
   spin_type = dftresult[result_index].spin_type;
@@ -196,7 +223,7 @@ function cal_Hamiltonian(spin=1,result_index=1,Hmode::DFTcommon.nc_Hamiltonian_s
   end
 
 end
-
+=#
 
 function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
   hdf_cache_name,
@@ -228,10 +255,10 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
   dataspace(TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
   hdf5_hamiltonian_real = d_create(fid_hdf,"Hamiltonian_real",datatype(Float64),
-  dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim));
+  dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
   hdf5_hamiltonian_imag = d_create(fid_hdf,"Hamiltonian_imag",datatype(Float64),
-  dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim));
+  dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim,Total_q_point_num ));
   # Write hamiltonian
 
   job_list = Array(Job_input_Type,0)
@@ -264,11 +291,20 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
         hdf5_eigenstate_real[:,:,1,jj] = real(temp[ii][1].Eigenstate);
         hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii][1].Eigenstate);
         hdf5_eigenvalues[:,1,jj] = temp[ii][1].Eigenvalues;
+
+        hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii][1].Hamiltonian);
+        hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii][1].Hamiltonian);
+
         if (DFTcommon.colinear_type == spin_type )
           hdf5_eigenstate_real[:,:,2,jj] = real(temp[ii][2].Eigenstate);
           hdf5_eigenstate_imag[:,:,2,jj] = imag(temp[ii][2].Eigenstate);
           hdf5_eigenvalues[:,2,jj] = temp[ii][2].Eigenvalues;
+
+          hdf5_hamiltonian_real[:,:,2,jj] = real(temp[ii][2].Hamiltonian);
+          hdf5_hamiltonian_imag[:,:,2,jj] = imag(temp[ii][2].Hamiltonian);
+
         end
+
         ii += 1;
       end
     elseif (DFTcommon.non_colinear_type == spin_type)
@@ -276,6 +312,10 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
         hdf5_eigenstate_real[:,:,1,jj] = real(temp[ii].Eigenstate);
         hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii].Eigenstate);
         hdf5_eigenvalues[:,1,jj] = temp[ii].Eigenvalues;
+
+        hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii][1].Hamiltonian);
+        hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii][1].Hamiltonian);
+
         ii += 1;
       end
     end
@@ -284,10 +324,10 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
     next!(p)
   end
   next!(p)
+  #=
+  #H::Hamiltonian_type = cal_Hamiltonian(1,result_index);
 
-  H::Hamiltonian_type = cal_Hamiltonian(1,result_index);
-
-  println(size(H))
+  #println(size(H))
   hdf5_hamiltonian_real[:,:,1] = real(H);
   hdf5_hamiltonian_imag[:,:,1] = imag(H);
   if (DFTcommon.colinear_type == spin_type )
@@ -295,6 +335,7 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
     hdf5_hamiltonian_real[:,:,2] = real(H);
     hdf5_hamiltonian_imag[:,:,2] = imag(H);
   end
+  =#
   flush(fid_hdf);
   close(fid_hdf);
   #fid_hdf = h5open(hdf_cache_name,"r");
@@ -334,11 +375,22 @@ function cacheread(cache_index=1)
   global eigenstate_list;
   return eigenstate_list[cache_index]
 end
+function cacheread_kpoint2q_index(k_point::k_point_Tuple,cache_index=1)
+  global eigenstate_list;
+  k_point_int = k_point_float2int(kPoint2BrillouinZone_Tuple(k_point));
+  q_index = -1;
+  if (haskey(eigenstate_list[cache_index].q_points_intdic, k_point_int))
+    q_index =  eigenstate_list[cache_index].q_points_intdic[k_point_int];
+  else
+    error(string("cacheread_eigenstate ",k_point," Not Found Exception"))
+  end
+  return q_index;
+end
 function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
   global eigenstate_list;
   global orbital_mask1,orbital_mask2,orbital_mask_on
 
-  k_point_int = k_point_float2int(kPoint2BrillouinZone_Tuple(k_point));
+  #k_point_int = k_point_float2int(kPoint2BrillouinZone_Tuple(k_point));
 
   # non spin :
   # collinear spin :
@@ -346,7 +398,7 @@ function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
   # * spin = 2 up spin
   # non-collienar spin :
   spin_type = eigenstate_list[cache_index].spin_type
-  q_index = -1;
+  q_index = cacheread_kpoint2q_index(k_point,cache_index);
   TotalOrbitalNum = eigenstate_list[cache_index].TotalOrbitalNum;
   TotalOrbitalNum2 = TotalOrbitalNum
   if (DFTcommon.non_colinear_type == spin_type)
@@ -355,11 +407,6 @@ function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
   Eigenstate = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
   Eigenvalues = zeros(Float_my,TotalOrbitalNum2);
 
-  if (haskey(eigenstate_list[cache_index].q_points_intdic, k_point_int))
-    q_index =  eigenstate_list[cache_index].q_points_intdic[k_point_int];
-  else
-    error(string("cacheread_eigenstate ",k_point," Not Found Exception"))
-  end
   if (q_index>=1)
     if (DFTcommon.para_type == spin_type)
         Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,:,1,q_index] +
@@ -376,26 +423,47 @@ function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
     end
   end
 
-  return Kpoint_eigenstate(Eigenstate,Eigenvalues,k_point);
+  return Kpoint_eigenstate_only(Eigenstate,Eigenvalues,k_point);
 end
-function cacheread_Hamiltonian(spin=1,cache_index=1)
+function cacheread_Hamiltonian(k_point::k_point_Tuple,spin=1,cache_index=1)
   global eigenstate_list;
+
+  # non spin :
+  # collinear spin :
+  # * spin = 1 down spin
+  # * spin = 2 up spin
+  # non-collienar spin :
+  spin_type = eigenstate_list[cache_index].spin_type
+  q_index = cacheread_kpoint2q_index(k_point,cache_index);
   TotalOrbitalNum = eigenstate_list[cache_index].TotalOrbitalNum;
   TotalOrbitalNum2 = TotalOrbitalNum
-  spin_type =  eigenstate_list[cache_index].spin_type;
   if (DFTcommon.non_colinear_type == spin_type)
     TotalOrbitalNum2 = 2*TotalOrbitalNum;
   end
-  Hamiltonian = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
-  Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,spin] +
-    im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,spin]
 
+  Hamiltonian = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
+
+  if (q_index>=1)
+    if (DFTcommon.para_type == spin_type)
+      Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,1,q_index] +
+      im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,1,q_index];
+
+    elseif (DFTcommon.colinear_type == spin_type)
+      Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,spin,q_index] +
+      im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,spin,q_index];
+
+    elseif (DFTcommon.non_colinear_type == spin_type)
+      Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,1,q_index] +
+      im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,1,q_index];
+
+    end
+  end
   return Hamiltonian;
 end
 function cacheread_atomsOrbital_lists(cache_index=1)
   global eigenstate_list;
-  return (eigenstate_list[cache_index].dftresult.orbitalStartIdx,
-  eigenstate_list[cache_index].dftresult.orbitalNums)
+  return (eigenstate_list[cache_index].dftresult.basisTransform_result.orbitalStartIdx_list,
+  eigenstate_list[cache_index].dftresult.basisTransform_result.orbitalNums)
 end
 function cacheread_lampup(q_point_list::Array{k_point_Tuple},cache_index=1)
   for q_point in q_point_list

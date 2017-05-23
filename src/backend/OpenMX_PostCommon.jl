@@ -5,6 +5,7 @@ using HDF5
 export update_co_linear_Energy,cal_noncolinear_eigenstate
 export test_SmallHks
 export colinear_Hamiltonian,noncolinear_Hamiltonian
+export cal_colinear_raw_Hamiltonian
 const OLP_eigen_cut = 1.0e-10;
 using DFTcommon
 include("OpenMX_read_scf.jl")
@@ -67,73 +68,86 @@ function Overlap_Band!(OLP::Overlap_type,
     end
     #end
 end
+function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamiltonian_info_type,spin_list=1)
+  scf_r = hamiltonian_info.scf_r;
+  ## Overlapmaxitrx S
 
-function test_SmallHks(atom1::Int,atom2::Int,scf_r::Openmxscf)
-  Number_ChoosenAtom = 2;
-  ChoosenAtom_list = [atom1,atom2];
-
-  atom1_orbitalNum = scf_r.Total_NumOrbs[atom1];
-  atom2_orbitalNum = scf_r.Total_NumOrbs[atom2];
-  small_orbitalNum = atom1_orbitalNum + atom2_orbitalNum;
-
-  SmallHks = Array(Array{Float_my,2},scf_r.SpinP_switch+1);
-  for ii = 1:scf_r.SpinP_switch+1
-      SmallHks[ii] = zeros(Float_my,small_orbitalNum,small_orbitalNum)
-  end
-  # MP
-  MP = zeros(Int32,2,) # Orbital index for chosen two atom used inside J cal only
-  MP[1] = 0;
-  MP[2] = scf_r.Total_NumOrbs[atom1];
-  # MPF
-  MPF = zeros(Int32,scf_r.atomnum)
-  orbitalStartIdx = 0; #각 atom별로 orbital index시작하는 지점
+  TotalOrbitalNum = sum(scf_r.Total_NumOrbs[:]);
+  S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
+  orbitalStartIdx_list = zeros(Int,scf_r.atomnum)
+  orbitalNums = copy(scf_r.Total_NumOrbs);
+  #MPF = Array(Int,scf_r.atomnum)
+  orbitalStartIdx = 0
   for i = 1:scf_r.atomnum
-      MPF[i] = orbitalStartIdx;
-      orbitalStartIdx += scf_r.Total_NumOrbs[i]
+      orbitalStartIdx_list[i] = orbitalStartIdx;
+      orbitalStartIdx += orbitalNums[i]
   end
 
-  atom1_MPF = MPF[atom1];
-  atom2_MPF = MPF[atom2];
+  Overlap_Band!(scf_r.OLP,S,orbitalStartIdx_list,k_point[1],k_point[2],k_point[3],scf_r);
+  # S rotation  & Merge
+  if hamiltonian_info.basisTransform_rule.orbital_rot_on
+    S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+  end
 
-  ####################################
-  # Get SmallHks
-  ####################################
-  # AN (atom number)
-  ## Hamiltonian and overlap for selected two atoms
-  #tic()
-  for spin = 1:scf_r.SpinP_switch+1
-      for atom1_i = 1:Number_ChoosenAtom
-          atom1_orbitalStartidx = MP[atom1_i]
-          ct_AN = ChoosenAtom_list[atom1_i];
-          TNO1 = scf_r.Total_NumOrbs[ct_AN]
+  S2 = copy(S);
+  S_eigvals = zeros(Float_my, TotalOrbitalNum);
+  eigfact_hermitian(S2,S_eigvals);
+  if (!check_eigmat(S,S2,S_eigvals))
+    println("S :",k_point)
+  end
 
-          for atom2_i = 1:Number_ChoosenAtom
-              atom2_orbitalStartidx = MP[atom2_i];
-              for h_AN = 1:scf_r.FNAN[ct_AN]+1
-                  Gh_AN = scf_r.natn[ct_AN][h_AN];
-              #println("Spin ",spin," ct_AN ",ct_AN," Gh_An ", Gh_AN)
-                  TNO2 = scf_r.Total_NumOrbs[Gh_AN];
-                  if ((Gh_AN == ChoosenAtom_list[atom2_i])
-                      && (0==scf_r.ncn[ct_AN][h_AN]))
-                      for ii = 1:TNO1
-                          #for jj = 1:TNO2
-                          #    SmallHks[spin][atom1_orbitalStartidx + ii, atom2_orbitalStartidx + jj] =
-                          #scf_r.Hks[spin][ct_AN][h_AN][ii][jj];
-                          SmallHks[spin][atom1_orbitalStartidx + ii, atom2_orbitalStartidx + (1:TNO2)] =
-                          scf_r.Hks[spin][ct_AN][h_AN][ii][1:TNO2];
+  M1 = zeros(size(S_eigvals));
+  M1[S_eigvals.>OLP_eigen_cut] = 1.0 ./sqrt.(S_eigvals[S_eigvals.>OLP_eigen_cut]);
 
-                          #end
-                      end
-                  end
-              end
-          end
+  ## Coes
+
+  #H_temp = Array(Array{Complex_my,2},scf_r.SpinP_switch+1);
+  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(0);
+  for spin=spin_list #scf_r.SpinP_switch+1
+      Coes = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
+      H = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
+      Overlap_Band!(scf_r.Hks[spin],H,orbitalStartIdx_list,k_point[1],k_point[2],k_point[3],scf_r);
+      # H rotation & Merge
+      if hamiltonian_info.basisTransform_rule.orbital_rot_on
+        H = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+        #println( sum(abs(H2-H)) )
       end
-      #SmallHks[spin] = scf_r.Hks[spin][atom1_i][atom2]
+      # C = M1 S2^t H S2 M1
+      # C = M1 U^t H U M1
+      #H_temp[spin] = H;
+      C::Array{Complex_my,2} = H*S2;
+      for jj = 1:TotalOrbitalNum
+          C[:,jj]*= M1[jj];
+      end
+      C2::Array{Complex_my,2} = (S2'*C); #check if conj(S2) is needed
+      for ii = 1:TotalOrbitalNum
+          C2[ii,:]*= M1[ii];
+      end
+
+      C3 = copy(C2);
+      ko = zeros(TotalOrbitalNum);
+
+      eigfact_hermitian(C3,ko);
+      if (!check_eigmat(C2,C3,ko))
+          println("C2 : ",k_point,"\tspin: ",spin)
+      end
+      #
+      Coes = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
+      S3 = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
+      for ii=1:TotalOrbitalNum
+          S3[:,ii] = S2[:,ii] * M1[ii];
+      end
+      Coes = S3*C3;
+      #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,ko,k_point,H);
+      kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,ko,k_point,H);
+      push!(kpoint_eigenstate_list,kpoint_common);
   end
-  return SmallHks;
+
+  return kpoint_eigenstate_list;
 end
 
-function cal_colinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf,spin_list=1)
+## Reference implimentation wihtout orbital rot & merge
+function cal_colinear_eigenstate_deprecated(k_point::k_point_Tuple,scf_r::Openmxscf,spin_list=1)
 
   ## Overlapmaxitrx S
   TotalOrbitalNum = sum(scf_r.Total_NumOrbs[:]);
@@ -152,7 +166,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf,spin_li
   S_eigvals = zeros(Float_my, TotalOrbitalNum);
   eigfact_hermitian(S2,S_eigvals);
   if (!check_eigmat(S,S2,S_eigvals))
-          println("S :",k_point)
+    println("S :",k_point)
   end
 
   M1 = zeros(size(S_eigvals));
@@ -161,7 +175,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf,spin_li
   ## Coes
 
   #H_temp = Array(Array{Complex_my,2},scf_r.SpinP_switch+1);
-  kpoint_eigenstate_list =  Array{Kpoint_eigenstate,1}();
+  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(0);
   for spin=spin_list #scf_r.SpinP_switch+1
       Coes = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
       H = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
@@ -191,13 +205,15 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,scf_r::Openmxscf,spin_li
           S3[:,ii] = S2[:,ii] * M1[ii];
       end
       Coes = S3*C3;
-      kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,ko,k_point);
+      #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,ko,k_point,H);
+      kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,ko,k_point,H);
       push!(kpoint_eigenstate_list,kpoint_common);
   end
   return kpoint_eigenstate_list;
 end
+function colinear_Hamiltonian(k_point::k_point_Tuple,spin::Int,scf_r::Openmxscf)
+  #return colinear_Hamiltonian((0.0,0.0,0.0),spin,scf_r);
 
-function colinear_Hamiltonian(spin::Int,scf_r::Openmxscf)
   TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
   MPF = zeros(Int,scf_r.atomnum)
   #MPF = Array(Int,scf_r.atomnum)
@@ -207,7 +223,7 @@ function colinear_Hamiltonian(spin::Int,scf_r::Openmxscf)
       orbitalStartIdx += scf_r.Total_NumOrbs[i]
   end
   Hout = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
-  Overlap_Band!(scf_r.Hks[spin],Hout,MPF,0.0,0.0,0.0,scf_r)
+  Overlap_Band!(scf_r.Hks[spin],Hout,MPF,k_point[1],k_point[2],k_point[3],scf_r)
   return Hout;
 end
 

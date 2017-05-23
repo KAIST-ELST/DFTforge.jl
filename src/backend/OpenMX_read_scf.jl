@@ -82,8 +82,8 @@ macro read_Hamil(mat,spin,atomnum)
 end
 
 
-H_type = Array{Array{Array{Array{Array{Float64,},},},1},1};
-Overlap_type =  Array{Array{Array{Array{Float64,},},},1};
+H_type = Array{Array{Array{Array{Array{Float64}}}}};
+Overlap_type =  Array{Array{Array{Array{Float64}}}};
 
 
 
@@ -100,8 +100,8 @@ immutable Openmxscf
     Total_NumOrbs::Array{Int32,1}
     FNAN::Array{Int32,1}
 
-    natn::Array{Array{Int32,},1}
-    ncn::Array{Array{Int32,},1}
+    natn::Array{Array{Int32},1}
+    ncn::Array{Array{Int32},1}
 
     tv::Array{Float64,2}
     rv::Array{Float64,2}

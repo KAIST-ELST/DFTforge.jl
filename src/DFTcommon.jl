@@ -3,8 +3,9 @@ using ArgParse
 using ProgressMeter
 import TOML # Pkg.clone("https://github.com/wildart/TOML.jl.git")
 
-export Kpoint_eigenstate,Complex_my,Float_my,k_point_Tuple,k_point_int_Tuple
-export Hamiltonian_type
+export Kpoint_eigenstate,Kpoint_eigenstate_only
+export Complex_my,Float_my,k_point_Tuple,k_point_int_Tuple
+export Hamiltonian_type,Hamiltonian_info_type
 export k_point_int2float,k_point_float2int,kPoint2BrillouinZone_Tuple,
        kPoint2BrillouinZone_int_Tuple,q_k_unique_points
 export kPoint_gen_EquallySpaced,kPoint_gen_GammaCenter
@@ -51,13 +52,50 @@ k_point_rational_Tuple = Tuple{Rational{Int64},Rational{Int64},Rational{Int64}};
 include("basisTransform.jl")
 include("inputHandler.jl")
 
-
+Hamiltonian_type = Array{Complex_my,2};
+type Kpoint_eigenstate_only
+    Eigenstate::Array{Complex_my,2};
+    Eigenvalues::Array{Float_my,1};
+    k_point_int::k_point_Tuple;
+    #Hamiltonian::Hamiltonian_type;
+end
 type Kpoint_eigenstate
     Eigenstate::Array{Complex_my,2};
     Eigenvalues::Array{Float_my,1};
     k_point_int::k_point_Tuple;
+    Hamiltonian::Hamiltonian_type;
 end
-Hamiltonian_type = Array{Complex_my,2};
+type Hamiltonian_info_type
+  scf_r;
+  dfttype::DFTcommon.DFTtype
+  spin_type::SPINtype
+  #atomnum_eff::Int
+  #orbitalNums_eff::Array{Int}
+  #orbital_index_map::Dict{Int,Dict{Int,Int}};
+  basisTransform_result::basisTransform_result_type
+
+  basisTransform_rule::basisTransform_rule_type
+  function Hamiltonian_info_type(scf_r,dfttype::DFTtype,spin_type::SPINtype)
+    atomnum::Int = copy(scf_r.atomnum);
+    orbitalNums::Array{Int} = copy(scf_r.Total_NumOrbs);
+    basisTransform_rule = basisTransform_rule_type()
+    basisTransform_result = basisTransform_init(atomnum,orbitalNums,basisTransform_rule)
+    new(scf_r,dfttype,spin_type,
+    basisTransform_result,basisTransform_rule);
+  end
+
+  function Hamiltonian_info_type(scf_r,dfttype::DFTtype,spin_type::SPINtype,
+    basisTransform_rule::basisTransform_rule_type)
+    atomnum::Int = copy(scf_r.atomnum);
+    orbitalNums::Array{Int} = copy(scf_r.Total_NumOrbs);
+    basisTransform_result = basisTransform_init(atomnum,orbitalNums,basisTransform_rule)
+    new(scf_r,dfttype,spin_type,
+    basisTransform_result,basisTransform_rule);
+  end
+end
+
+
+
 
 
 function k_point_int2float(k_point_int::k_point_int_Tuple)
@@ -153,15 +191,15 @@ end
 
 function orbital_mask_inv(orbital_mask1,atom1_orbitalNum,)
   orbital_mask1_inv = Array{Int64,1}();
-  if(nomask == orbital_mask_option)
-      if( 0 < length(orbital_mask1))
+  if (nomask == orbital_mask_option)
+      if ( 0 < length(orbital_mask1))
           println("INFO: Orbital masking options only works with --ommode 1 or 2")
       end
       orbital_mask1 = Array{Int64,1}();
       orbital_mask_name = "";
   else
       orbital_mask_on = true;
-      if(unmask ==  orbital_mask_option) # inverse selection
+      if (unmask ==  orbital_mask_option) # inverse selection
 
           orbital_mask1_tmp = collect(1:atom1_orbitalNum);
 
@@ -174,7 +212,7 @@ function orbital_mask_inv(orbital_mask1,atom1_orbitalNum,)
       end
       ## orbital_mask1_inv are only used for file saving
       for orbit1 = 1:atom1_orbitalNum
-          if(0==length(find( orbital_mask1.== orbit1)))
+          if (0==length(find( orbital_mask1.== orbit1)))
               push!(orbital_mask1_inv,orbit1);
           end
       end
