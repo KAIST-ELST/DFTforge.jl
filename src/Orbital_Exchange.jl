@@ -3,7 +3,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-X_VERSION = VersionNumber("0.2.0-dev+20170503");
+X_VERSION = VersionNumber("0.4.0-dev+20170515");
 if 1 == myid()
   println(" X_VERSION: ",X_VERSION)
 end
@@ -78,9 +78,11 @@ Wannier90_type = arg_input.Wannier90_type
 
 println(DFTcommon.bar_string) # print ====...====
 println(atom12_list)
+println("q_point_num ",q_point_num, "\tk_point_num ",k_point_num)
 println(string("DFT_type ",DFT_type))
 println(string("orbital_mask_option ",orbital_mask_option))
 println("mask1list ",orbital_mask1_list,"\tmask2list ",orbital_mask2_list)
+
 
 ## 1.4 Set caluations type and ouput folder
 cal_type = "jq.orbital" # xq, ...
@@ -319,6 +321,8 @@ end
         V1_up[i,i] -= Hks_up[atom1_orbitals[l1],atom1_orbitals[l1]]
         V1_down[i,i] -= Hks_down[atom1_orbitals[l1],atom1_orbitals[l1]]
       end
+      V1_up *= 0.5;
+      V1_down *= 0.5;
 
       V2_up   = Hks_up[atom2_orbitals,atom2_orbitals]
       V2_down = Hks_down[atom2_orbitals,atom2_orbitals]
@@ -326,7 +330,8 @@ end
         V2_up[i,i] -= Hks_up[atom2_orbitals[l3],atom2_orbitals[l3]]
         V2_down[i,i] -= Hks_down[atom2_orbitals[l3],atom2_orbitals[l3]]
       end
-
+      V2_up *= 0.5;
+      V2_down *= 0.5;
 
       atom1_orbitals_rel = 1:orbitalNums[atom1];
       atom2_orbitals_rel = 1:orbitalNums[atom2];
@@ -345,8 +350,8 @@ end
       Vi_Vj_up = transpose(VV1_up).*VV2_up;
       Vi_Vj_down = transpose(VV1_down).*VV2_down;
 
-      J_ij_up =  1.0./(-Enk_Emkq_up).*dFnk_Fmkq_up .* Vi_Vj_up ;
-      J_ij_down =  1.0./(-Enk_Emkq_down).*dFnk_Fmkq_down .* Vi_Vj_down ;
+      J_ij_up =  0.5./(-Enk_Emkq_up).*dFnk_Fmkq_up .* Vi_Vj_up ;
+      J_ij_down =  0.5./(-Enk_Emkq_down).*dFnk_Fmkq_down .* Vi_Vj_down ;
 
       #return sum(J_ij[:])*Hartree2cm;
       #return sum(J_ij[!isnan(J_ij)] )*Hartree2cm;
@@ -372,6 +377,10 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
     println(DFTcommon.bar_string) # print ====...====
     println(orbital_mask_name," mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2)
 
+    if !(1==length(orbital_mask1) && 1==length(orbital_mask2))
+      println(" Skiping: number of each masks should be 1 ")
+      continue;
+    end
     # setup extra info
     DFTforge.pwork(init_orbital_mask,orbital_mask_input)
     DFTforge.pwork(init_variables,ChemP_delta_ev)
