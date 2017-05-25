@@ -3,7 +3,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-X_VERSION = VersionNumber("0.3.0-dev+20170518");
+X_VERSION = VersionNumber("0.4.0-dev+20170525");
 println(" X_VERSION: ",X_VERSION)
 
 @everywhere import DFTforge
@@ -16,6 +16,7 @@ println(" X_VERSION: ",X_VERSION)
 ## 1.3 Set values from intput (arg_input)
 ## 1.4 Set caluations type and ouput folder
 ##############################################################################
+
 hdftmpdir = ""
 ## 1.1 Set Default values
 #orbital_mask1 = Array{Int64,1}();
@@ -180,7 +181,7 @@ end
 ## 4.1 Do K,Q sum
 ## 4.2 reduce K,Q to Q space
 ##############################################################################
-
+## %%
 ## 4. Magnetic exchange function define
 @everywhere function Magnetic_Exchange_J_colinear(input::Job_input_kq_atom_list_Type)
   global orbital_mask1,orbital_mask2,orbital_mask_on
@@ -195,7 +196,7 @@ end
   spin_type::DFTforge.SPINtype = input.spin_type;
 
   atom12_list::Vector{Tuple{Int64,Int64}} = input.atom12_list;
-  result_mat = zeros(Complex_my,4,length(atom12_list))
+  result_mat = zeros(Complex_my,5,length(atom12_list))
   #atom1::Int = input.atom1;
   #atom2::Int = input.atom2;
 
@@ -233,8 +234,8 @@ end
   Hks_q_up::Hamiltonian_type  = cacheread_Hamiltonian(q_point,1,cache_index)
   Hks_q_down::Hamiltonian_type = cacheread_Hamiltonian(q_point,2,cache_index)
 
-  Hks_q_n_up::Hamiltonian_type  = cacheread_Hamiltonian(q_point,1,cache_index)
-  Hks_q_n_down::Hamiltonian_type = cacheread_Hamiltonian(q_point,2,cache_index)
+  Hks_q_n_up::Hamiltonian_type  = cacheread_Hamiltonian(q_n_point,1,cache_index)
+  Hks_q_n_down::Hamiltonian_type = cacheread_Hamiltonian(q_n_point,2,cache_index)
 
 # #=
   Hks_k_up::Hamiltonian_type  = cacheread_Hamiltonian(k_point,1,cache_index)
@@ -356,9 +357,9 @@ end
         Es_n_k_down_atom2[atom2_orbitals,:];
 
 
-    VV1_down_up = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_kq *
+    VV1_down_up = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_q *
             Es_m_kq_up_atom1[atom1_orbitals,:];
-    VV2_up_down = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_k *
+    VV2_up_down = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_q_n*
         Es_n_k_down_atom2[atom2_orbitals,:];
 
     VV1_up_down = Es_n_k_up_atom1[atom1_orbitals,:]' * V1_kq *
@@ -370,22 +371,43 @@ end
     Vi_Vj_down_up_up_down = transpose(VV1_down_up).*VV2_up_down;
     Vi_Vj_up_down_down_up = transpose(VV1_up_down).*VV2_down_up;
 
+    # for testing
+    VV1_down_up2 = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_k *
+            Es_m_kq_up_atom1[atom1_orbitals,:];
+    VV2_up_down2 = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_kq *
+        Es_n_k_down_atom2[atom2_orbitals,:];
+
+    VV1_up_down2 = Es_n_k_up_atom1[atom1_orbitals,:]' * V1_k *
+            Es_m_kq_down_atom1[atom1_orbitals,:];
+    VV2_down_up2 = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_kq *
+        Es_n_k_up_atom2[atom2_orbitals,:];
+
+    Vi_Vj_down_up_up_down2 = transpose(VV1_down_up2).*VV2_up_down2;
+    Vi_Vj_up_down_down_up2 = transpose(VV1_up_down2).*VV2_down_up2;
+
     J_ij_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
-    J_ij_1 =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down ;
-    J_ij_2 =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up ;
+    J_ij_2 =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down ;
+    J_ij_3 =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up ;
+
+    J_ij_4 =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down2 ;
+    J_ij_5 =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up2 ;
 
     #return sum(J_ij[:])*Hartree2cm;
     #return sum(J_ij[!isnan(J_ij)] )*Hartree2cm;
 
     result_mat[1,atom12_i] = sum(J_ij_G[!isnan(J_ij_G)] );
-    result_mat[2,atom12_i] = sum(J_ij_1[!isnan(J_ij_1)] ) + sum(J_ij_2[!isnan(J_ij_2)] );
-    result_mat[3,atom12_i] = sum(J_ij_1[!isnan(J_ij_1)] );
-    result_mat[4,atom12_i] = sum(J_ij_2[!isnan(J_ij_2)] );
+    #result_mat[2,atom12_i] = sum(J_ij_1[!isnan(J_ij_1)] ) + sum(J_ij_2[!isnan(J_ij_2)] );
+    result_mat[2,atom12_i] = sum(J_ij_2[!isnan(J_ij_2)] );
+    result_mat[3,atom12_i] = sum(J_ij_3[!isnan(J_ij_3)] );
+    result_mat[4,atom12_i] = sum(J_ij_4[!isnan(J_ij_4)] );
+    result_mat[5,atom12_i] = sum(J_ij_5[!isnan(J_ij_5)] );
   end
   return result_mat
+
 end
 
-num_return = 4;
+
+num_return = 5;
 
 ## 4.1 Do K,Q sum
 # for orbital_mask1_list,orbital_mask2_list combinations

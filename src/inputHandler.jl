@@ -110,12 +110,30 @@ function parse_Kpath(kPoint_toml,kPoint_step_num)
   end
   return K_point_groups;
 end
+
 function parse_TOML(toml_file,input::Arg_Inputs)
+
   if (isfile(toml_file))
     toml_inputs = TOML.parse(readstring(input.TOMLinput))
+    println(" TOML file: ",input.TOMLinput)
     #println(toml_inputs)
     if (haskey(toml_inputs,"result_file"))
-      input.result_file = toml_inputs["result_file"]
+      result_file =  toml_inputs["result_file"]
+      println(result_file) # TODO: remove it
+      if !isfile(result_file)
+        toml_dir =  dirname(input.TOMLinput)
+        if isfile(joinpath(toml_dir,result_file))
+          result_file = joinpath(toml_dir,result_file)
+        elseif isfile(joinpath(pwd(),result_file))
+          result_file = joinpath(pwd(),result_file)
+        else
+
+        end
+      end
+      if isfile(result_file)
+        input.result_file = result_file
+      end
+
     end
     if (haskey(toml_inputs,"DFTtype"))
       DFT_type::AbstractString = toml_inputs["DFTtype"]
@@ -185,7 +203,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
     if (haskey(toml_inputs,"orbitals"))
       #println(toml_inputs["orbitals"])
       if (haskey(toml_inputs["orbitals"],"orbitalselection"))
-        if ("on" == lowercase(toml_inputs["orbitals"]["orbitalselection"]))
+        if (toml_inputs["orbitals"]["orbitalselection"])
           input.orbital_mask_option = unmask
           #input.orbital_mask_name = "masked"
           if (haskey(toml_inputs["orbitals"],"orbital_mask_option"))
@@ -377,9 +395,15 @@ function parse_input(args,input::Arg_Inputs)
         if (key == "result_file")
             if (typeof(val) <:AbstractString)
               #if (isfile(val) && ".scfout" == splitext(val)[2])
-                  input.result_file  = val;
-                  #println("scf file:$scf_name")
-              #end
+              result_file = val;
+              if !isfile(result_file)
+                if isfile(joinpath(pwd(),result_file))
+                  result_file = joinpath(pwd(),result_file)
+                end
+              end
+              if isfile(result_file)
+                input.result_file  = val;
+              end
             end
         end
         if (key == "DFTtype" && typeof(val) <: AbstractString)
@@ -504,7 +528,11 @@ function input_checker(input::Arg_Inputs)
   if (""==input.result_file)
     # no result file
     println(" NO RESULT FILE SPECIFIED. TRY -h OPTION FOR HELP.")
-    exit(1);
+    exit_programe = true;
+    #exit(1);
+  end
+  if !isfile(input.result_file )
+    println(" result file is not found ", input.result_file );
   end
   if (DFTcommon.OpenMX == input.DFT_type)
   elseif (DFTcommon.Wannier90 == input.DFT_type)
@@ -546,6 +574,7 @@ function input_checker(input::Arg_Inputs)
   end
 
   if exit_programe
+    sleep(2);
     println(DFTcommon.bar_string) # print ====...====
     println(" Exiting programe. Please set informations" )
     println(DFTcommon.bar_string) # print ====...====
