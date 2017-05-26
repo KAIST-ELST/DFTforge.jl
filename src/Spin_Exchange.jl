@@ -3,7 +3,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-X_VERSION = VersionNumber("0.4.0-dev+20170525");
+X_VERSION = VersionNumber("0.4.1-dev+20170526");
 println(" X_VERSION: ",X_VERSION)
 
 @everywhere import DFTforge
@@ -220,22 +220,20 @@ end
   eigenstate_kq_down::Kpoint_eigenstate_only = cacheread_eigenstate(kq_point,2,cache_index)
 
   # Get Hamiltonian
-  #Hks_kq_up::Hamiltonian_type  = cacheread_Hamiltonian((0.0,0.0,0.0),1,cache_index)
-  #Hks_k_down::Hamiltonian_type = cacheread_Hamiltonian((0.0,0.0,0.0),2,cache_index)
-
   Hks_G_up::Hamiltonian_type  = cacheread_Hamiltonian((0.0,0.0,0.0),1,cache_index)
   #Hks_G_up::Hamiltonian_type  = cacheread_Hamiltonian((0.0,0.0,0.0),1,cache_index)
   Hks_G_down::Hamiltonian_type = cacheread_Hamiltonian((0.0,0.0,0.0),2,cache_index)
   #Hks_G_down::Hamiltonian_type = cacheread_Hamiltonian((0.0,0.0,0.0),2,cache_index)
-
+#=
   q_point = (kq_point[1]-k_point[1],kq_point[2]-k_point[2],kq_point[3]-k_point[3])
-  q_n_point = (-kq_point[1]+k_point[1],-kq_point[2]+k_point[2],-kq_point[3]+k_point[3])
+  qn_point = (-kq_point[1]+k_point[1],-kq_point[2]+k_point[2],-kq_point[3]+k_point[3])
 
   Hks_q_up::Hamiltonian_type  = cacheread_Hamiltonian(q_point,1,cache_index)
   Hks_q_down::Hamiltonian_type = cacheread_Hamiltonian(q_point,2,cache_index)
 
-  Hks_q_n_up::Hamiltonian_type  = cacheread_Hamiltonian(q_n_point,1,cache_index)
-  Hks_q_n_down::Hamiltonian_type = cacheread_Hamiltonian(q_n_point,2,cache_index)
+  Hks_qn_up::Hamiltonian_type  = cacheread_Hamiltonian(qn_point,1,cache_index)
+  Hks_qn_down::Hamiltonian_type = cacheread_Hamiltonian(qn_point,2,cache_index)
+=#
 
 # #=
   Hks_k_up::Hamiltonian_type  = cacheread_Hamiltonian(k_point,1,cache_index)
@@ -314,93 +312,68 @@ end
       En_k_up[:]*ones(1,TotalOrbitalNum2) - ones(TotalOrbitalNum2,1)*Em_kq_down[:]' ;
     #Enk_Emkq += im*0.001;
 
+    V1_G = 0.5*(Hks_G_up[atom1_orbitals,atom1_orbitals] - Hks_G_down[atom1_orbitals,atom1_orbitals]);
+    V2_G = 0.5*(Hks_G_up[atom2_orbitals,atom2_orbitals] - Hks_G_down[atom2_orbitals,atom2_orbitals]);
 #=
-    V1_down_up = Hks_kq_up[atom1_orbitals,atom1_orbitals] - Hks_k_down[atom1_orbitals,atom1_orbitals];
-    V2_up_down = Hks_k_down[atom2_orbitals,atom2_orbitals] - Hks_kq_up[atom2_orbitals,atom2_orbitals];
-
-    V1_down_up *= 0.5;
-    V2_up_down *= 0.5;
-
-    V1_up_down   = Hks_kq_down[atom1_orbitals,atom1_orbitals] - Hks_k_up[atom1_orbitals,atom1_orbitals];
-    V2_down_up = Hks_k_up[atom2_orbitals,atom2_orbitals] - Hks_kq_down[atom2_orbitals,atom2_orbitals];
-
-    V1_up_down *= 0.5;
-    V2_down_up *= 0.5;
-=#
-    V1_G = Hks_G_up[atom1_orbitals,atom1_orbitals] - Hks_G_down[atom1_orbitals,atom1_orbitals];
-    V2_G = Hks_G_up[atom2_orbitals,atom2_orbitals] - Hks_G_down[atom2_orbitals,atom2_orbitals];
-    V1_G *= 0.5;
-    V2_G *= 0.5;
-
     V1_q = 0.5*(Hks_q_up[atom1_orbitals,atom1_orbitals]-Hks_q_down[atom1_orbitals,atom1_orbitals])
     V2_q = 0.5*(Hks_q_up[atom2_orbitals,atom2_orbitals]-Hks_q_down[atom2_orbitals,atom2_orbitals])
 
-    V1_q_n = 0.5*(Hks_q_n_up[atom1_orbitals,atom1_orbitals]-Hks_q_n_down[atom1_orbitals,atom1_orbitals])
-    V2_q_n = 0.5*(Hks_q_n_up[atom2_orbitals,atom2_orbitals]-Hks_q_n_down[atom2_orbitals,atom2_orbitals])
 
+    V1_qn = 0.5*(Hks_qn_up[atom1_orbitals,atom1_orbitals]-Hks_qn_down[atom1_orbitals,atom1_orbitals])
+    V2_qn = 0.5*(Hks_qn_up[atom2_orbitals,atom2_orbitals]-Hks_qn_down[atom2_orbitals,atom2_orbitals])
+=#
 
     V1_k = 0.5*(Hks_k_up[atom1_orbitals,atom1_orbitals] - Hks_k_down[atom1_orbitals,atom1_orbitals]);
     V2_kq = 0.5*(Hks_kq_up[atom2_orbitals,atom2_orbitals] - Hks_kq_down[atom2_orbitals,atom2_orbitals]);
 
     V1_kq = 0.5*(Hks_kq_up[atom1_orbitals,atom1_orbitals] - Hks_kq_down[atom1_orbitals,atom1_orbitals]);
     V2_k = 0.5*(Hks_k_up[atom2_orbitals,atom2_orbitals] - Hks_k_down[atom2_orbitals,atom2_orbitals]);
-
+#=
     V1_kq_k = 0.5*(Hks_kq_up[atom1_orbitals,atom1_orbitals] - Hks_k_down[atom1_orbitals,atom1_orbitals]);
     V2_kq_k = 0.5*(Hks_kq_up[atom2_orbitals,atom2_orbitals] - Hks_k_down[atom2_orbitals,atom2_orbitals]);
+=#
     #atom1_orbitals_rel = 1:orbitalNums[atom1];
     #atom2_orbitals_rel = 1:orbitalNums[atom2];
     #atom2_orbitals_rel2 = orbitalNums[atom1]+atom2_orbitals_rel;
 
     VV1_down_up_G = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_G *
-            Es_m_kq_up_atom1[atom1_orbitals,:];
+        Es_m_kq_up_atom1[atom1_orbitals,:];
     VV2_up_down_G = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_G *
         Es_n_k_down_atom2[atom2_orbitals,:];
 
-
-    VV1_down_up = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_q *
-            Es_m_kq_up_atom1[atom1_orbitals,:];
-    VV2_up_down = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_q_n*
+#=
+    VV1_down_up_q = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_q  *
+        Es_m_kq_up_atom1[atom1_orbitals,:];
+    VV2_up_down_q = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_q *
         Es_n_k_down_atom2[atom2_orbitals,:];
-
-    VV1_up_down = Es_n_k_up_atom1[atom1_orbitals,:]' * V1_kq *
-            Es_m_kq_down_atom1[atom1_orbitals,:];
-    VV2_down_up = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_k *
-        Es_n_k_up_atom2[atom2_orbitals,:];
-
-    Vi_Vj_down_up_up_down_G = transpose(VV1_down_up_G).*VV2_up_down_G;
-    Vi_Vj_down_up_up_down = transpose(VV1_down_up).*VV2_up_down;
-    Vi_Vj_up_down_down_up = transpose(VV1_up_down).*VV2_down_up;
-
-    # for testing
+    VV2_up_down_qn = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_qn *
+        Es_n_k_down_atom2[atom2_orbitals,:];
+=#
     VV1_down_up2 = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_k *
-            Es_m_kq_up_atom1[atom1_orbitals,:];
+        Es_m_kq_up_atom1[atom1_orbitals,:];
     VV2_up_down2 = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_kq *
         Es_n_k_down_atom2[atom2_orbitals,:];
 
-    VV1_up_down2 = Es_n_k_up_atom1[atom1_orbitals,:]' * V1_k *
-            Es_m_kq_down_atom1[atom1_orbitals,:];
-    VV2_down_up2 = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_kq *
+    VV1_up_down_kq = Es_n_k_up_atom1[atom1_orbitals,:]' * V1_kq *
+        Es_m_kq_down_atom1[atom1_orbitals,:];
+    VV2_down_up_k = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_k *
         Es_n_k_up_atom2[atom2_orbitals,:];
 
-    Vi_Vj_down_up_up_down2 = transpose(VV1_down_up2).*VV2_up_down2;
-    Vi_Vj_up_down_down_up2 = transpose(VV1_up_down2).*VV2_down_up2;
+
+    Vi_Vj_down_up_up_down = transpose(VV1_down_up2).*VV2_up_down2;
+    Vi_Vj_up_down_down_up = transpose(VV1_up_down_kq).*VV2_down_up_k;
+    Vi_Vj_down_up_up_down_G = transpose(VV1_down_up_G).*VV2_up_down_G;
+    # for testing
 
     J_ij_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
-    J_ij_2 =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down ;
-    J_ij_3 =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up ;
+    J_ij_1_k_kq =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down ;
+    J_ij_2_kq_k =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up ;
 
-    J_ij_4 =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down2 ;
-    J_ij_5 =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up2 ;
-
-    #return sum(J_ij[:])*Hartree2cm;
-    #return sum(J_ij[!isnan(J_ij)] )*Hartree2cm;
-
-    result_mat[1,atom12_i] = sum(J_ij_G[!isnan(J_ij_G)] );
+    result_mat[1,atom12_i] = sum(J_ij_1_k_kq[!isnan(J_ij_1_k_kq)] );
     #result_mat[2,atom12_i] = sum(J_ij_1[!isnan(J_ij_1)] ) + sum(J_ij_2[!isnan(J_ij_2)] );
-    result_mat[2,atom12_i] = sum(J_ij_2[!isnan(J_ij_2)] );
-    result_mat[3,atom12_i] = sum(J_ij_3[!isnan(J_ij_3)] );
-    result_mat[4,atom12_i] = sum(J_ij_4[!isnan(J_ij_4)] );
-    result_mat[5,atom12_i] = sum(J_ij_5[!isnan(J_ij_5)] );
+    result_mat[2,atom12_i] = sum(J_ij_2_kq_k[!isnan(J_ij_2_kq_k)] );
+    result_mat[3,atom12_i] = sum(J_ij_G[!isnan(J_ij_G)] );
+
   end
   return result_mat
 
