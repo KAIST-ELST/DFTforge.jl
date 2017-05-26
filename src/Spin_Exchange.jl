@@ -3,7 +3,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-X_VERSION = VersionNumber("0.4.2-dev+20170526");
+X_VERSION = VersionNumber("0.5.0-dev+20170526");
 println(" X_VERSION: ",X_VERSION)
 
 @everywhere import DFTforge
