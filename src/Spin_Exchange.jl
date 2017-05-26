@@ -3,7 +3,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-X_VERSION = VersionNumber("0.4.1-dev+20170526");
+X_VERSION = VersionNumber("0.4.2-dev+20170526");
 println(" X_VERSION: ",X_VERSION)
 
 @everywhere import DFTforge
@@ -183,6 +183,8 @@ end
 ##############################################################################
 ## %%
 ## 4. Magnetic exchange function define
+num_return = 4; #local scope
+
 @everywhere function Magnetic_Exchange_J_colinear(input::Job_input_kq_atom_list_Type)
   global orbital_mask1,orbital_mask2,orbital_mask_on
   global ChemP_delta_ev
@@ -191,12 +193,13 @@ end
   ## Accessing Data Start
   ############################################################################
   # Common input info
+  num_return = 4;
   k_point::DFTforge.k_point_Tuple =  input.k_point
   kq_point::DFTforge.k_point_Tuple =  input.kq_point
   spin_type::DFTforge.SPINtype = input.spin_type;
 
   atom12_list::Vector{Tuple{Int64,Int64}} = input.atom12_list;
-  result_mat = zeros(Complex_my,5,length(atom12_list))
+  result_mat = zeros(Complex_my,num_return,length(atom12_list))
   #atom1::Int = input.atom1;
   #atom2::Int = input.atom2;
 
@@ -354,9 +357,9 @@ end
     VV2_up_down2 = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_kq *
         Es_n_k_down_atom2[atom2_orbitals,:];
 
-    VV1_up_down_kq = Es_n_k_up_atom1[atom1_orbitals,:]' * V1_kq *
+    VV1_up_down_kq = Es_n_k_up_atom1[atom1_orbitals,:]' * V1_k *
         Es_m_kq_down_atom1[atom1_orbitals,:];
-    VV2_down_up_k = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_k *
+    VV2_down_up_k = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_kq *
         Es_n_k_up_atom2[atom2_orbitals,:];
 
 
@@ -365,14 +368,17 @@ end
     Vi_Vj_down_up_up_down_G = transpose(VV1_down_up_G).*VV2_up_down_G;
     # for testing
 
-    J_ij_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
+
     J_ij_1_k_kq =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down ;
     J_ij_2_kq_k =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up ;
+    J_ij_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
 
     result_mat[1,atom12_i] = sum(J_ij_1_k_kq[!isnan(J_ij_1_k_kq)] );
     #result_mat[2,atom12_i] = sum(J_ij_1[!isnan(J_ij_1)] ) + sum(J_ij_2[!isnan(J_ij_2)] );
     result_mat[2,atom12_i] = sum(J_ij_2_kq_k[!isnan(J_ij_2_kq_k)] );
     result_mat[3,atom12_i] = sum(J_ij_G[!isnan(J_ij_G)] );
+
+    result_mat[4,atom12_i] = 0.5*(result_mat[1,atom12_i] + result_mat[2,atom12_i]);
 
   end
   return result_mat
@@ -380,7 +386,7 @@ end
 end
 
 
-num_return = 5;
+
 
 ## 4.1 Do K,Q sum
 # for orbital_mask1_list,orbital_mask2_list combinations
