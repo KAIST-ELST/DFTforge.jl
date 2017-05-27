@@ -231,7 +231,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       if (haskey(toml_inputs["orbital_reassign"],"orbital_rot_on"))
         orbital_rot_on = toml_inputs["orbital_reassign"]["orbital_rot_on"]
       end
-    
+
       if orbital_rot_on
         if (haskey(toml_inputs["orbital_reassign"],"d_orbital_rot"))
           #orbital_rot_d_dict = Dict{Int,orbital_rot_d_type}()
@@ -367,7 +367,7 @@ function parse_input(args,input::Arg_Inputs)
         help = "Chemical potential shift in eV(default 0.0 eV)"
         arg_type = Float64
         "--spintype","-s"
-        help = "Spin type [para,cospin,ncspin] "
+        help = "Spin type [para, co_spin, nc_spin] "
         "result_file"
         help = "Result file name ex:) nio.scfout (OpenMX scf), nio.HWR (OpenMX wannier)"
         required = false        # makes the argument mandatory

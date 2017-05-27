@@ -569,6 +569,9 @@ function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
   atom12_list::Vector{Tuple{Int64,Int64}},num_return=1,
   result_index=1,cache_index=1)
   batch_size = 2*nprocs();
+  if (20 > batch_size)
+    batch_size = 20;
+  end
   cnt = 1
   spin_type = get_dftdataset(result_index).spin_type;
 
