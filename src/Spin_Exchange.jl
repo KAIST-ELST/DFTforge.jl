@@ -291,8 +291,8 @@ num_return = 4; #local scope
       for orbit2 in orbital_mask2
           deleteat!(orbital_mask2_tmp, find(orbital_mask2_tmp.==orbit2))
       end
-      Es_m_kq_up_atom2[orbitalStartIdx_list[atom2]+orbital_mask2_tmp,:]   = 0.0;
-      Es_m_kq_down_atom2[orbitalStartIdx_list[atom2]+orbital_mask2_tmp,:]   = 0.0;
+      Es_n_k_up_atom2[orbitalStartIdx_list[atom2]+orbital_mask2_tmp,:]   = 0.0;
+      Es_n_k_down_atom2[orbitalStartIdx_list[atom2]+orbital_mask2_tmp,:]   = 0.0;
     end
 
     ## Do auctual calucations
