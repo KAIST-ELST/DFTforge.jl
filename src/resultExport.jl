@@ -8,6 +8,28 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
   jq_output_dir::AbstractString,cal_name::AbstractString,
   orbital_mask_name::AbstractString,
   cal_type::AbstractString)
+  export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
+      q_point_list,
+      k_point_list,atom12_list,
+      orbital_mask_on,
+      orbital_mask1,orbital_mask2,Array{Int}(0),Array{Int}(0),
+      ChemP_delta_ev,
+      optionalOutputDict,
+      jq_output_dir,cal_name,
+      orbital_mask_name,
+      cal_type)
+
+end
+function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
+  q_point_list::Array{k_point_Tuple},
+  k_point_list::Array{k_point_Tuple},atom12_list::Vector{Tuple{Int64,Int64}},
+  orbital_mask_on::Bool,
+  orbital_mask1,orbital_mask2,orbital_mask3,orbital_mask4,
+  ChemP_delta_ev::Float64,
+  optionalOutputDict::Dict{AbstractString,Any},
+  jq_output_dir::AbstractString,cal_name::AbstractString,
+  orbital_mask_name::AbstractString,
+  cal_type::AbstractString)
 
   scf_r = hamiltonian_info.scf_r;
 ## .1 Prepaire infomations for outout

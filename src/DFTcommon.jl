@@ -185,8 +185,25 @@ atom12_Tuple = Tuple{Int64,Int64};
 type orbital_mask_input_Type
     orbital_mask1::Array{Int64,1}
     orbital_mask2::Array{Int64,1}
+
+    orbital_mask3::Array{Int64,1}
+    orbital_mask4::Array{Int64,1}
     atom12::atom12_Tuple
     orbital_mask_on::Bool
+
+    function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},
+      atom12::atom12_Tuple,orbital_mask_on::Bool)
+
+      new(orbital_mask1,orbital_mask2,Array{Int64}(),Array{Int64}(),
+        atom12,orbital_mask_on)
+    end
+    function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},
+      orbital_mask3::Array{Int64,1}, orbital_mask4::Array{Int64,1},
+      atom12::atom12_Tuple,orbital_mask_on::Bool)
+
+      new(orbital_mask1,orbital_mask2,orbital_mask3,orbital_mask4,
+        atom12,orbital_mask_on)
+    end
 end
 
 function orbital_mask_inv(orbital_mask1,atom1_orbitalNum,)

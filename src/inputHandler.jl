@@ -21,6 +21,12 @@ type Arg_Inputs
   orbital_mask1_names::Array{AbstractString,1}
   orbital_mask2_list::Array{Array{Int}}
   orbital_mask2_names::Array{AbstractString,1}
+
+  orbital_mask3_list::Array{Array{Int}}
+  orbital_mask3_names::Array{AbstractString,1}
+  orbital_mask4_list::Array{Array{Int}}
+  orbital_mask4_names::Array{AbstractString,1}
+
   orbital_mask_option::orbital_mask_enum
   #orbital_mask_name
 
@@ -39,6 +45,8 @@ type Arg_Inputs
   Arg_Inputs() = new("",-1,-1,[(-1,-1)],[2,2,2],[2,2,2],
     convert(Array{Array{Int}}, [[]]),["all"],
     convert(Array{Array{Int}}, [[]]),["all"],
+    convert(Array{Array{Int}}, [[]]),["all"], #orbital_mask3_list,orbital_mask3_names
+    convert(Array{Array{Int}}, [[]]),["all"], #orbital_mask4_list,orbital_mask4_names
     nomask,nc_allH,"",0.0,"",
     Vector{k_point_Tuple}(0),NULLDFT,NULLWANNIER,Wannier_OptionalInfo(),
     colinear_type,
@@ -220,6 +228,16 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           input.orbital_mask1_names = split(toml_inputs["orbitals"]["orbital_mask1_names"],r"\[|\]|,",keep=false)
           input.orbital_mask2_list = convert(Array{Array{Int}},toml_inputs["orbitals"]["orbital_mask2_list"])
           input.orbital_mask2_names = split(toml_inputs["orbitals"]["orbital_mask2_names"],r"\[|\]|,",keep=false)
+
+          if (haskey(toml_inputs["orbitals"],"orbital_mask3_list"))
+            input.orbital_mask3_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask3_list"])
+            input.orbital_mask3_names = split(toml_inputs["orbitals"]["orbital_mask3_names"],r"\[|\]|,",keep=false)
+          end
+          if (haskey(toml_inputs["orbitals"],"orbital_mask4_list"))
+            input.orbital_mask4_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask4_list"])
+            input.orbital_mask4_names = split(toml_inputs["orbitals"]["orbital_mask4_names"],r"\[|\]|,",keep=false)
+          end
+
         end
       end
     end
@@ -346,12 +364,22 @@ function parse_input(args,input::Arg_Inputs)
         "--om1"
         help = "orbital_mask1_list ex) [[],[9,10,11,12,13],[9]] <= [all,d-only,z2]"
         "--om1names"
-        help = "obital mask1 names ex) [all,d,z2]]"
+        help = "obital mask1 names ex) [all,d,z2]"
 
         "--om2"
         help = "orbital_mask2_list ex) [[],[9,10],[11]] <= [all,eg,xy]"
         "--om2names"
         help = "obital mask2 names ex) [all,eg,xy]"
+
+        "--om3"
+        help = "orbital_mask1_list ex) [[],[9,10,11,12,13] <= [all,d-only]"
+        "--om3names"
+        help = "obital mask1 names ex) [all,d]"
+
+        "--om4"
+        help = "orbital_mask2_list ex) [[],[9,10,11,12,13] <= [all,d-only]"
+        "--om4names"
+        help = "obital mask2 names ex) [all,d]"
 
         "--soc"
         help = "spin orbitcoupling ex:) nc_allH=0 nc_realH_only=1 nc_imagH_only=2 "
@@ -483,6 +511,28 @@ function parse_input(args,input::Arg_Inputs)
             #println(val)
             input.orbital_mask2_names = split(val,r"\[|\]|,",keep=false)
         end
+
+        if (key =="om3" && typeof(val) <: AbstractString)
+            #input.orbital_mask1 = parse_int_list(val)
+            orbital_mask3_list = string("orbital_mask3_list = ",val);
+            v = TOML.parse(orbital_mask3_list);
+            input.orbital_mask3_list = convert(Array{Array{Int}},v["orbital_mask3_list"])
+        end
+        if (key =="om3names" && typeof(val) <: AbstractString)
+            #println(val)
+            input.orbital_mask3_names = split(val,r"\[|\]|,",keep=false)
+        end
+        if (key =="om4" && typeof(val) <: AbstractString)
+            #input.orbital_mask2 = parse_int_list(val)
+            orbital_mask4_list = string("orbital_mask4_list = ",val);
+            v = TOML.parse(orbital_mask4_list);
+            input.orbital_mask4_list =  convert(Array{Array{Int}},v["orbital_mask4_list"])
+        end
+        if (key =="om4names" && typeof(val) <: AbstractString)
+            #println(val)
+            input.orbital_mask4_names = split(val,r"\[|\]|,",keep=false)
+        end
+
         if ("ommode"==key)
             if(1 == val)
                input.orbital_mask_option = unmask
