@@ -123,13 +123,15 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
   if (isfile(toml_file))
     toml_inputs = TOML.parse(readstring(input.TOMLinput))
-    println(" TOML file: ",input.TOMLinput)
+    toml_realpath = realpath(input.TOMLinput);
+    println(" TOML file: ",toml_realpath)
+
     #println(toml_inputs)
     if (haskey(toml_inputs,"result_file"))
       result_file =  toml_inputs["result_file"]
       println(result_file) # TODO: remove it
       if !isfile(result_file)
-        toml_dir =  dirname(input.TOMLinput)
+        toml_dir =  dirname(toml_realpath)
         if isfile(joinpath(toml_dir,result_file))
           result_file = joinpath(toml_dir,result_file)
         elseif isfile(joinpath(pwd(),result_file))

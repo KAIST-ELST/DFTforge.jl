@@ -88,6 +88,8 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
       ,"cal_name" => cal_name
       ,"orbital_mask1" => orbital_mask1
       ,"orbital_mask2" => orbital_mask2
+      ,"orbital_mask3" => orbital_mask3
+      ,"orbital_mask4" => orbital_mask4
       #,"Jij_history" => cal_history_dat["Jij_history"]
       ,"orbital_mask_on" => orbital_mask_on
       #,"orbital_mask1_inv" => orbital_mask1_inv

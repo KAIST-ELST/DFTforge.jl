@@ -27,6 +27,11 @@ orbital_mask1_names = Array{AbstractString}(0);
 orbital_mask2_list = Array{Array{Int}}(0);
 orbital_mask2_names = Array{AbstractString}(0);
 
+orbital_mask3_list = Array{Array{Int}}(0);
+orbital_mask3_names = Array{AbstractString}(0);
+orbital_mask4_list = Array{Array{Int}}(0);
+orbital_mask4_names = Array{AbstractString}(0);
+
 orbital_mask_option = DFTcommon.nomask;
 orbital_mask_on = false;
 
@@ -62,27 +67,38 @@ atom1 = arg_input.atom1;
 atom2 = arg_input.atom2;
 atom12_list = arg_input.atom12_list;
 hdftmpdir = arg_input.hdftmpdir;
-Wannier90_type = arg_input.Wannier90_type
-  # orbital mask
- orbital_mask_option = arg_input.orbital_mask_option;
 
- orbital_mask1_list = arg_input.orbital_mask1_list;
- orbital_mask1_names = arg_input.orbital_mask1_names;
- orbital_mask2_list = arg_input.orbital_mask2_list;
- orbital_mask2_names = arg_input.orbital_mask2_names;
- println(orbital_mask2_list," ",orbital_mask2_names)
- assert(length(orbital_mask1_list) == length(orbital_mask1_names));
- assert(length(orbital_mask2_list) == length(orbital_mask2_names));
- if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
-   #orbital_mask_name = arg_input.orbital_mask_name
-   orbital_mask_on = true
- end
+# orbital mask
+orbital_mask_option = arg_input.orbital_mask_option;
 
- # orbital orbital_reassign
- basisTransform_rule = basisTransform_rule_type()
- if haskey(arg_input.Optional,"basisTransform")
-   basisTransform_rule = arg_input.Optional["basisTransform"]
- end
+orbital_mask1_list = arg_input.orbital_mask1_list;
+orbital_mask1_names = arg_input.orbital_mask1_names;
+orbital_mask2_list = arg_input.orbital_mask2_list;
+orbital_mask2_names = arg_input.orbital_mask2_names;
+
+orbital_mask3_list = arg_input.orbital_mask3_list;
+orbital_mask3_names = arg_input.orbital_mask3_names;
+orbital_mask4_list = arg_input.orbital_mask4_list;
+orbital_mask4_names = arg_input.orbital_mask4_names;
+
+println(orbital_mask1_list," ",orbital_mask1_names)
+println(orbital_mask2_list," ",orbital_mask2_names)
+println(orbital_mask3_list," ",orbital_mask3_names)
+println(orbital_mask4_list," ",orbital_mask4_names)
+assert(length(orbital_mask1_list) == length(orbital_mask1_names));
+assert(length(orbital_mask2_list) == length(orbital_mask2_names));
+assert(length(orbital_mask3_list) == length(orbital_mask3_names));
+assert(length(orbital_mask4_list) == length(orbital_mask4_names));
+if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
+ #orbital_mask_name = arg_input.orbital_mask_name
+ orbital_mask_on = true
+end
+
+# orbital orbital_reassign
+basisTransform_rule = basisTransform_rule_type()
+if haskey(arg_input.Optional,"basisTransform")
+ basisTransform_rule = arg_input.Optional["basisTransform"]
+end
 println(DFTcommon.bar_string) # print ====...====
 println(atom12_list)
 println("q_point_num ",q_point_num, "\tk_point_num ",k_point_num)
@@ -161,11 +177,18 @@ toc();
 ##############################################################################
 @everywhere function init_orbital_mask(orbital_mask_input::orbital_mask_input_Type)
     global orbital_mask1,orbital_mask2,orbital_mask_on
+    global orbital_mask3,orbital_mask4
     orbital_mask1 = Array{Int64,1}();
     orbital_mask2 = Array{Int64,1}();
+
+    orbital_mask3 = Array{Int64,1}();
+    orbital_mask4 = Array{Int64,1}();
     if (orbital_mask_input.orbital_mask_on)
         orbital_mask1 = orbital_mask_input.orbital_mask1;
         orbital_mask2 = orbital_mask_input.orbital_mask2;
+
+        orbital_mask3 = orbital_mask_input.orbital_mask3;
+        orbital_mask4 = orbital_mask_input.orbital_mask4;
         orbital_mask_on = true;
     else
         orbital_mask_on = false;
@@ -196,6 +219,7 @@ num_return = 5;
 #input = Job_input_kq_atom_list_Type((0.0,0.0,0.0),(0.0,0.0,0.0),DFTcommon.colinear_type,[(1,1),(1,2)] )
 
   global orbital_mask1,orbital_mask2,orbital_mask_on
+  global orbital_mask3,orbital_mask4
   global ChemP_delta_ev
   #global SmallHks;
   ############################################################################
@@ -242,7 +266,7 @@ num_return = 5;
   Hks_k_down::Hamiltonian_type = cacheread_Hamiltonian(k_point,2,cache_index)
   Hks_kq_down::Hamiltonian_type = cacheread_Hamiltonian(kq_point,2,cache_index)
 
-  (orbitalStartIdx,orbitalNums) = cacheread_atomsOrbital_lists(cache_index)
+  (orbitalStartIdx_list,orbitalNums) = cacheread_atomsOrbital_lists(cache_index)
 
   En_k_up    = eigenstate_k_up.Eigenvalues;
   Em_kq_up   = eigenstate_kq_up.Eigenvalues;
@@ -261,8 +285,8 @@ num_return = 5;
       atom1 = atom12[1]
       atom2 = atom12[2]
 
-      atom1_orbitals = orbitalStartIdx[atom1]+(1:orbitalNums[atom1]);
-      atom2_orbitals = orbitalStartIdx[atom2]+(1:orbitalNums[atom2]);
+      atom1_orbitals = orbitalStartIdx_list[atom1]+(1:orbitalNums[atom1]);
+      atom2_orbitals = orbitalStartIdx_list[atom2]+(1:orbitalNums[atom2]);
 
       ############################################################################
       ## Accessing Data End
@@ -292,19 +316,36 @@ num_return = 5;
         for orbit1 in orbital_mask1
             deleteat!(orbital_mask1_tmp, find(orbital_mask1_tmp.==orbit1))
         end
-        #Es_n_k_up_atom1[orbitalStartIdx[atom1]+orbital_mask1_tmp,:]   = 0.0;
-        Es_n_k_up_atom1[orbitalStartIdx[atom1]+orbital_mask1_tmp,:] = 0.0;
-        Es_n_k_down_atom1[orbitalStartIdx[atom1]+orbital_mask1_tmp,:] = 0.0;
+        #Es_n_k_up_atom1[orbitalStartIdx_list[atom1]+orbital_mask1_tmp,:]   = 0.0;
+        Es_n_k_up_atom1[orbitalStartIdx_list[atom1]+orbital_mask1_tmp,:] = 0.0;
+        Es_n_k_down_atom1[orbitalStartIdx_list[atom1]+orbital_mask1_tmp,:] = 0.0;
       end
+      if (length(orbital_mask3)>0)
+        orbital_mask3_tmp = collect(1:orbitalNums[atom1]);
+        for orbit3 in orbital_mask3
+            deleteat!(orbital_mask3_tmp, find(orbital_mask3_tmp.==orbit3))
+        end
+        Es_m_kq_up_atom1[orbitalStartIdx_list[atom1]+orbital_mask3_tmp,:] = 0.0;
+        Es_m_kq_down_atom1[orbitalStartIdx_list[atom1]+orbital_mask3_tmp,:] = 0.0;
+      end
+
       if (length(orbital_mask2)>0)
         orbital_mask2_tmp = collect(1:orbitalNums[atom2]);
         for orbit2 in orbital_mask2
             deleteat!(orbital_mask2_tmp, find(orbital_mask2_tmp.==orbit2))
         end
-          Es_n_k_up_atom2[orbitalStartIdx[atom2]+orbital_mask2_tmp,:]   = 0.0;
-          Es_n_k_down_atom2[orbitalStartIdx[atom2]+orbital_mask2_tmp,:]   = 0.0;
+          Es_n_k_up_atom2[orbitalStartIdx_list[atom2]+orbital_mask2_tmp,:]   = 0.0;
+          Es_n_k_down_atom2[orbitalStartIdx_list[atom2]+orbital_mask2_tmp,:]   = 0.0;
         #Es_m_kq_up_atom2[orbitalStartIdx[atom2]+orbital_mask2_tmp,:]   = 0.0;
         #Es_m_kq_down_atom2[orbitalStartIdx[atom2]+orbital_mask2_tmp,:] = 0.0;
+      end
+      if (length(orbital_mask4)>0)
+        orbital_mask4_tmp = collect(1:orbitalNums[atom2]);
+        for orbit4 in orbital_mask4
+            deleteat!(orbital_mask4_tmp, find(orbital_mask4_tmp.==orbit4))
+        end
+        Es_m_kq_up_atom2[orbitalStartIdx_list[atom2]+orbital_mask4_tmp,:]   = 0.0;
+        Es_m_kq_down_atom2[orbitalStartIdx_list[atom2]+orbital_mask4_tmp,:]   = 0.0;
       end
 
       ## Do auctual calucations
@@ -444,59 +485,69 @@ end
 
 for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
   for (orbital2_i,orbital_mask2) in enumerate(orbital_mask2_list)
-    orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),false)
-    if (orbital_mask_on)
-        orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,(-1,-1),true)
-    end
-    orbital_mask_name = orbital_mask1_names[orbital1_i]*"_"*orbital_mask2_names[orbital2_i];
-    println(DFTcommon.bar_string) # print ====...====
-    println(orbital_mask_name," mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2)
-
-    if !(1==length(orbital_mask1) && 1==length(orbital_mask2))
-      println(" Skiping: number of each masks should be 1 ")
-      continue;
-    end
-    # setup extra info
-    DFTforge.pwork(init_orbital_mask,orbital_mask_input)
-    DFTforge.pwork(init_variables,ChemP_delta_ev)
-    # Do K,Q sum
-    (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Orbital_Exchange_J_colinear,
-    q_point_list,k_point_list,atom12_list,num_return)
-
-    #println(typeof(X_Q_mean_nc))
-
-    ## 4.2 reduce K,Q to Q space
-    # Average X_Q results
-    Xij_Q_mean_matlab = Array(Array{Complex_my,1},num_return,length(atom12_list));
-    for (atom12_i,atom12) in enumerate(atom12_list)
-      atom1 = atom12[1];
-      atom2 = atom12[2];
-      for xyz_i = 1:num_return
-        Xij_Q_mean_matlab[xyz_i,atom12_i] = zeros(Complex_my,length(q_point_list));
-        for (q_i,q_point) in enumerate(q_point_list)
-          q_point_int = k_point_float2int(q_point);
-          Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
-            X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
+    for (orbital3_i,orbital_mask3) in enumerate(orbital_mask3_list)
+      for (orbital4_i,orbital_mask4) in enumerate(orbital_mask4_list)
+        orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,
+          orbital_mask3,orbital_mask4,(-1,-1),false)
+        if (orbital_mask_on)
+            orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,
+            orbital_mask3,orbital_mask4,(-1,-1),true)
         end
-        println(string(" Gamma point J [",atom1,",",atom2,"] ",xyz_i," :",
-          1000.0*mean(Xij_Q_mean_matlab[xyz_i,atom12_i][:])," meV"))
-      end
-    end
-    ###############################################################################
-    ## 5. Save results and clear hdf5 file
-    ## 5.1 Prepaire infomations for outout
-    ## 5.2 Write to MAT
-    ###############################################################################
-    optionalOutputDict = Dict{AbstractString,Any}()
-    optionalOutputDict["num_return"] = num_return;
-    optionalOutputDict["VERSION_Orbital_Exchange"] = string(X_VERSION);
+        orbital_mask_name = orbital_mask1_names[orbital1_i]*"_"*orbital_mask2_names[orbital2_i]*"__"*
+          orbital_mask3_names[orbital3_i]*"__"*orbital_mask4_names[orbital4_i];
+        println(DFTcommon.bar_string) # print ====...====
+        println(orbital_mask_name," mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2,
+        "\tmask3 ",orbital_mask3,"\tmask4 ",orbital_mask4)
 
-    export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,q_point_list,k_point_list,atom12_list,
-    orbital_mask_on,orbital_mask1,orbital_mask2,ChemP_delta_ev,
-    optionalOutputDict,
-    jq_output_dir,cal_name,
-    orbital_mask_name,cal_type);
+        if !(1==length(orbital_mask1) && 1==length(orbital_mask2))
+          println(" Skiping: number of each masks should be 1 ")
+          continue;
+        end
+        # setup extra info
+        DFTforge.pwork(init_orbital_mask,orbital_mask_input)
+        DFTforge.pwork(init_variables,ChemP_delta_ev)
+        # Do K,Q sum
+        (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Orbital_Exchange_J_colinear,
+        q_point_list,k_point_list,atom12_list,num_return)
+
+        #println(typeof(X_Q_mean_nc))
+
+        ## 4.2 reduce K,Q to Q space
+        # Average X_Q results
+        Xij_Q_mean_matlab = Array(Array{Complex_my,1},num_return,length(atom12_list));
+        for (atom12_i,atom12) in enumerate(atom12_list)
+          atom1 = atom12[1];
+          atom2 = atom12[2];
+          for xyz_i = 1:num_return
+            Xij_Q_mean_matlab[xyz_i,atom12_i] = zeros(Complex_my,length(q_point_list));
+            for (q_i,q_point) in enumerate(q_point_list)
+              q_point_int = k_point_float2int(q_point);
+              Xij_Q_mean_matlab[xyz_i,atom12_i][q_i] =
+                X_Q_mean_nc[xyz_i,atom12_i][q_point_int];
+            end
+            println(string(" Gamma point J [",atom1,",",atom2,"] ",xyz_i," :",
+              1000.0*mean(Xij_Q_mean_matlab[xyz_i,atom12_i][:])," meV"))
+          end
+        end
+        ###############################################################################
+        ## 5. Save results and clear hdf5 file
+        ## 5.1 Prepaire infomations for outout
+        ## 5.2 Write to MAT
+        ###############################################################################
+        optionalOutputDict = Dict{AbstractString,Any}()
+        optionalOutputDict["num_return"] = num_return;
+        optionalOutputDict["VERSION_Orbital_Exchange"] = string(X_VERSION);
+
+        export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,q_point_list,k_point_list,atom12_list,
+        orbital_mask_on,
+        orbital_mask1,orbital_mask2,orbital_mask3,orbital_mask4,
+        ChemP_delta_ev,
+        optionalOutputDict,
+        jq_output_dir,cal_name,
+        orbital_mask_name,cal_type);
+        end
     end
+  end
 end
 
 
