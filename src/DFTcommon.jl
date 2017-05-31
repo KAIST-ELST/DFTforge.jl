@@ -194,7 +194,7 @@ type orbital_mask_input_Type
     function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},
       atom12::atom12_Tuple,orbital_mask_on::Bool)
 
-      new(orbital_mask1,orbital_mask2,Array{Int64}(),Array{Int64}(),
+      new(orbital_mask1,orbital_mask2,Array{Int64}(0),Array{Int64}(0),
         atom12,orbital_mask_on)
     end
     function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},

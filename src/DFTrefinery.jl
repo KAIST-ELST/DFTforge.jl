@@ -193,7 +193,7 @@ end
 function cal_nonco_linear_Eigenstate(Kpoint::k_point_Tuple,result_index=1)
   global dftresult
   return DFTforge.cal_nonco_linear_Eigenstate(Kpoint,
-  dftresult[result_index].dfttype,dftresult[result_index].scf_r);
+  dftresult[result_index].dfttype,dftresult[result_index]);
 end
 
 # for pmap
@@ -313,8 +313,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
         hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii].Eigenstate);
         hdf5_eigenvalues[:,1,jj] = temp[ii].Eigenvalues;
 
-        hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii][1].Hamiltonian);
-        hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii][1].Hamiltonian);
+        hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii].Hamiltonian);
+        hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii].Hamiltonian);
 
         ii += 1;
       end

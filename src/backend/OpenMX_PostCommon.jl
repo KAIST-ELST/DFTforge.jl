@@ -322,7 +322,8 @@ end
 
 
 
-function cal_noncolinear_eigenstate(k_point,scf_r::Openmxscf)
+function cal_noncolinear_eigenstate(k_point,hamiltonian_info::Hamiltonian_info_type)
+  scf_r = hamiltonian_info.scf_r;
   #function nc_update_Energy(k_point_int::k_point_int_Tuple)
   # non collinear Enk and Eigen function \Psi
 
@@ -432,7 +433,7 @@ function cal_noncolinear_eigenstate(k_point,scf_r::Openmxscf)
   #return kpoint_nc_common;
   #kpoint_nc_common = Kpoint_nc_commondata_Type(H3,ko_all,k_point_int);
   #kpoint_nc_common = Kpoint_nc_commondata_debug_Type(NC_Es,ko_all,k_point_int,S2,H0,H1,H2,H3);
-  kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(NC_Es,ko_all,k_point);
+  kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(NC_Es,ko_all,k_point,H0);
   return kpoint_common
 end
 
