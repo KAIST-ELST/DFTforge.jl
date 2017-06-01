@@ -426,6 +426,7 @@ num_return = 7; #local scope
     Vi_Vj_up_down_down_up_k_kq = VV1_up_down_k.*transpose(VV2_down_up_kq);
     Vi_Vj_up_down_down_up_kq_k = VV1_up_down_kq.*transpose(VV2_down_up_k);
     Vi_Vj_down_up_up_down_G    = VV1_down_up_G.*transpose(VV2_up_down_G);
+    Vi_Vj_up_down_down_up_G    = VV1_up_down_G.*transpose(VV2_down_up_G);
     # for testing
 
     # Index convetion: J_ij[nk,mkq]
@@ -436,7 +437,7 @@ num_return = 7; #local scope
     J_ij_up_down_down_up_kq_k =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_kq_k ;
 
     J_ij_down_up_up_down_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
-    J_ij_up_down_down_up_G =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_down_up_up_down_G ;
+    J_ij_up_down_down_up_G =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_G ;
 
 
     result_mat[2,atom12_i] = sum(J_ij_down_up_up_down_k_kq[!isnan(J_ij_down_up_up_down_k_kq)] );
