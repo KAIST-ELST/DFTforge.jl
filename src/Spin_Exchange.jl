@@ -3,7 +3,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-X_VERSION = VersionNumber("0.5.0-dev+20170528");
+X_VERSION = VersionNumber("0.5.1-dev+20170601");
 println(" X_VERSION: ",X_VERSION)
 
 @everywhere import DFTforge
@@ -320,7 +320,6 @@ num_return = 7; #local scope
       Es_m_kq_down_atom1[orbitalStartIdx_list[atom1]+orbital_mask3_tmp,:] = 0.0;
     end
 
-
     if (length(orbital_mask2)>0)
       orbital_mask2_tmp = collect(1:orbitalNums[atom2]);
       for orbit2 in orbital_mask2
@@ -342,16 +341,16 @@ num_return = 7; #local scope
     Fftn_k_up  = 1.0./(exp( ((En_k_up)  - ChemP)/(kBeV*E_temp)) + 1.0 );
     Fftm_kq_up = 1.0./(exp( ((Em_kq_up) - ChemP)/(kBeV*E_temp)) + 1.0 );
 
-
     Fftn_k_down  = 1.0./(exp( ((En_k_down)  - ChemP)/(kBeV*E_temp)) + 1.0 );
     Fftm_kq_down = 1.0./(exp( ((Em_kq_down) - ChemP)/(kBeV*E_temp)) + 1.0 );
 
+    # Index convention: dFnk[nk,mkq]
     dFnk_down_Fmkq_up =
       Fftn_k_down*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq_up[:]' ;
     dFnk_up_Fmkq_down =
       Fftn_k_up*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq_down[:]' ;
 
-
+    # Index convention: Enk_Emkq[nk,mkq]
     Enk_down_Emkq_up =
       En_k_down[:]*ones(1,TotalOrbitalNum2) - ones(TotalOrbitalNum2,1)*Em_kq_up[:]' ;
     Enk_up_Emkq_down =
@@ -369,11 +368,11 @@ num_return = 7; #local scope
     V2_qn = 0.5*(Hks_qn_up[atom2_orbitals,atom2_orbitals]-Hks_qn_down[atom2_orbitals,atom2_orbitals])
 =#
 
-    V1_k = 0.5*(Hks_k_up[atom1_orbitals,atom1_orbitals] - Hks_k_down[atom1_orbitals,atom1_orbitals]);
+    V1_k  = 0.5*(Hks_k_up[atom1_orbitals,atom1_orbitals] - Hks_k_down[atom1_orbitals,atom1_orbitals]);
     V2_kq = 0.5*(Hks_kq_up[atom2_orbitals,atom2_orbitals] - Hks_kq_down[atom2_orbitals,atom2_orbitals]);
 
     V1_kq = 0.5*(Hks_kq_up[atom1_orbitals,atom1_orbitals] - Hks_kq_down[atom1_orbitals,atom1_orbitals]);
-    V2_k = 0.5*(Hks_k_up[atom2_orbitals,atom2_orbitals] - Hks_k_down[atom2_orbitals,atom2_orbitals]);
+    V2_k  = 0.5*(Hks_k_up[atom2_orbitals,atom2_orbitals] - Hks_k_down[atom2_orbitals,atom2_orbitals]);
 #=
     V1_kq_k = 0.5*(Hks_kq_up[atom1_orbitals,atom1_orbitals] - Hks_k_down[atom1_orbitals,atom1_orbitals]);
     V2_kq_k = 0.5*(Hks_kq_up[atom2_orbitals,atom2_orbitals] - Hks_k_down[atom2_orbitals,atom2_orbitals]);
@@ -420,16 +419,16 @@ num_return = 7; #local scope
     VV2_down_up_k = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_k *
         Es_n_k_up_atom2[atom2_orbitals,:];
 
+    # Index convention: Vi_Vj[nk,mkq]
+    Vi_Vj_down_up_up_down_k_kq = VV1_down_up_k.*transpose(VV2_up_down_kq);
+    Vi_Vj_down_up_up_down_kq_k = VV1_down_up_kq.*transpose(VV2_up_down_k);
 
-    Vi_Vj_down_up_up_down_k_kq = transpose(VV1_down_up_k).*VV2_up_down_kq;
-    Vi_Vj_down_up_up_down_kq_k = transpose(VV1_down_up_kq).*VV2_up_down_k;
-
-    Vi_Vj_up_down_down_up_k_kq = transpose(VV1_up_down_k).*VV2_down_up_kq;
-    Vi_Vj_up_down_down_up_kq_k = transpose(VV1_up_down_kq).*VV2_down_up_k;
-    Vi_Vj_down_up_up_down_G = transpose(VV1_down_up_G).*VV2_up_down_G;
+    Vi_Vj_up_down_down_up_k_kq = VV1_up_down_k.*transpose(VV2_down_up_kq);
+    Vi_Vj_up_down_down_up_kq_k = VV1_up_down_kq.*transpose(VV2_down_up_k);
+    Vi_Vj_down_up_up_down_G    = VV1_down_up_G.*transpose(VV2_up_down_G);
     # for testing
 
-
+    # Index convetion: J_ij[nk,mkq]
     J_ij_down_up_up_down_k_kq =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_k_kq ;
     J_ij_down_up_up_down_kq_k =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_kq_k ;
 
