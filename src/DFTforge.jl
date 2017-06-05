@@ -34,7 +34,8 @@ end
 #    dfttype::DFTforge.DFTtype
 #end
 export read_dftresult
-function read_dftresult(scf_fname::AbstractString, dfttype::DFTcommon.DFTtype,spin_type::DFTcommon.SPINtype,
+function read_dftresult(scf_fname::AbstractString, result_file_dict::Dict{AbstractString,AbstractString},
+  dfttype::DFTcommon.DFTtype,spin_type::DFTcommon.SPINtype,
   basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type())
     if (DFTcommon.OpenMX == dfttype)
       scf_r = OpenMXdata.read_scf(scf_fname);
@@ -44,12 +45,14 @@ function read_dftresult(scf_fname::AbstractString, dfttype::DFTcommon.DFTtype,sp
 
 end
 
-function read_dftresult(wannier_fname::AbstractString,dfttype::DFTcommon.DFTtype,
+function read_dftresult(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
+  dfttype::DFTcommon.DFTtype,
   Wannier90_type::DFTcommon.Wannier90type,spin_type::DFTcommon.SPINtype,
     atoms_orbitals_list::Vector{Array{Int64}},
   atomnum::Int,atompos::Array{Float64,2},basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type())
   if (DFTcommon.Wannier90 == dfttype)
-    wannier_r = Wannierdata.read_wannier(wannier_fname,Wannier90_type,
+
+    wannier_r = Wannierdata.read_wannier(wannier_fname, result_file_dict, Wannier90_type, spin_type,
       atoms_orbitals_list,atomnum,atompos)
     hamiltonian_info = Hamiltonian_info_type(wannier_r,dfttype,spin_type,basisTransform_rule)
     return hamiltonian_info;

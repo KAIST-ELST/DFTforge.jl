@@ -97,7 +97,7 @@ end
 global dftresult = Array{Hamiltonian_info_type}();
 global eigenstate_list =  Array{Eigenstate_hdf5}(); #cached Eigenstates
 
-function set_current_dftdataset(scf_name::AbstractString,
+function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
     basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),result_index=1)
   global dftresult;
@@ -125,14 +125,15 @@ function set_current_dftdataset(scf_name::AbstractString,
     return hamiltonian_info;
   end
 end
-function set_current_dftdataset(wannier_fname::AbstractString,dfttype::DFTcommon.DFTtype,
+function set_current_dftdataset(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
+  dfttype::DFTcommon.DFTtype,
     Wannier90_type::DFTcommon.Wannier90type,spin_type::DFTcommon.SPINtype,
       atoms_orbitals_list::Vector{Array{Int64}},
     atomnum::Int,atompos::Array{Float64,2},basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),
     result_index=1)
   global dftresult;
   if (DFTcommon.Wannier90 ==dfttype)
-    hamiltonian_info = read_dftresult(  wannier_fname,dfttype,
+    hamiltonian_info = read_dftresult(wannier_fname, result_file_dict, dfttype,
         Wannier90_type,spin_type,
           atoms_orbitals_list,
         atomnum,atompos,basisTransform_rule)
@@ -585,7 +586,7 @@ function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
   end
   #Q_ksum = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
   println(DFTcommon.bar_string) # print ====...====
-  p = Progress( round(Int, length(q_point_list)/10),
+  p = Progress( ceil(Int, length(q_point_list)/10),
     string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
   p.barglyphs=BarGlyphs("[=> ]")
   p.output = STDOUT

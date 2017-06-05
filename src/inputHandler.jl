@@ -12,6 +12,7 @@ end
 
 type Arg_Inputs
   result_file::AbstractString
+  result_file_dict::Dict{AbstractString,AbstractString}
   atom1::Int
   atom2::Int
   atom12_list::Vector{Tuple{Int64,Int64}}
@@ -42,7 +43,8 @@ type Arg_Inputs
   #Optinal::Dict{AbstractString,Any};
   spin_type::SPINtype;
   Optional::Dict{AbstractString,Any};
-  Arg_Inputs() = new("",-1,-1,[(-1,-1)],[2,2,2],[2,2,2],
+  Arg_Inputs() = new("",Dict{AbstractString,AbstractString}(),
+  -1,-1,[(-1,-1)],[2,2,2],[2,2,2],
     convert(Array{Array{Int}}, [[]]),["all"],
     convert(Array{Array{Int}}, [[]]),["all"],
     convert(Array{Array{Int}}, [[]]),["all"], #orbital_mask3_list,orbital_mask3_names
@@ -118,33 +120,28 @@ function parse_Kpath(kPoint_toml,kPoint_step_num)
   end
   return K_point_groups;
 end
+function detect_file(result_file,toml_realpath)
+  found = false;
+  if !isfile(result_file)
+    toml_dir =  dirname(toml_realpath)
+    if isfile(joinpath(toml_dir,result_file))
+      result_file = joinpath(toml_dir,result_file)
+      found = true;
+    elseif isfile(joinpath(pwd(),result_file))
+      result_file = joinpath(pwd(),result_file)
+      found = true;
+    else
 
+    end
+  end
+  return (found,result_file);
+end
 function parse_TOML(toml_file,input::Arg_Inputs)
 
   if (isfile(toml_file))
     toml_inputs = TOML.parse(readstring(input.TOMLinput))
     toml_realpath = realpath(input.TOMLinput);
     println(" TOML file: ",toml_realpath)
-
-    #println(toml_inputs)
-    if (haskey(toml_inputs,"result_file"))
-      result_file =  toml_inputs["result_file"]
-      println(result_file) # TODO: remove it
-      if !isfile(result_file)
-        toml_dir =  dirname(toml_realpath)
-        if isfile(joinpath(toml_dir,result_file))
-          result_file = joinpath(toml_dir,result_file)
-        elseif isfile(joinpath(pwd(),result_file))
-          result_file = joinpath(pwd(),result_file)
-        else
-
-        end
-      end
-      if isfile(result_file)
-        input.result_file = result_file
-      end
-
-    end
     if (haskey(toml_inputs,"DFTtype"))
       DFT_type::AbstractString = toml_inputs["DFTtype"]
       if ( lowercase("OpenMX") == lowercase(DFT_type) )
@@ -153,6 +150,71 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         input.DFT_type = Wannier90
       end
     end
+    if (haskey(toml_inputs,"Wannier90type"))
+      result_type::AbstractString = toml_inputs["Wannier90type"]
+      if ( lowercase("openmx") == lowercase(result_type) )
+        input.Wannier90_type = OpenMXWF;
+      elseif ( lowercase("vasp") == lowercase(result_type))
+        input.Wannier90_type = VASPWF;
+      elseif ( lowercase("ecalj") == lowercase(result_type))
+        input.Wannier90_type = EcalJWF;
+      elseif ( lowercase("wien2k") == lowercase(result_type))
+
+      end
+    end
+
+    # Input files for OpenMX outputs
+
+    if (OpenMX == input.DFT_type ||
+      (Wannier90 == input.DFT_type &&  OpenMXWF ==  input.Wannier90_type) )
+      ## OpenMX
+      if (haskey(toml_inputs,"result_file"))
+        result_file =  toml_inputs["result_file"]
+        println(result_file) # TODO: remove it
+        if !isfile(result_file)
+          toml_dir =  dirname(toml_realpath)
+          if isfile(joinpath(toml_dir,result_file))
+            result_file = joinpath(toml_dir,result_file)
+          elseif isfile(joinpath(pwd(),result_file))
+            result_file = joinpath(pwd(),result_file)
+          else
+
+          end
+        end
+        if isfile(result_file)
+          input.result_file = result_file
+        end
+
+      end
+    elseif ((Wannier90 == input.DFT_type &&  EcalJWF ==  input.Wannier90_type))
+      ## Wannier90
+      #result_file =  toml_inputs["result_file"];
+      if (haskey(toml_inputs,"result_file"))
+
+        result_file_list_input =  toml_inputs["result_file"]
+        if (length(result_file_list_input) > 1)
+          result_file_1 = result_file_list_input[1]
+          result_file = split(split(result_file_1,".")[1],"_")[1];
+        end
+        result_file_list = Array{AbstractString}(0);
+        for (k,v) in enumerate(result_file_list_input)
+          (exits_check,result_file_path) = detect_file(v, toml_realpath)
+          if (exits_check)
+            push!(result_file_list,result_file_path);
+          else
+            println("File not found  ",v)
+            assert(false)
+          end
+
+        end
+        result_file_dict = Dict(
+        "result_file_up" => result_file_list[1],
+        "result_file_down" => result_file_list[2])
+        input.result_file_dict = result_file_dict;
+        #result_file_dict = Dict
+      end
+    end
+
     if (haskey(toml_inputs,"spintype"))
       val = toml_inputs["spintype"];
       if ("para" == lowercase(val))
@@ -173,18 +235,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       assert(3 == length(q_point_num))
       input.q_point_num = q_point_num
     end
-    if (haskey(toml_inputs,"Wannier90type"))
-      result_type::AbstractString = toml_inputs["Wannier90type"]
-      if ( lowercase("openmx") == lowercase(result_type) )
-        input.Wannier90_type = OpenMXWF;
-      elseif ( lowercase("vasp") == lowercase(result_type))
-        input.Wannier90_type = VASPWF;
-      elseif ( lowercase("ecalj") == lowercase(result_type))
-        input.Wannier90_type = EcalJWF;
-      elseif ( lowercase("wien2k") == lowercase(result_type))
 
-      end
-    end
     if (haskey(toml_inputs,"atom12"))
       input.atom12_list = Vector{Tuple{Int64,Int64}}(0);
       for (k,v) in enumerate(toml_inputs["atom12"])
@@ -579,7 +630,7 @@ function parse_input(args,input::Arg_Inputs)
 end
 function input_checker(input::Arg_Inputs)
   exit_programe = false;
-  if (""==input.result_file)
+  if (""==input.result_file && 0 == length(input.result_file_dict) )
     # no result file
     println(" NO RESULT FILE SPECIFIED. TRY -h OPTION FOR HELP.")
     exit_programe = true;
