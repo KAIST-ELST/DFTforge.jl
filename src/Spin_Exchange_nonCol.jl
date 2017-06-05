@@ -26,6 +26,11 @@ orbital_mask1_names = Array{AbstractString}(0);
 orbital_mask2_list = Array{Array{Int}}(0);
 orbital_mask2_names = Array{AbstractString}(0);
 
+orbital_mask3_list = Array{Array{Int}}(0);
+orbital_mask3_names = Array{AbstractString}(0);
+orbital_mask4_list = Array{Array{Int}}(0);
+orbital_mask4_names = Array{AbstractString}(0);
+
 orbital_mask_option = DFTcommon.nomask;
 orbital_mask_on = false;
 
@@ -46,6 +51,7 @@ arg_input = parse_input(ARGS,arg_input)
 ## 1.3 Set values from intput (arg_input)
 DFT_type = arg_input.DFT_type
 Wannier90_type = arg_input.Wannier90_type
+spin_type = arg_input.spin_type
 
 result_file = arg_input.result_file
 ChemP_delta_ev = arg_input.ChemP_delta_ev
@@ -59,29 +65,46 @@ atom12_list = arg_input.atom12_list;
 hdftmpdir = arg_input.hdftmpdir;
 
 Hmode = arg_input.Hmode;
- # orbital mask
+# orbital mask
 orbital_mask_option = arg_input.orbital_mask_option;
 
 orbital_mask1_list = arg_input.orbital_mask1_list;
 orbital_mask1_names = arg_input.orbital_mask1_names;
 orbital_mask2_list = arg_input.orbital_mask2_list;
 orbital_mask2_names = arg_input.orbital_mask2_names;
+
+orbital_mask3_list = arg_input.orbital_mask3_list;
+orbital_mask3_names = arg_input.orbital_mask3_names;
+orbital_mask4_list = arg_input.orbital_mask4_list;
+orbital_mask4_names = arg_input.orbital_mask4_names;
+
+println(orbital_mask1_list," ",orbital_mask1_names)
 println(orbital_mask2_list," ",orbital_mask2_names)
+println(orbital_mask3_list," ",orbital_mask3_names)
+println(orbital_mask4_list," ",orbital_mask4_names)
 assert(length(orbital_mask1_list) == length(orbital_mask1_names));
 assert(length(orbital_mask2_list) == length(orbital_mask2_names));
+assert(length(orbital_mask3_list) == length(orbital_mask3_names));
+assert(length(orbital_mask4_list) == length(orbital_mask4_names));
+
 if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
-  #orbital_mask_name = arg_input.orbital_mask_name
-  orbital_mask_on = true
-end
-if (0==length(orbital_mask1_list) || 0==length(orbital_mask2_list))
-  println(" orbital_mask is empty!")
-  exit(1);
+ #orbital_mask_name = arg_input.orbital_mask_name
+ orbital_mask_on = true
 end
 
+
+# orbital orbital_reassign
+basisTransform_rule = basisTransform_rule_type()
+if haskey(arg_input.Optional,"basisTransform")
+ basisTransform_rule = arg_input.Optional["basisTransform"]
+end
 println(DFTcommon.bar_string) # print ====...====
 println(atom12_list)
+println("q_point_num ",q_point_num, "\tk_point_num ",k_point_num)
 println(string("DFT_type ",DFT_type))
+println(string("orbital_mask_option ",orbital_mask_option))
 println("mask1list ",orbital_mask1_list,"\tmask2list ",orbital_mask2_list)
+println("basisTransform", basisTransform_rule)
 
 ## 1.4 Set caluations type and ouput folder
 cal_type = "jq" # xq, ...
@@ -118,19 +141,18 @@ println(DFTcommon.bar_string) # print ====...====
 ##############################################################################
 
 ## 2.1 Set Input info
-scf_r = [];
+hamiltonian_info = [];
 if (DFTcommon.OpenMX == DFT_type)
-  scf_r = set_current_dftdataset(result_file, DFTcommon.OpenMX, DFTcommon.non_colinear_type)
+  hamiltonian_info = set_current_dftdataset(result_file, DFTcommon.OpenMX, spin_type,basisTransform_rule)
 elseif (DFTcommon.Wannier90 == DFT_type)
   atomnum = arg_input.Wannier_Optional_Info.atomnum
   atompos = arg_input.Wannier_Optional_Info.atompos
   atoms_orbitals_list = arg_input.Wannier_Optional_Info.atoms_orbitals_list
 
-  scf_r = DFTforge.read_dftresult(result_file,DFT_type,Wannier90_type,atoms_orbitals_list,atomnum,atompos)
-  scf_r = set_current_dftdataset(scf_r, DFT_type, DFTcommon.non_colinear_type)
+  hamiltonian_info = set_current_dftdataset(result_file,DFT_type,Wannier90_type,spin_type,atoms_orbitals_list,atomnum,atompos,basisTransform_rule)
 end
 
-DFTforge.pwork(set_current_dftdataset,(scf_r, DFT_type, DFTcommon.non_colinear_type,1));
+DFTforge.pwork(set_current_dftdataset,(hamiltonian_info, 1));
 
 ## 2.2 Generate k,q points
 k_point_list = kPoint_gen_GammaCenter(k_point_num);
@@ -170,14 +192,19 @@ toc();
     end
     #println(orbital_mask1)
 end
-@everywhere function init_variables(Input_ChemP_delta_ev)
-  global ChemP_delta_ev
+@everywhere function init_variables(input)
+  global ChemP_delta_ev,Hmode
+  Input_ChemP_delta_ev = input[1];
+  Input_Hmode = input[2];
+
   ChemP_delta_ev = Input_ChemP_delta_ev;
+  Hmode = Input_Hmode;
 end
 
 
 @everywhere import MAT
 #DFTforge.pwork(Init_SmallHks,(atom1,atom2))
+#=
 @everywhere function init_Hks(input)
   global Hks_0;
     result_index = input[1]
@@ -185,6 +212,7 @@ end
     Hks_0  = cal_Hamiltonian(1,result_index,Hmode)
   end
 DFTforge.pwork(init_Hks,(1,Hmode))
+=#
 
 ##############################################################################
 ## Physical properties calculation define section
@@ -192,16 +220,18 @@ DFTforge.pwork(init_Hks,(1,Hmode))
 ## 4.1 Do K,Q sum
 ## 4.2 reduce K,Q to Q space
 ##############################################################################
-
+num_return = 10;
 ## 4. Magnetic exchange function define
 @everywhere function Magnetic_Exchange_J_noncolinear(input::Job_input_kq_atom_list_Type)
     global Hks_0;
+    global Hmode;
     #global SmallHks;
     #global Hks_0;
     ############################################################################
     ## Accessing Data Start
     ############################################################################
     # Common input info
+    num_return = 10;
     k_point::DFTforge.k_point_Tuple =  input.k_point
     kq_point::DFTforge.k_point_Tuple =  input.kq_point
     spin_type::DFTforge.SPINtype = input.spin_type;
@@ -209,7 +239,7 @@ DFTforge.pwork(init_Hks,(1,Hmode))
     #atom1::Int = input.atom12[1][1];
     #atom2::Int = input.atom12[1][2];
     atom12_list::Vector{Tuple{Int64,Int64}} = input.atom12_list;
-    result_mat = zeros(Complex_my,10,length(atom12_list))
+    result_mat = zeros(Complex_my,num_return,length(atom12_list))
 
     #atom1::Int = input.atom1;
     #atom2::Int = input.atom2;
@@ -239,9 +269,15 @@ DFTforge.pwork(init_Hks,(1,Hmode))
     #Hks_updown = copy(Hks_0);
 
     #Hks_updown = cacheread_Hamiltonian(1,cache_index)
-    Hks_updown = copy(Hks_0);
+    #Hks_updown = copy(Hks_0);
     #assert( sum(real(Hks_updown - Hks_down2)) < 10.0^-4 )
-    (orbitalStartIdx,orbitalNums) = cacheread_atomsOrbital_lists(cache_index)
+    Hks_updown_k::Hamiltonian_type  = cacheread_Hamiltonian(k_point,1,cache_index)
+    Hks_updown_kq::Hamiltonian_type  = cacheread_Hamiltonian(kq_point,1,cache_index)
+    assert(size(Hks_updown_k)[1] == TotalOrbitalNum2);
+    #Hks_k_down::Hamiltonian_type = cacheread_Hamiltonian(k_point,2,cache_index)
+    #Hks_kq_down::Hamiltonian_type = cacheread_Hamiltonian(kq_point,2,cache_index)
+
+    (orbitalStartIdx_list,orbitalNums) = cacheread_atomsOrbital_lists(cache_index)
 
     #En_k_up::Array{Float_my,1} = eigenstate_k_up.Eigenvalues;
     Em_kq = eigenstate_kq.Eigenvalues;
@@ -252,8 +288,6 @@ DFTforge.pwork(init_Hks,(1,Hmode))
     Es_m_kq  = eigenstate_kq.Eigenstate;
     Es_n_k  = eigenstate_k.Eigenstate;
 
-
-
     #for mask2 in orbital_mask2
     #    Es_m_kq_atom2[mask2,:]=0.0
     #end
@@ -261,13 +295,15 @@ DFTforge.pwork(init_Hks,(1,Hmode))
     #Es_m_kq_down::Array{Complex_my,2} = eigenstate_kq_down.Eigenstate;
     Fftn_k  = 1.0./(exp( ((En_k)  - ChemP)/(kBeV*E_temp)) + 1.0 );
     Fftm_kq = 1.0./(exp( ((Em_kq) - ChemP)/(kBeV*E_temp)) + 1.0 );
+    # Index convention: dFnk[nk,mkq]
     dFnk_Fmkq  =
       Fftn_k*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq' ;
-
+    # Index convention: Enk_Emkq[nk,mkq]
     Enk_Emkq =
       En_k[:]*ones(1,TotalOrbitalNum2) - ones(TotalOrbitalNum2,1)*Em_kq[:]' ;
     Enk_Emkq += im*0.0001;
 
+    # Index convention: part1[nk,mkq]
     part1 = dFnk_Fmkq./(-Enk_Emkq);
 
     for (atom12_i,atom12) in enumerate(atom12_list)
@@ -283,20 +319,22 @@ DFTforge.pwork(init_Hks,(1,Hmode))
         for orbit1 in orbital_mask1
             deleteat!(orbital_mask1_tmp, find(orbital_mask1_tmp.==orbit1))
         end
-        Es_n_k_atom1[orbitalStartIdx[atom1]+orbital_mask1_tmp,:]=0.0;
+        Es_n_k_atom1[orbitalStartIdx_list[atom1]+orbital_mask1_tmp,:]=0.0; # up
+        Es_n_k_atom1[TotalOrbitalNum + orbitalStartIdx_list[atom1]+orbital_mask1_tmp,:]=0.0; # down
       end
       if (length(orbital_mask2)>0)
         orbital_mask2_tmp = collect(1:orbitalNums[atom2]);
         for orbit2 in orbital_mask2
             deleteat!(orbital_mask2_tmp, find(orbital_mask2_tmp.==orbit2))
         end
-        Es_m_kq_atom2[orbitalStartIdx[atom2]+orbital_mask2_tmp,:]=0.0;
+        Es_m_kq_atom2[orbitalStartIdx_list[atom2]+orbital_mask2_tmp,:]=0.0; # up
+        Es_m_kq_atom2[TotalOrbitalNum + orbitalStartIdx_list[atom2]+orbital_mask2_tmp,:]=0.0; # down
       end
 
 
-      atom1_orbits_up   = orbitalStartIdx[atom1] + (1:orbitalNums[atom1])
+      atom1_orbits_up   = orbitalStartIdx_list[atom1] + (1:orbitalNums[atom1])
       atom1_orbits_down = TotalOrbitalNum + atom1_orbits_up
-      atom2_orbits_up   = orbitalStartIdx[atom2] + (1:orbitalNums[atom2])
+      atom2_orbits_up   = orbitalStartIdx_list[atom2] + (1:orbitalNums[atom2])
       atom2_orbits_down = TotalOrbitalNum + atom2_orbits_up
       #Plots.heatmap(real(Hks_updown))
 
@@ -304,20 +342,22 @@ DFTforge.pwork(init_Hks,(1,Hmode))
       ## Accessing Data End
       ############################################################################
       ## Do auctual calucations
-      Vz_1 = 0.5*(Hks_updown[atom1_orbits_up,atom1_orbits_up] -
-      Hks_updown[atom1_orbits_down,atom1_orbits_down])
+
+
+      Vz_1 = 0.5*(Hks_updown_k[atom1_orbits_up,atom1_orbits_up] -
+      Hks_updown_k[atom1_orbits_down,atom1_orbits_down])
       #Voff_1 = Hks_updown[atom1_orbits_up,atom1_orbits_down]
-      Voff_1 = conj(Hks_updown[atom1_orbits_up,atom1_orbits_down]) +
-        Hks_updown[atom1_orbits_down,atom1_orbits_up]
+      Voff_1 = conj(Hks_updown_k[atom1_orbits_up,atom1_orbits_down]) +
+        Hks_updown_k[atom1_orbits_down,atom1_orbits_up]
       Vx_1 = 0.5*(Voff_1 + conj(Voff_1))/2.0;
       Vy_1 = 0.5*(Voff_1 - conj(Voff_1))/(2.0*im);
       #Plots.heatmap(real(Vz_1))
       #Plots.heatmap(real(Vy_1))
 
-      Vz_2 = 0.5*(Hks_updown[atom2_orbits_up,atom2_orbits_up] -
-      Hks_updown[atom2_orbits_down,atom2_orbits_down])
-      Voff_2 = conj(Hks_updown[atom2_orbits_up,atom2_orbits_down]) +
-        Hks_updown[atom2_orbits_down,atom2_orbits_up]
+      Vz_2 = 0.5*(Hks_updown_kq[atom2_orbits_up,atom2_orbits_up] -
+      Hks_updown_kq[atom2_orbits_down,atom2_orbits_down])
+      Voff_2 = conj(Hks_updown_kq[atom2_orbits_up,atom2_orbits_down]) +
+        Hks_updown_kq[atom2_orbits_down,atom2_orbits_up]
       # Voff_2 = (Hks_updown[atom2_orbits_up,atom2_orbits_down])
              #+ Hks_updown[atom2_orbits_down,atom2_orbits_up]
 
@@ -335,21 +375,22 @@ DFTforge.pwork(init_Hks,(1,Hmode))
       G1V1_y = (Es_n_k_atom1[atom1_orbits_down,:]'  *Vy_1* Es_m_kq_atom1[atom1_orbits_up,:]);
       G2V2_y = (Es_m_kq_atom2[atom2_orbits_up,:]'   *Vy_2* Es_n_k_atom2[atom2_orbits_down,:]);
 
-      J_ij_xx =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_x );
-      J_ij_xy =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_y );
-      J_ij_xz =  0.5* sum(part1.* transpose(G1V1_x) .* G2V2_z );
+      # Index convention: J_ij_(xyz,xyz)[nk,mkq]
+      J_ij_xx =  0.5* sum(part1.* G1V1_x .* transpose(G2V2_x) );
+      J_ij_xy =  0.5* sum(part1.* G1V1_x .* transpose(G2V2_y) );
+      J_ij_xz =  0.5* sum(part1.* G1V1_x .* transpose(G2V2_z) );
 
-      J_ij_yx =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_x );
-      J_ij_yy =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_y );
-      J_ij_yz =  0.5* sum(part1.* transpose(G1V1_y) .* G2V2_z );
+      J_ij_yx =  0.5* sum(part1.* G1V1_y .* transpose(G2V2_x) );
+      J_ij_yy =  0.5* sum(part1.* G1V1_y .* transpose(G2V2_y) );
+      J_ij_yz =  0.5* sum(part1.* G1V1_y .* transpose(G2V2_z) );
 
-      J_ij_zx =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_x );
-      J_ij_zy =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_y );
-      J_ij_zz =  0.5* sum(part1.* transpose(G1V1_z) .* G2V2_z );
+      J_ij_zx =  0.5* sum(part1.* G1V1_z .* transpose(G2V2_x) );
+      J_ij_zy =  0.5* sum(part1.* G1V1_z .* transpose(G2V2_y) );
+      J_ij_zz =  0.5* sum(part1.* G1V1_z .* transpose(G2V2_z) );
 
       X_ij = sum(part1.*
-      transpose(Es_n_k[atom1_orbits_down,:]' * Es_m_kq[atom1_orbits_up,:]) .*
-      (Es_m_kq[atom2_orbits_up,:]' * Es_n_k[atom2_orbits_down,:]));
+      (Es_n_k[atom1_orbits_down,:]' * Es_m_kq[atom1_orbits_up,:]) .*
+      transpose(Es_m_kq[atom2_orbits_up,:]' * Es_n_k[atom2_orbits_down,:]) );
       result_subset = [
       J_ij_xx,J_ij_xy,J_ij_xz,
       J_ij_yx,J_ij_yy,J_ij_yz,
@@ -378,7 +419,7 @@ DFTforge.pwork(init_Hks,(1,Hmode))
   end
 
 
-  num_return = 10;
+
 
   ## 4.1 Do K,Q sum
   # for orbital_mask1_list,orbital_mask2_list combinations
@@ -395,7 +436,7 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
 
     # setup extra info
     DFTforge.pwork(init_orbital_mask,orbital_mask_input)
-    DFTforge.pwork(init_variables,ChemP_delta_ev)
+	DFTforge.pwork(init_variables,(ChemP_delta_ev,Hmode))
 
     (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Magnetic_Exchange_J_noncolinear,
     q_point_list,k_point_list,atom12_list,num_return)
@@ -430,7 +471,7 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
     optionalOutputDict["num_return"] = num_return;
     optionalOutputDict["VERSION_Spin_Exchange"] = string(X_VERSION);
 
-    export2mat_K_Q(Xij_Q_mean_matlab,scf_r,q_point_list,k_point_list,atom12_list,
+    export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,q_point_list,k_point_list,atom12_list,
     orbital_mask_on,orbital_mask1,orbital_mask2,ChemP_delta_ev,
     optionalOutputDict,
     jq_output_dir,cal_name,

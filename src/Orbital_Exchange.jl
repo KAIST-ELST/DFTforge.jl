@@ -359,12 +359,13 @@ num_return = 5;
       Fftn_k_down  = 1.0./(exp( ((En_k_down)  - ChemP)/(kBeV*E_temp)) + 1.0 );
       Fftm_kq_down = 1.0./(exp( ((Em_kq_down) - ChemP)/(kBeV*E_temp)) + 1.0 );
 
+      # Index convention: dFnk[nk,mkq]
       dFnk_down_Fmkq_up =
         Fftn_k_up*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq_up[:]' ;
       dFnk_up_Fmkq_down =
         Fftn_k_down*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq_down[:]' ;
 
-
+      # Index convention: Enk_Emkq[nk,mkq]
       Enk_down_Emkq_up =
         En_k_up[:]*ones(1,TotalOrbitalNum2) - ones(TotalOrbitalNum2,1)*Em_kq_up[:]' ;
       Enk_up_Emkq_down =
@@ -451,17 +452,17 @@ num_return = 5;
       VV2_down_G = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_down_G *
           Es_n_k_down_atom2[atom2_orbitals,:];
 
-      Vi_Vj_up_k_kq = transpose(VV1_up_k_kq).*VV2_up_kq_k;
-      Vi_Vj_down_k_kq = transpose(VV1_down_k_kq).*VV2_down_k_kq;
+      # Index convention: Vi_Vj[nk,mkq]
+      Vi_Vj_up_k_kq   = VV1_up_k_kq.*transpose(VV2_up_kq_k);
+      Vi_Vj_down_k_kq = VV1_down_k_kq.*transpose(VV2_down_k_kq);
 
-      Vi_Vj_up_G = transpose(VV1_up_G).*VV2_up_G;
-      Vi_Vj_down_G = transpose(VV1_down_G).*VV2_down_G;
+      Vi_Vj_up_G   = VV1_up_G.*transpose(VV2_up_G);
+      Vi_Vj_down_G = VV1_down_G.*transpose(VV2_down_G);
 
+      # Index convetion: J_ij[nk,mkq]
       J_ij_up_k_kq   =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_up_k_kq ;
       J_ij_down_k_kq =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_down_k_kq ;
-      #J_ij_up_G   =  0.5./(-Enk_Emkq_up).*dFnk_Fmkq_up .* Vi_Vj_up_G ;
-      #J_ij_down_G =  0.5./(-Enk_Emkq_down).*dFnk_Fmkq_down .* Vi_Vj_down_G ;
-
+      
 
       J_ij_up_G   =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_up_G ;
       J_ij_down_G =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_down_G ;
