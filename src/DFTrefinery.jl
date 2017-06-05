@@ -104,7 +104,7 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
   if (DFTcommon.OpenMX == dfttype)
     # Read SCF and Set as current dftdata
     #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
-    hamiltonian_info = read_dftresult(scf_name,dfttype,spin_type,basisTransform_rule)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
     #=
     orbitalStartIdx = zeros(Int,scf_r.atomnum);
     orbitalIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
