@@ -48,6 +48,7 @@ DFT_type = arg_input.DFT_type
 Wannier90_type = arg_input.Wannier90_type
 
 result_file = arg_input.result_file
+result_file_dict = arg_input.result_file_dict;
 ChemP_delta_ev = arg_input.ChemP_delta_ev
  # k,q point num
 k_point_num = arg_input.k_point_num
@@ -120,14 +121,14 @@ println(DFTcommon.bar_string) # print ====...====
 ## 2.1 Set Input info
 scf_r = [];
 if (DFTcommon.OpenMX == DFT_type)
-  scf_r = set_current_dftdataset(result_file, DFTcommon.OpenMX, DFTcommon.non_colinear_type)
+  scf_r = set_current_dftdataset(result_file, result_file_dict, DFTcommon.OpenMX, DFTcommon.non_colinear_type)
 elseif (DFTcommon.Wannier90 == DFT_type)
   atomnum = arg_input.Wannier_Optional_Info.atomnum
   atompos = arg_input.Wannier_Optional_Info.atompos
   atoms_orbitals_list = arg_input.Wannier_Optional_Info.atoms_orbitals_list
 
-  scf_r = DFTforge.read_dftresult(result_file,DFT_type,Wannier90_type,atoms_orbitals_list,atomnum,atompos)
-  scf_r = set_current_dftdataset(scf_r, DFT_type, DFTcommon.non_colinear_type)
+  #scf_r = DFTforge.read_dftresult(result_file, result_file_dict, DFT_type,Wannier90_type,atoms_orbitals_list,atomnum,atompos)
+  scf_r = set_current_dftdataset(scf_r, result_file_dict, DFT_type, DFTcommon.non_colinear_type)
 end
 
 DFTforge.pwork(set_current_dftdataset,(scf_r, DFT_type, DFTcommon.non_colinear_type,1));
