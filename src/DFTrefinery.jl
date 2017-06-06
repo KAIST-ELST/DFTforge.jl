@@ -467,8 +467,24 @@ function cacheread_atomsOrbital_lists(cache_index=1)
   eigenstate_list[cache_index].dftresult.basisTransform_result.orbitalNums)
 end
 function cacheread_lampup(q_point_list::Array{k_point_Tuple},cache_index=1)
+  global eigenstate_list;
+  spin_type = eigenstate_list[cache_index].spin_type
   for q_point in q_point_list
-    cacheread_eigenstate(q_point,cache_index)
+    cacheread_eigenstate(q_point,1,cache_index)
+  end
+  if (DFTcommon.colinear_type == spin_type)
+    for q_point in q_point_list
+      cacheread_eigenstate(q_point,2,cache_index)
+    end
+  end
+  # Read Hamiltonian
+  for q_point in q_point_list
+    cacheread_Hamiltonian(q_point,1,cache_index)
+  end
+  if (DFTcommon.colinear_type == spin_type)
+    for q_point in q_point_list
+      cacheread_Hamiltonian(q_point,2,cache_index)
+    end
   end
 end
 
