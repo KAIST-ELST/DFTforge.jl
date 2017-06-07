@@ -122,13 +122,16 @@ function parse_Kpath(kPoint_toml,kPoint_step_num)
 end
 function detect_file(result_file,toml_realpath)
   found = false;
-  if !isfile(result_file)
+  if isfile(joinpath(pwd(),result_file))
+    found = true;
+    result_file = joinpath(pwd(),result_file)
+  elseif isfile(result_file)
+    found = true;
+    result_file = result_file
+  else
     toml_dir =  dirname(toml_realpath)
     if isfile(joinpath(toml_dir,result_file))
       result_file = joinpath(toml_dir,result_file)
-      found = true;
-    elseif isfile(joinpath(pwd(),result_file))
-      result_file = joinpath(pwd(),result_file)
       found = true;
     else
 
@@ -194,7 +197,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         result_file_list_input =  toml_inputs["result_file"]
         if (length(result_file_list_input) > 1)
           result_file_1 = result_file_list_input[1]
-          result_file = split(split(result_file_1,".")[1],"_")[1];
+          input.result_file = split(split(result_file_1,".")[1],"_")[1];
         end
         result_file_list = Array{AbstractString}(0);
         for (k,v) in enumerate(result_file_list_input)
@@ -211,6 +214,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         "result_file_up" => result_file_list[1],
         "result_file_down" => result_file_list[2])
         input.result_file_dict = result_file_dict;
+        println(result_file_dict)
         #result_file_dict = Dict
       end
     end
@@ -636,8 +640,13 @@ function input_checker(input::Arg_Inputs)
     exit_programe = true;
     #exit(1);
   end
-  if !isfile(input.result_file )
+  if !isfile(input.result_file) && (0 == length(input.result_file_dict))
     println(" result file is not found ", input.result_file );
+  end
+  for (k,v) in input.result_file_dict
+    if (!isfile(v))
+      println(" result file is not found ",k,"\t",v );
+    end
   end
   if (DFTcommon.OpenMX == input.DFT_type)
   elseif (DFTcommon.Wannier90 == input.DFT_type)
