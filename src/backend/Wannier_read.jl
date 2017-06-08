@@ -166,7 +166,7 @@ function read_wannier_EcalJ(result_file_dict::Dict{AbstractString,AbstractString
 
     Hks_R = Array{Array{Array{Complex_my,2}}}(2)
     Hks_R[1] = Wannier_info_up.Hks_R[1];
-    Hks_R[2] = Wannier_info_up.Hks_R[1];
+    Hks_R[2] = Wannier_info_down.Hks_R[1];
 
 
     #R_vector_mat = Wannier_info_up.R_vector_mat;
