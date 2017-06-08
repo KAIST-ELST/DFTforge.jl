@@ -49,6 +49,7 @@ function read_wannier_OpenMX(wannier_fname,atoms_orbitals_list::Vector{Array{Int
   tv[2,:] = map(x->parse(Float64,x),split(lines[6]))
   tv[3,:] = map(x->parse(Float64,x),split(lines[7]))
 
+
   rv = 2*pi*inv(tv'); # Check required
 
   ChemP = parse(Float64,split(lines[9])[end])*DFTcommon.Hatree2eV
@@ -229,14 +230,14 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   check_fail = false;
   for (i,v) in enumerate(atoms_orbitals_list)
     position_1 = map(x->parse(Float64,x), split(lines[7+v[1]])[end-2:end]);
-    position_1 = map(x-> rem(x,1.0), position_1 + 2.0)
+    #position_1 = map(x-> rem(x,1.0), position_1 + 2.0)
     if (sum(abs(atompos[i,:] - position_1)) > 10.0^-4.0)
       println(" read_wannier_EcalJ atom ",i," position not matched ",position_1,"  ",atompos[i,:])
       check_fail = true;
     end
     for (i2,v2) in enumerate(v)
       position_2 = map(x->parse(Float64,x), split(lines[7+v[i2] ])[end-2:end]);
-      position_2 = map(x-> rem(x,1.0), position_2 + 2.0)
+      #position_2 = map(x-> rem(x,1.0), position_2 + 2.0)
       if (sum(abs(atompos[i,:] - position_2)) > 10.0^-4.0)
         println(" read_wannier_EcalJ atom ",i2," position not matched ",position_2,"  ",atompos[i,:])
         check_fail = true;
