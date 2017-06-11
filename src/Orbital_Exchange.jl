@@ -3,7 +3,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 using DFTcommon
 import MAT
-X_VERSION = VersionNumber("0.4.0-dev+20170515");
+X_VERSION = VersionNumber("0.5.0-dev+20170606");
 if 1 == myid()
   println(" X_VERSION: ",X_VERSION)
 end
@@ -465,7 +465,7 @@ num_return = 5;
       # Index convetion: J_ij[nk,mkq]
       J_ij_up_k_kq   =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_up_k_kq ;
       J_ij_down_k_kq =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_down_k_kq ;
-      
+
 
       J_ij_up_G   =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_up_G ;
       J_ij_down_G =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_down_G ;
