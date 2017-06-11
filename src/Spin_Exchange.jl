@@ -210,7 +210,7 @@ end
 ##############################################################################
 ## %%
 ## 4. Magnetic exchange function define
-num_return = 7; #local scope
+num_return = 8; #local scope
 
 @everywhere function Magnetic_Exchange_J_colinear(input::Job_input_kq_atom_list_Type)
   global orbital_mask1,orbital_mask2,orbital_mask_on
@@ -221,7 +221,7 @@ num_return = 7; #local scope
   ## Accessing Data Start
   ############################################################################
   # Common input info
-  num_return = 7;
+  num_return = 8;
   k_point::DFTforge.k_point_Tuple =  input.k_point
   kq_point::DFTforge.k_point_Tuple =  input.kq_point
   spin_type::DFTforge.SPINtype = input.spin_type;
@@ -422,6 +422,12 @@ num_return = 7; #local scope
     VV2_down_up_k = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_k *
         Es_n_k_up_atom2[atom2_orbitals,:];
 
+
+    x1_down_up_k = Es_n_k_down_atom1[atom1_orbitals,:]'  *
+        Es_m_kq_up_atom1[atom1_orbitals,:];
+    x2_up_down_kq = Es_m_kq_up_atom2[atom2_orbitals,:]'  *
+        Es_n_k_down_atom2[atom2_orbitals,:];
+
     # Index convention: Vi_Vj[nk,mkq]
     Vi_Vj_down_up_up_down_k_kq = VV1_down_up_k.*transpose(VV2_up_down_kq);
     Vi_Vj_down_up_up_down_kq_k = VV1_down_up_kq.*transpose(VV2_up_down_k);
@@ -430,6 +436,8 @@ num_return = 7; #local scope
     Vi_Vj_up_down_down_up_kq_k = VV1_up_down_kq.*transpose(VV2_down_up_k);
     Vi_Vj_down_up_up_down_G    = VV1_down_up_G.*transpose(VV2_up_down_G);
     Vi_Vj_up_down_down_up_G    = VV1_up_down_G.*transpose(VV2_down_up_G);
+
+    x_down_up_up_down_k_kq = x1_down_up_k.*transpose(x2_up_down_kq);
     # for testing
 
     # Index convetion: J_ij[nk,mkq]
@@ -442,6 +450,7 @@ num_return = 7; #local scope
     J_ij_down_up_up_down_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
     J_ij_up_down_down_up_G =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_G ;
 
+    x_ij_down_up_up_down_k_kq =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* x_down_up_up_down_k_kq ;
 
     result_mat[2,atom12_i] = sum(J_ij_down_up_up_down_k_kq[!isnan(J_ij_down_up_up_down_k_kq)] );
     #result_mat[2,atom12_i] = sum(J_ij_1[!isnan(J_ij_1)] ) + sum(J_ij_2[!isnan(J_ij_2)] );
@@ -451,6 +460,8 @@ num_return = 7; #local scope
     result_mat[5,atom12_i] = sum(J_ij_up_down_down_up_kq_k[!isnan(J_ij_up_down_down_up_kq_k)] );
     result_mat[6,atom12_i] = sum(J_ij_down_up_up_down_G[!isnan(J_ij_down_up_up_down_G)] );
     result_mat[7,atom12_i] = sum(J_ij_up_down_down_up_G[!isnan(J_ij_up_down_down_up_G)] );
+
+    result_mat[8,atom12_i] = sum(x_ij_down_up_up_down_k_kq[!isnan(x_ij_down_up_up_down_k_kq)] );
 
     result_mat[1,atom12_i] = 0.5*(result_mat[2,atom12_i] +result_mat[5,atom12_i] );
   end
