@@ -276,8 +276,8 @@ num_return = 10;
     #Hks_updown = cacheread_Hamiltonian(1,cache_index)
     #Hks_updown = copy(Hks_0);
     #assert( sum(real(Hks_updown - Hks_down2)) < 10.0^-4 )
-    Hks_updown_k::Hamiltonian_type  = cacheread_Hamiltonian(k_point,1,cache_index)
-    Hks_updown_kq::Hamiltonian_type  = cacheread_Hamiltonian(kq_point,1,cache_index)
+    Hks_updown_k::Hamiltonian_type  = cacheread_Hamiltonian(k_point, Hmode,cache_index)
+    Hks_updown_kq::Hamiltonian_type  = cacheread_Hamiltonian(kq_point, Hmode,cache_index)
     assert(size(Hks_updown_k)[1] == TotalOrbitalNum2);
     #Hks_k_down::Hamiltonian_type = cacheread_Hamiltonian(k_point,2,cache_index)
     #Hks_kq_down::Hamiltonian_type = cacheread_Hamiltonian(kq_point,2,cache_index)
@@ -441,7 +441,7 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
 
     # setup extra info
     DFTforge.pwork(init_orbital_mask,orbital_mask_input)
-	DFTforge.pwork(init_variables,(ChemP_delta_ev,Hmode))
+    DFTforge.pwork(init_variables,(ChemP_delta_ev,Hmode))
 
     (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Magnetic_Exchange_J_noncolinear,
     q_point_list,k_point_list,atom12_list,num_return)

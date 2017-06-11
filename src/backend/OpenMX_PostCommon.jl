@@ -235,7 +235,6 @@ function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
     assert(4 == size(H)[1]);
     assert(3 == size(iH)[1]);
 
-
     k_point::Array{Float_my,1} = [k1,k2,k3];
     TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
     orbitalStartIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
@@ -301,23 +300,22 @@ function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
     end
 end
 
-function noncolinear_Hamiltonian(scf_r::Openmxscf,
-  Hmode::DFTcommon.nc_Hamiltonian_selection=DFTcommon.nc_allH)
-  TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
-  assert(3==scf_r.SpinP_switch); # Check if Noncolinear
-  TotalOrbitalNum2 = TotalOrbitalNum*2;
-  MPF = zeros(Int,scf_r.atomnum)
-  orbitalStartIdx = 0
+function noncolinear_Hamiltonian(k_point, hamiltonian_info::Hamiltonian_info_type,
+  Hmode::DFTcommon.nc_Hamiltonian_selection)
+
+  scf_r = hamiltonian_info.scf_r;
+
+  TotalOrbitalNum = sum(scf_r.Total_NumOrbs[:])
+  orbitalStartIdx_list = zeros(Int,scf_r.atomnum)
+  orbitalStartIdx = 0;
   for i = 1:scf_r.atomnum
-      MPF[i] = orbitalStartIdx;
+      orbitalStartIdx_list[i] = orbitalStartIdx;
       orbitalStartIdx += scf_r.Total_NumOrbs[i]
   end
-  Hout = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
-  #Hmode = nc_realH_only;
-  #Hmode = nc_imagH_only;
-  #noncolinear_Hamiltonian!(Hout,scf_r.Hks,scf_r.iHks,MPF,0.0,0.0,0.0,nc_allH,scf_r)
-  noncolinear_Hamiltonian!(Hout,scf_r.Hks,scf_r.iHks,MPF,0.0,0.0,0.0,Hmode,scf_r)
-  return Hout;
+  H0 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  noncolinear_Hamiltonian!(H0,scf_r.Hks,scf_r.iHks,orbitalStartIdx_list,k_point[1],
+    k_point[2],k_point[3], Hmode, scf_r);
+  return H0;
 end
 
 

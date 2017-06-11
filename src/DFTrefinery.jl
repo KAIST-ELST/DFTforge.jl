@@ -50,9 +50,13 @@ end
 type Job_input_Type
   k_point::k_point_Tuple
   spin_type::SPINtype
+  Hmode::DFTcommon.nc_Hamiltonian_selection
   result_index::Int
-  Job_input_Type(k_point,spin_type) = new(k_point,spin_type,1)
-  Job_input_Type(k_point,spin_type,result_index) = new(k_point,spin_type,result_index)
+  Job_input_Type(k_point, spin_type) = new(k_point, spin_type, DFTcommon.nc_allH, 1)
+  Job_input_Type(k_point, spin_type, result_index) = new(k_point, spin_type, DFTcommon.nc_allH, result_index)
+
+  Job_input_Type(k_point, spin_type, Hmode::DFTcommon.nc_Hamiltonian_selection) = new(k_point, spin_type, Hmode, 1)
+  Job_input_Type(k_point, spin_type, Hmode::DFTcommon.nc_Hamiltonian_selection, result_index) = new(k_point, spin_type, Hmode, result_index)
 end
 
 type Job_input_kq_Type
@@ -197,6 +201,8 @@ function cal_nonco_linear_Eigenstate(Kpoint::k_point_Tuple,result_index=1)
   dftresult[result_index].dfttype,dftresult[result_index]);
 end
 
+
+## for pmap functions
 # for pmap
 function cal_eigenstate(input::Job_input_Type,result_index=1)
   # specfify spin type is required
@@ -212,19 +218,15 @@ function cal_eigenstate(input::Job_input_Type,result_index=1)
     return cal_nonco_linear_Eigenstate(input.k_point,input.result_index)
   end
 end
-#=
-function cal_Hamiltonian(spin=1,result_index=1,Hmode::DFTcommon.nc_Hamiltonian_selection=DFTcommon.nc_allH)
-  global dftresult;
-  spin_type = dftresult[result_index].spin_type;
-  dfttype::DFTtype = dftresult[result_index].dfttype;
-  if (DFTcommon.para_type == spin_type || DFTcommon.colinear_type == spin_type)
-    return cal_colinear_Hamiltonian(dfttype,dftresult[result_index].scf_r,spin);
-  elseif (DFTcommon.non_colinear_type == spin_type)
-    return cal_noncolinear_Hamiltonian(dfttype,Hmode,dftresult[result_index].scf_r)
-  end
 
+#for pmap
+function cal_noncolinear_Hamiltonian(input::Job_input_Type,result_index=1)
+  assert(DFTcommon.non_colinear_type == input.spin_type)
+  global dftresult
+  return DFTforge.cal_noncolinear_Hamiltonian(input.k_point,
+  dftresult[result_index].dfttype, input.Hmode, dftresult[result_index]);
 end
-=#
+
 
 function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
   hdf_cache_name,
@@ -284,7 +286,9 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
     # pmap
     start_idx = cnt;
     end_idx = minimum([cnt+batch_size-1,Total_q_point_num]);
+
     temp = pmap(cal_eigenstate,job_list[start_idx:end_idx]);
+
     ii = 1;
     if (DFTcommon.colinear_type == spin_type || DFTcommon.para_type == spin_type)
       for jj = start_idx:end_idx
@@ -320,6 +324,32 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
         ii += 1;
       end
     end
+
+    #for non_colinear_type spin
+    # H of (real only, image only)
+    if (DFTcommon.non_colinear_type == spin_type)
+      job_list_nc_realH_only = Array(Job_input_Type,0)
+      job_list_nc_imagH_only = Array(Job_input_Type,0)
+      for (index,job_item) in enumerate(job_list[start_idx:end_idx])
+        push!(job_list_nc_realH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_realH_only, result_index));
+        push!(job_list_nc_imagH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_imagH_only, result_index));
+      end
+      tmp_realH_only = pmap(cal_noncolinear_Hamiltonian, job_list_nc_realH_only);
+      tmp_imagH_only = pmap(cal_noncolinear_Hamiltonian, job_list_nc_imagH_only);
+
+      ii = 1;
+      for jj = start_idx:end_idx
+
+        hdf5_hamiltonian_real[:,:,2,jj] = real(tmp_realH_only[ii]);
+        hdf5_hamiltonian_imag[:,:,2,jj] = imag(tmp_realH_only[ii]);
+
+        hdf5_hamiltonian_real[:,:,3,jj] = real(tmp_imagH_only[ii]);
+        hdf5_hamiltonian_imag[:,:,3,jj] = imag(tmp_imagH_only[ii]);
+
+        ii += 1;
+      end
+    end
+
     # write to hdf5
     cnt = end_idx + 1;
     next!(p)
@@ -426,7 +456,18 @@ function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
 
   return Kpoint_eigenstate_only(Eigenstate,Eigenvalues,k_point);
 end
-function cacheread_Hamiltonian(k_point::k_point_Tuple,spin=1,cache_index=1)
+function cacheread_Hamiltonian(k_point::k_point_Tuple,Hmode::DFTcommon.nc_Hamiltonian_selection, cache_index=1)
+  spin = 1;
+  if (DFTcommon.nc_allH == Hmode)
+    spin = 1;
+  elseif (DFTcommon.nc_realH_only == Hmode)
+    spin = 2;
+  elseif (DFTcommon.nc_imagH_only == Hmode)
+    spin = 3;
+  end
+  return cacheread_Hamiltonian(k_point,spin,cache_index);
+end
+function cacheread_Hamiltonian(k_point::k_point_Tuple,spin::Int=1,cache_index=1)
   global eigenstate_list;
 
   # non spin :
@@ -454,8 +495,8 @@ function cacheread_Hamiltonian(k_point::k_point_Tuple,spin=1,cache_index=1)
       im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,spin,q_index];
 
     elseif (DFTcommon.non_colinear_type == spin_type)
-      Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,1,q_index] +
-      im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,1,q_index];
+      Hamiltonian[:,:] = eigenstate_list[cache_index].Hamiltonian_real[:,:,spin,q_index] +
+      im * eigenstate_list[cache_index].Hamiltonian_imag[:,:,spin,q_index];
 
     end
   end
@@ -484,6 +525,13 @@ function cacheread_lampup(q_point_list::Array{k_point_Tuple},cache_index=1)
   if (DFTcommon.colinear_type == spin_type)
     for q_point in q_point_list
       cacheread_Hamiltonian(q_point,2,cache_index)
+    end
+  end
+  if (DFTcommon.non_colinear_type == spin_type)
+    for q_point in q_point_list
+      cacheread_Hamiltonian(q_point,1,cache_index)
+      cacheread_Hamiltonian(q_point,2,cache_index)
+      cacheread_Hamiltonian(q_point,3,cache_index)
     end
   end
 end
