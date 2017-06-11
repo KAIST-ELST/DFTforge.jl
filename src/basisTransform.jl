@@ -51,7 +51,7 @@ function rot_basis!(mat_original,orbitalStartIdx::Array{Int},
       orbital_rot_full[atom_orbitals,atom_orbitals] = orbital_rot
       # actual rotation
       # Aroted = U * A * A'
-      mat_original[:,:] = orbital_rot_full*mat_original*(orbital_rot_full');
+      mat_original[:,:] = orbital_rot_full'*mat_original*(orbital_rot_full);
     end
   end
   #return mat_original;
@@ -66,7 +66,9 @@ function rot_matrixByZXaxisbase(Z_vect::Vector{Float64},X_vect::Vector{Float64})
   R[1,:] = X_vect
   R[2,:] = Y_vect
   R[3,:] = Z_vect
-  return R;
+
+
+  return R';
 end
 #=
 function rot_matrixByZYXangle(theta_Z::Float64,theta_Y::Float64::Float64)
@@ -81,7 +83,11 @@ end
 
 function rot_D_orbital(R::Array{Float64,2})
   # From Jae-Hoon Sim's orbital rotation code
-  assert( abs(norm(R)-1.0) < 10.0^-6.0);
+  diff = ( abs(norm(R)-1.0))
+  if !( diff < 10.0^-4.0)
+	  println(" new global X, Z are not orthorgonal ", diff)
+	  assert(false)
+  end
 
   h = 2.0
   s3 = sqrt(3.0)
@@ -116,7 +122,7 @@ function rot_D_orbital(R::Array{Float64,2})
   DR[5,3]=R[2,1]*R[3,2]+R[3,1]*R[2,2]
   DR[5,4]=R[2,1]*R[3,3]+R[3,1]*R[2,3]
   DR[5,5]=R[2,2]*R[3,3]+R[2,3]*R[3,2]
-  assert( abs(norm(DR)-1.0) < 10.0^-6.0);
+  assert( abs(norm(DR)-1.0) < 10.0^-4.0);
 
   return DR;
 end
