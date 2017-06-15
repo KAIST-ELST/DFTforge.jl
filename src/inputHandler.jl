@@ -97,7 +97,7 @@ function parse_Kpath(kPoint_toml,kPoint_step_num)
     assert(3==length(k_point_start) && 3==length(k_point_end))
     K_start_point_name = ""
     K_end_point_name = ""
-    if (length(v)>=3 && (typeof(v[3]) <: AbstractString) )
+    if (length(v)>=3 && (typeof(v[3][1]) <: AbstractString) )
       K_start_point_name = v[3][1];
       K_end_point_name = v[3][2];
       if (length(v)>=4 && (Int == typeof(v[4])))
