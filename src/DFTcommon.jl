@@ -34,9 +34,11 @@ const Hartree2cm = 2.194746*100000.0;
 const cm2meV = 0.1240;
 const Hartree2meV = Hartree2cm*cm2meV;
 const Hatree2eV = 27.21138602;
+
 #const kB=0.000003166813628;  # Boltzmann constant (Hatree/K)
 const kBeV = 8.6173303*(10.0^-5);  # Boltzmann constant (eV/K)
-
+export ang2bohr
+const ang2bohr = 1.889725989;
 const k_point_precision = 10.0^6;
 export nc_Hamiltonian_selection
 @enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2

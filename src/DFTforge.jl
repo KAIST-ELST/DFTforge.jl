@@ -7,7 +7,7 @@ export Hamiltonian_info_type
 export k_point_Tuple,k_point_int_Tuple
 export cal_colinear_eigenstate,cal_colinear_Hamiltonian
 export cal_nonco_linear_Eigenstate,cal_noncolinear_Hamiltonian
-DFTforge_VERSION = VersionNumber("0.5.0-dev+20170526");
+DFTforge_VERSION = VersionNumber("0.5.0-dev+20170615");
 if 1 == myid()
   println(" DFTforge Version :",string(DFTforge_VERSION))
 end

@@ -149,7 +149,7 @@ function read_scf(scf_name::AbstractString)
     for Rn=1:TCpyCell+1
         read(f,Float64)
         for ii=1:3
-            atv[Rn,ii] = read(f,Float64)
+            atv[Rn,ii] = read(f,Float64) / DFTcommon.ang2bohr;
         end
     end
 
@@ -206,7 +206,7 @@ function read_scf(scf_name::AbstractString)
     for ii=1:3
         read(f,Float64)
         for jj =1:3
-            tv[ii,jj] = read(f,Float64)
+            tv[ii,jj] = read(f,Float64)  / DFTcommon.ang2bohr
         end
     end
 
@@ -216,7 +216,7 @@ function read_scf(scf_name::AbstractString)
     for ii=1:3
         read(f,Float64)
         for jj =1:3
-            rv[ii,jj] = read(f,Float64)
+            rv[ii,jj] = read(f,Float64)  * DFTcommon.ang2bohr
         end
     end
 
@@ -230,7 +230,7 @@ function read_scf(scf_name::AbstractString)
     for ii=1:atomnum
         read(f,Float64)
         for jj =1:3
-            Gxyz[ii,jj] = read(f,Float64)
+            Gxyz[ii,jj] = read(f,Float64)/DFTcommon.ang2bohr
         end
     end
 
