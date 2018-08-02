@@ -1,0 +1,29 @@
+# Input for DFT + DMFT
+# User mostly only need to change below files
+# 1. result_file
+# 2. DMFT.DFT openmx_input
+# 3. max_iter & start_iter
+result_file = "dft/H.scfout"
+
+DFTtype = "OpenMX"
+[DMFT]
+#start_iter = 0 # default 0, set when restaring DMFT+DFT routine from the specific previous step.
+max_iter = 20
+
+## Set binary
+dmft_executable = "/home/users1/bluehope/work_local/DMFT.DFT.scf_read_OpenMX_DMFT/bin/dmft"
+charge_mixing   =  0.3 # default : 0.3 Simple mixing parameter
+[DMFT.DFT]
+openmx_input = "H.dat" # Will automatically lookup dft/H.dat
+
+## Set binary
+openmx_POST_executable = "/home/users1/bluehope/work_local/DMFT.DFT.scf_read_OpenMX_DMFT/bin/analysis_example"
+
+openmx_DM_executable = "/home/users1/bluehope/work_local/DMFT.DFT.scf_read_OpenMX_DMFT/bin/openmx3.8.DM"
+openmx_DM_executable_thread_num  = 10       # default 4
+
+[MPI]
+mpirun_type = "mvapich" #openmpi|mvapich  (for both mvapich and intel)
+mpirun      = "/home/users1/bluehope/opt/local/mvapich2/2.2/bin/mpirun"
+mpirun_num  = 4       # only used when -mpihosts are not set
+thread_num  = 1       # default 1
