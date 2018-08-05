@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-cd "examples/NiO/4cell/Ni6.0_O5.0-s2p2d2f1-4.25_0.0-4.180-k10"
+cd "examples/NiO_G-AFM.OpenMx"
+
+# Unzip dft result 
+# nio.scf : OpenMX full Hamiltonian info
+# nio.HWR : Wannier Hamiltonian from OpenMX
+tar xvf nio_dft_result.tar.xz
 # obtain J(q)
 julia -p 4 ~/.julia/v0.6/DFTforge/src/Spin_Exchange.jl  -T nio_J_openmx.toml
 # J(q) -> J(R)
