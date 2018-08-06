@@ -1,8 +1,36 @@
+
+# QuickStart Guide
+
+## Install
+### Install Julia
+
+For Linux system:
+```
+JULIA_INSTALL=~/opt/bin bash -ci "$(curl –fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
+```
+For OSX or Windows see: https://julialang.org/downloads/
+
+### Install DFTforge in Julia
+
+```sh
+git clone https://github.com/ElectronicStructureTheory-KAIST/DFTforge.jl/
+julia install.jl
+```
+
+## Run example
+
+ * G-type AFM NiO example
+```
+./example_NiO_OpenMX.sh
+```
+---
+
 # DFT postprocessing environment
 Simplify obtaining Hamiltonian, Eigenvalue, Eigenvector from DFT results and Pre-caching them for parallelized calculations.
 Pre-caching results are easy to use when calculating in k and q space.
  * It consists of two parts DFTforge & DFTrefinery.
  
+
 
 ## DFTforge
 The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT results.
