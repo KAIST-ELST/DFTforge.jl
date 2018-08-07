@@ -1,1 +1,9 @@
-theme: jekyll-theme-cayman
+title: DFTforge
+description: Includes MFT (Magnetic force theory) based spin exchange calculation from OpenMX/Wannier Hamiltonian.
+show_downloads: true
+google_analytics:
+theme: jekyll-theme-slate
+email: hongkeeyoon@kaist.ac.kr
+
+sass:
+  sass_dir: ./_sass
