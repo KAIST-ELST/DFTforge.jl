@@ -264,7 +264,7 @@ for result_i in 1:num_results
 
     dist_vect = J_ij_R[result_i][3]
     distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
-    println(size(distance_scalar),size(J_ij_R[result_i][4]),size(cell_vect_list),size(dist_vect))
+    #println(size(distance_scalar),size(J_ij_R[result_i][4]),size(cell_vect_list),size(dist_vect))
     CSV.write(csv_filename,
     DataFrames.DataFrame(Distance = distance_scalar,
                          JmeV = J_ij_R[result_i][5] * 1000.0, # eV -> meV
@@ -273,21 +273,21 @@ for result_i in 1:num_results
                          Dx = dist_vect[:,1],
                          Dy = dist_vect[:,2],
                          Dz = dist_vect[:,3]
-
-                         #Rx = J_ij_R[result_i][4][1],
-                         #Ry = cell_vect_list[:][2],
-                         #Rz = cell_vect_list[:][3]
                         ); delim='\t' )
 end
-#mean(s["Jij_Q_matlab"][3]*1000.0)
+
+################################################################################
 # Plot first item
+################################################################################
 Plots.plotly()
 dist_vect = J_ij_R[1][3]
-label= string(J_ij_R[1][1])*"_"*string(J_ij_R[1][2])
 distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+label= string(J_ij_R[1][1])*"_"*string(J_ij_R[1][2])
 
-Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0. label = label)
-# Plot second to end
+Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0, label = label)
+################################################################################
+# Plot second to end of itmes
+################################################################################
 for result_i in 2:size(J_ij_R)[1]
     #println(result_i)
     dist_vect = J_ij_R[result_i][3]
