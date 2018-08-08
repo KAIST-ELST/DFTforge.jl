@@ -94,11 +94,13 @@ end
 
 cached_mat_dict = Dict{Tuple{Int64,Int64},Any}();
 s = [];
-for (k,v) in enumerate(file_list)
-  s = MAT.matread(v);
+for (k,v_filename) in enumerate(file_list)
+  s = MAT.matread(v_filename);
   atom1 = s["atom1"];
   atom2 = s["atom2"];
+
   if ( base_atom == atom1)
+    s["filename"] = v_filename
     cached_mat_dict[(atom1,atom2)] = s;
   end
 end
@@ -186,11 +188,19 @@ function get_J_idx_1(cell_vect_list, item_idx)
     distance_scalar = distance_scalar[v];
     J = J[v];
     J_r = real(J);
+    dist_vect = dist_vect[v,:];
+    cell_vect_list2 = cell_vect_list[v];
+    #########################
+    # Remove 0,0,0 position
+    #########################
     nonzero_distance_idx = abs.(distance_scalar) .> 0.000001
-    distance_scalar = distance_scalar[nonzero_distance_idx]
-    J_r = J_r[nonzero_distance_idx]
+    distance_scalar     = distance_scalar[nonzero_distance_idx]
+    dist_vect           = dist_vect[nonzero_distance_idx,:]
+    cell_vect_list2     = cell_vect_list2[nonzero_distance_idx]
+    J_r                 = J_r[nonzero_distance_idx]
 
-    push!(J_ij_R,deepcopy((atom1,atom2,distance_scalar,J_r)) )
+    push!(J_ij_R,deepcopy(
+    (atom1, atom2, dist_vect, cell_vect_list2, J_r, s["filename"])) )
     #Plots.scatter!(distance_scalar, J_r*1000.0)
   end
   return J_ij_R;
@@ -251,16 +261,40 @@ for result_i in 1:num_results
     basefile =  splitext(file_list[result_i])[1]
     csv_filename = basefile*".csv"
     println(" Writing CSV:", basename(csv_filename))
+
+    dist_vect = J_ij_R[result_i][3]
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+    println(size(distance_scalar),size(J_ij_R[result_i][4]),size(cell_vect_list),size(dist_vect))
     CSV.write(csv_filename,
-    DataFrames.DataFrame(Distance = J_ij_R[result_i][3],JmeV = J_ij_R[result_i][4] * 1000.0) )
+    DataFrames.DataFrame(Distance = distance_scalar,
+                         JmeV = J_ij_R[result_i][5] * 1000.0, # eV -> meV
+                         #Dxyz = dist_vect[:,1],
+                         Rxyz = J_ij_R[result_i][4],
+                         Dx = dist_vect[:,1],
+                         Dy = dist_vect[:,2],
+                         Dz = dist_vect[:,3]
+
+                         #Rx = J_ij_R[result_i][4][1],
+                         #Ry = cell_vect_list[:][2],
+                         #Rz = cell_vect_list[:][3]
+                        ); delim='\t' )
 end
 #mean(s["Jij_Q_matlab"][3]*1000.0)
-#
+# Plot first item
 Plots.plotly()
-Plots.plot(J_ij_R[1][3],J_ij_R[1][4] *1000.0)
+dist_vect = J_ij_R[1][3]
+label= string(J_ij_R[1][1])*"_"*string(J_ij_R[1][2])
+distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+
+Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0. label = label)
+# Plot second to end
 for result_i in 2:size(J_ij_R)[1]
     #println(result_i)
-    Plots.plot!(J_ij_R[result_i][3],J_ij_R[result_i][4] *1000.0)
+    dist_vect = J_ij_R[result_i][3]
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+    label= string(J_ij_R[result_i][1])*"_"*string(J_ij_R[result_i][2])
+
+    Plots.plot!(distance_scalar,J_ij_R[result_i][5] *1000.0, label = label)  # eV -> meV
 end
 
 plot_filename = "Jplot_"*join(atom_12name_list,",")*"_"*orbital_name*".html"
