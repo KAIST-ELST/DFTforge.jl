@@ -1,7 +1,7 @@
 using ProgressMeter
 import DFTforge
 #using DFTforge.DFTrefinery
-using DFTcommon
+using ..DFTcommon
 
 export update_scfout;
 
