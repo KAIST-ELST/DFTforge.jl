@@ -274,7 +274,7 @@ end
 function pwork(f,args...)
     worker_list = workers()
     n = length(worker_list)
-    results = Array{Any}(n)
+    results = Array{Any}(undef,n)
     @sync begin
         for (worer_idx,worker_id) in enumerate(worker_list)
             @async begin

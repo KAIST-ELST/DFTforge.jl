@@ -1,14 +1,21 @@
 using ProgressMeter
+using Distributed
 import DFTforge
 using DFTforge.DFTrefinery
-using DFTcommon
+#using DFTcommon
+using DFTforge.DFTcommon;
 import MAT
+# Julia 1.0
+using Statistics
+#
+
 X_VERSION = VersionNumber("0.6.1-dev+20180718");
 println(" X_VERSION: ",X_VERSION)
 
+@everywhere using Distributed
 @everywhere import DFTforge
 @everywhere using DFTforge.DFTrefinery
-@everywhere using DFTcommon
+@everywhere using DFTforge.DFTcommon
 ##############################################################################
 ## 1. Read INPUT
 ## 1.1 Set Default values
@@ -203,7 +210,7 @@ println(string(" q point ",length(q_point_list) ," k point ",length(k_point_list
 
 ## 2.3 Calculate Eigenstate & Store Eigenstate into file in HDF5 format
 eigenstate_cache = cachecal_all_Qpoint_eigenstats(kq_point_list,hdf_cache_name);
-gc();
+GC.gc();
 
 ## 2.4 Send Eigenstate info to child processes
 DFTforge.pwork(cacheset,eigenstate_cache)
@@ -353,8 +360,8 @@ num_return = 8; #local scope
     atom1 = atom12[1]
     atom2 = atom12[2]
 
-    atom1_orbitals = orbitalStartIdx_list[atom1]+(1:orbitalNums[atom1]);
-    atom2_orbitals = orbitalStartIdx_list[atom2]+(1:orbitalNums[atom2]);
+    atom1_orbitals = orbitalStartIdx_list[atom1] .+ (1:orbitalNums[atom1]);
+    atom2_orbitals = orbitalStartIdx_list[atom2] .+ (1:orbitalNums[atom2]);
     ############################################################################
     ## Accessing Data End
     ############################################################################
@@ -453,11 +460,11 @@ num_return = 8; #local scope
     end
 
     ## Do auctual calucations
-    Fftn_k_up  = 1.0./(exp.( ((En_k_up)  - ChemP)/(kBeV*E_temp)) + 1.0 );
-    Fftm_kq_up = 1.0./(exp.( ((Em_kq_up) - ChemP)/(kBeV*E_temp)) + 1.0 );
+    Fftn_k_up  = 1.0./(exp.( ((En_k_up)  .- ChemP)/(kBeV*E_temp)) .+ 1.0 );
+    Fftm_kq_up = 1.0./(exp.( ((Em_kq_up) .- ChemP)/(kBeV*E_temp)) .+ 1.0 );
 
-    Fftn_k_down  = 1.0./(exp.( ((En_k_down)  - ChemP)/(kBeV*E_temp)) + 1.0 );
-    Fftm_kq_down = 1.0./(exp.( ((Em_kq_down) - ChemP)/(kBeV*E_temp)) + 1.0 );
+    Fftn_k_down  = 1.0./(exp.( ((En_k_down)  .- ChemP)/(kBeV*E_temp)) .+ 1.0 );
+    Fftm_kq_down = 1.0./(exp.( ((Em_kq_down) .- ChemP)/(kBeV*E_temp)) .+ 1.0 );
 
     # Index convention: dFnk[nk,mkq]
     dFnk_down_Fmkq_up =
@@ -619,7 +626,7 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
         println(DFTcommon.bar_string) # print ====...====
         ## 4.2 reduce K,Q to Q space
         # Average X_Q results
-        Xij_Q_mean_matlab = Array{Array{Complex_my,1}}(num_return,length(atom12_list));
+        Xij_Q_mean_matlab = Array{Array{Complex_my,1}}(undef,num_return,length(atom12_list));
         for (atom12_i,atom12) in enumerate(atom12_list)
           atom1 = atom12[1];
           atom2 = atom12[2];

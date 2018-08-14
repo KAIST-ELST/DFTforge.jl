@@ -947,8 +947,8 @@ function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
   cnt = 1
   spin_type = get_dftdataset(result_index).spin_type;
 
-  Xij_Q = Array{Dict{k_point_int_Tuple,Array{Complex_my,1}}}(num_return,length(atom12_list));
-  Xij_Q_mean = Array{Dict{k_point_int_Tuple,Complex_my}}(num_return,length(atom12_list));
+  Xij_Q = Array{Dict{k_point_int_Tuple,Array{Complex_my,1}}}(undef,num_return,length(atom12_list));
+  Xij_Q_mean = Array{Dict{k_point_int_Tuple,Complex_my}}(undef,num_return,length(atom12_list));
   for xyz_ij = 1:num_return
       for atom12_i = 1:length(atom12_list)
           Xij_Q[xyz_ij,atom12_i] = Dict{k_point_int_Tuple, Array{Complex_my,1}}();

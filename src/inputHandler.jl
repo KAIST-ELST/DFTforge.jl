@@ -13,7 +13,7 @@ mutable struct Wannier_OptionalInfo
   atomnum::Int
   atompos::Array{Float64,2}
   atoms_orbitals_list::Array{Array{Int},1}
-  Wannier_OptionalInfo() = new(0,zeros(0,3),Array{Array{Int},1}(0));
+  Wannier_OptionalInfo() = new(0,zeros(0,3),Array{Array{Int},1}(undef,0));
 end
 
 mutable struct Arg_Inputs

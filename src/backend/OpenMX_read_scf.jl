@@ -305,21 +305,21 @@ function read_scf(scf_name::AbstractString)
     #               [FNAN[ct_AN]+1]
     #               [Total_NumOrbs[ct_AN]]
     #                [Total_NumOrbs[h_AN]];
-    Hks = Array{Array{Array{Array{Array{Float64}}}}}(SpinP_switch+1)
-    iHks = Array{Array{Array{Array{Array{Float64}}}}}(3)
+    Hks = Array{Array{Array{Array{Array{Float64}}}}}(undef,SpinP_switch+1)
+    iHks = Array{Array{Array{Array{Array{Float64}}}}}(undef,3)
 
-    OLP = Array{Array{Array{Array{Float64}}}}(atomnum)
-    OLPpox = Array{Array{Array{Array{Float64}}}}(atomnum);
-    OLPpoy = Array{Array{Array{Array{Float64}}}}(atomnum);
-    OLPpoz = Array{Array{Array{Array{Float64}}}}(atomnum);
-    DM = Array{Array{Array{Array{Array{Float64}}}}}(SpinP_switch+1)
+    OLP = Array{Array{Array{Array{Float64}}}}(undef,atomnum)
+    OLPpox = Array{Array{Array{Array{Float64}}}}(undef,atomnum);
+    OLPpoy = Array{Array{Array{Array{Float64}}}}(undef,atomnum);
+    OLPpoz = Array{Array{Array{Array{Float64}}}}(undef,atomnum);
+    DM = Array{Array{Array{Array{Array{Float64}}}}}(undef,SpinP_switch+1)
 
     for spin = 1:SpinP_switch+1
-        Hks[spin] = Array{Array{Array{Array{Float64}}}}(atomnum)
+        Hks[spin] = Array{Array{Array{Array{Float64}}}}(undef,atomnum)
         init_Hamil!(Hks, spin, atomnum, Total_NumOrbs, FNAN, natn)
     end
     for spin = 1:3
-        iHks[spin] = Array{Array{Array{Array{Float64}}}}(atomnum)
+        iHks[spin] = Array{Array{Array{Array{Float64}}}}(undef,atomnum)
         init_Hamil!(iHks, spin, atomnum, Total_NumOrbs, FNAN, natn)
     end
 
