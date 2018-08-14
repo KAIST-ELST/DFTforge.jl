@@ -1,8 +1,10 @@
-using DFTcommon
-export Wannierdata
+#include("../DFTcommon.jl")
+using ..DFTcommon
+
+#export Wannierdata
 export read_wannier
 
-immutable Wannierdatatype
+struct Wannierdatatype
   atomnum::Int
   Total_NumOrbs::Array{Int,1}
   SpinP_switch::Int
@@ -20,11 +22,11 @@ immutable Wannierdatatype
   wannierOrbital2atomGrouped::Array{Int,1}
 
   E_Temp::Float64;
-  spin_type::DFTcommon.SPINtype
+  spin_type::SPINtype
 end
 
 function read_wannier(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
-  Wannier90_type::DFTcommon.Wannier90type, spin_type::DFTcommon.SPINtype,
+  Wannier90_type::Wannier90type, spin_type::SPINtype,
   atoms_orbitals_list::Vector{Array{Int64}},atomnum::Int,atompos::Array{Float64,2})
   assert(atomnum == length(atoms_orbitals_list))
   if (DFTcommon.OpenMXWF == Wannier90_type)
@@ -43,7 +45,7 @@ function read_wannier(wannier_fname::AbstractString,result_file_dict::Dict{Abstr
 end
 
 function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::Vector{Array{Int64}},
-  atomnum::Int,atompos::Array{Float64,2}, spin_type::DFTcommon.SPINtype)
+  atomnum::Int,atompos::Array{Float64,2}, spin_type::SPINtype)
   assert(atomnum == length(atoms_orbitals_list))
   #assert( spin_type ) #TODO: spin_type check
   Total_NumOrbs = Array{Int,1}(0);
@@ -64,7 +66,7 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
 
   rv = 2*pi*inv(tv'); # Check required
 
-  ChemP = parse(Float64,split(lines[9])[end])*DFTcommon.Hatree2eV
+  ChemP = parse(Float64,split(lines[9])[end])* Hatree2eV
   SpinP_switch  = parse(Int64,split(lines[8])[end])
   # read HWR
   current_line = 10
@@ -126,7 +128,7 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
     		HWR_mat[x,y] = value;
 	    end
     end
-    HWR_mat *= DFTcommon.Hatree2eV/Float64(num_degen_list[i]);
+    HWR_mat *= Hatree2eV/Float64(num_degen_list[i]);
     push!(Hks_R[spin],HWR_mat);
     cnt += 1;
   end
@@ -453,30 +455,31 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
   for spin in 1:SpinP_switch
     Hks_R[spin] = Array{Array{Complex128,2}}(0);
     R_vector_mat[spin] = zeros(num_Rvector,3);
-  end
-  for R_vect_idx = 1:num_Rvector
-    start_cell_vect =  start_linenum + (R_vect_idx-1)*TotalOrbitalNum^2;
-    HWR_mat = zeros(Complex_my, TotalOrbitalNum,TotalOrbitalNum);
-    rel_line = 0;
+  #end
+    for R_vect_idx = 1:num_Rvector
+      start_cell_vect =  start_linenum + (R_vect_idx-1)*TotalOrbitalNum^2;
+      HWR_mat = zeros(Complex_my, TotalOrbitalNum,TotalOrbitalNum);
+      rel_line = 0;
 
-    R_vector =  map(x->parse(Int,x),split(chomp(wannier90_hr_file[start_cell_vect+0]))[1:3]);
-    R_vector_mat[spin][R_vect_idx,:] = R_vector;
-    for y in 1:TotalOrbitalNum
-        for x in 1:TotalOrbitalNum
-            tmp = map(x->parse(Float64,x),split(chomp(wannier90_hr_file[start_cell_vect+rel_line]))[6:7]);
-            value = tmp[1] + tmp[2]*im;
-    		HWR_mat[x,y] = value;
+      R_vector =  map(x->parse(Int,x),split(chomp(wannier90_hr_file[start_cell_vect+0]))[1:3]);
+      R_vector_mat[spin][R_vect_idx,:] = R_vector;
+      for y in 1:TotalOrbitalNum
+          for x in 1:TotalOrbitalNum
+              tmp = map(x->parse(Float64,x),split(chomp(wannier90_hr_file[start_cell_vect+rel_line]))[6:7]);
+              value = tmp[1] + tmp[2]*im;
+      		HWR_mat[x,y] = value;
 
-            tmp = map(x->parse(Int,x),split(chomp(wannier90_hr_file[start_cell_vect+rel_line]))[1:5]);
-            assert(tmp[1:3] == R_vector) # Check if same R_vector
-            #println(tmp)
-            assert(tmp[4] == x && tmp[5] == y)
+              tmp = map(x->parse(Int,x),split(chomp(wannier90_hr_file[start_cell_vect+rel_line]))[1:5]);
+              assert(tmp[1:3] == R_vector) # Check if same R_vector
+              #println(tmp)
+              assert(tmp[4] == x && tmp[5] == y)
 
-            rel_line += 1;
-        end
+              rel_line += 1;
+          end
+      end
+      HWR_mat *= 1.0 # Transform to eV unit
+      push!(Hks_R[spin],HWR_mat);
     end
-    HWR_mat *= 1.0 # Transform to eV unit
-    push!(Hks_R[spin],HWR_mat);
   end
 
   # re arange wannier group same atoms orbitals
@@ -639,12 +642,12 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   push!(start_linenums, start_line);
   push!(num_degen_list, degen )
 
-  assert(sum(abs(R_frac - R_int)) < 10.^-4.0); # Check if cell vector is Int
+  assert(sum(abs(R_frac - R_int)) < 10.0^-4.0); # Check if cell vector is Int
   for current_line in start_line:length(lines)
     R_vector_catesian = map(x->parse(Float64,x),split(lines[current_line])[4:6]) * fractional_scale;
     degen = parse(Int64, split(chomp(lines[current_line]))[7]);
 
-    if sum(abs(prev_R_vect-R_vector_catesian)) < 10.^-4.0
+    if sum(abs(prev_R_vect-R_vector_catesian)) < 10.0^-4.0
     else
       # new R vector
       push!(start_linenums,current_line);
@@ -652,7 +655,7 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
 
       R_frac =  (rv) * R_vector_catesian[:]/(2*pi);
       R_int = round(Int64,R_frac)
-      if (sum(abs(R_frac - R_int)) > 10.^-4.0)
+      if (sum(abs(R_frac - R_int)) > 10.0^-4.0)
         println(" Cartesian R vector  ",R_vector_catesian," did not convert to fractional R", R_frac," @line# ",current_line)
         assert(false); # Check if cell vector is Int
       end
@@ -682,7 +685,7 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
     R_vector_catesian =  map(x->parse(Float64,x),split(lines[start_linenum])[4:6]) * fractional_scale
     R_frac =  (rv) * R_vector_catesian[:]/(2*pi);
     R_int = round(Int64,R_frac)
-    if (sum(abs(R_frac - R_int)) > 10.^-4.0)
+    if (sum(abs(R_frac - R_int)) > 10.0^-4.0)
       println(" Cartesian R vector  ",R_vector_catesian," did not convert to fractional R", R_frac," @line# ",start_linenum)
       assert(false); # Check if cell vector is Int
     end

@@ -1,7 +1,12 @@
 using DFTforge
-using DFTcommon
+using ..DFTcommon
 using HDF5
 using ProgressMeter
+using Distributed
+# Julia 1.0 support
+using Mmap
+using Statistics
+#
 include("resultExport.jl")
 export export2mat_K_Q,export2mat_K_Q_nc
 
@@ -27,7 +32,7 @@ type DFTdataset
 end
 =#
 
-type Eigenstate_hdf5
+mutable struct Eigenstate_hdf5
   hdf_cache_name::AbstractString
   fid_hdf::HDF5.HDF5File
   q_points::Array{k_point_Tuple}
@@ -49,7 +54,7 @@ type Eigenstate_hdf5
     q_points_intdic,spin_type,TotalOrbitalNum,dftresult);
 end
 
-type Job_input_Type
+struct Job_input_Type
   k_point::k_point_Tuple
   spin_type::SPINtype
   Hmode::DFTcommon.nc_Hamiltonian_selection
@@ -61,7 +66,7 @@ type Job_input_Type
   Job_input_Type(k_point, spin_type, Hmode::DFTcommon.nc_Hamiltonian_selection, result_index) = new(k_point, spin_type, Hmode, result_index)
 end
 
-type Job_input_kq_Type
+struct Job_input_kq_Type
   k_point::k_point_Tuple
   kq_point::k_point_Tuple
   spin_type::SPINtype
@@ -72,7 +77,7 @@ type Job_input_kq_Type
   Job_input_kq_Type(k_point,kq_point,spin_type,result_index,cache_index) =
     new(k_point,kq_point,spin_type,result_index,cache_index)
 end
-type Job_input_kq_atom_Type
+struct Job_input_kq_atom_Type
   k_point::k_point_Tuple
   kq_point::k_point_Tuple
   spin_type::SPINtype
@@ -86,7 +91,7 @@ type Job_input_kq_atom_Type
     new(k_point,kq_point,spin_type,atom1,atom2,result_index,cache_index)
 end
 
-type Job_input_kq_atom_list_Type
+struct Job_input_kq_atom_list_Type
   k_point::k_point_Tuple
   kq_point::k_point_Tuple
   spin_type::SPINtype
@@ -407,7 +412,7 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
   hdf5_eigenstate_real = [];
   hdf5_eigenstate_imag = [];
   hdf5_eigenvalues = [];
-  gc();
+  GC.gc();
   return eigenstate_cache;
 end
 
@@ -548,7 +553,7 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
   hdf5_eigenstate_real = [];
   hdf5_eigenstate_imag = [];
   hdf5_eigenvalues = [];
-  gc();
+  GC.gc();
   return eigenstate_cache;
 end
 
@@ -566,7 +571,7 @@ function cacheset(eigenstate_cache::Eigenstate_hdf5,cache_index=1)
 
   #eigenstate_cache.fid_hdf = fid_hdf;
 
-  gc();
+  GC.gc();
 end
 function cacheread(cache_index=1)
   global eigenstate_list;
@@ -894,7 +899,7 @@ function Qspace_Ksum_parallel(kq_function,q_point_list,k_point_list,
       next!(p)
     end
     if (1==rem(q_i,50))
-      @everywhere gc()
+      @everywhere GC.gc()
     end
   end
   return Q_ksum;
@@ -927,7 +932,7 @@ function Qspace_Ksum_atom_parallel(kq_function,q_point_list,k_point_list,atom1,a
       next!(p)
     end
     if (1==rem(q_i,50))
-      @everywhere gc()
+      @everywhere GC.gc()
     end
   end
   return Q_ksum;
@@ -959,7 +964,7 @@ function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
   for (q_i,q_point) in enumerate(q_point_list)
     q_point_int = k_point_float2int(q_point);
 
-    job_list = Array{Job_input_kq_atom_list_Type}(0)
+    job_list = Array{Job_input_kq_atom_list_Type}(undef,0)
     for k_point in k_point_list
       kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
       kq_point = kPoint2BrillouinZone_Tuple(kq_point);
@@ -984,7 +989,7 @@ function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
       next!(p)
     end
     if (1==rem(q_i,50))
-      @everywhere gc()
+      @everywhere GC.gc()
     end
   end
   return (Xij_Q,Xij_Q_mean);
@@ -1052,7 +1057,7 @@ function Qspace_Ksum_atomlist_parallel_nc(kq_function,q_point_list,k_point_list,
       next!(p)
     end
     if (1==rem(q_i,progress_step*5))
-      @everywhere gc()
+      @everywhere GC.gc()
     end
   end
   return (Xij_Q,Xij_Q_mean);

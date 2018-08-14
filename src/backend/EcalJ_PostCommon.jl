@@ -1,8 +1,9 @@
-using DFTcommon
+using ..DFTcommon
+
 export EcalJscf
 export read_EcalJ_scf
 
-immutable EcalJ_H
+struct EcalJ_H
     orbital_cell_orbitals::Array{Int64,2};
     orbital_cell_indexs::Array{Int64,2};
 
@@ -11,7 +12,7 @@ immutable EcalJ_H
     orbital_cell_S::Array{Complex_my,1};
 end
 
-immutable EcalJscf
+struct EcalJscf
     atomnum::Int32
     Total_NumOrbs::Array{Int,1}
     SpinP_switch::Int
@@ -25,7 +26,7 @@ immutable EcalJscf
 
 
     E_Temp::Float64;
-    spin_type::DFTcommon.SPINtype
+    spin_type::SPINtype
 
     EcalJ_H_list::Array{EcalJ_H,1}
 
@@ -58,7 +59,7 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
 
             #phase = (1./scf_r.EcalJ_H_list[spin].orbital_cell_Degen[idx])*exp(-im* 2.0*pi *
             #    sum( k_point_cartesian .* ( plat * scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,:]  )  ) )
-            phase = (1./scf_r.EcalJ_H_list[spin].orbital_cell_Degen[idx])*exp(-im* 2.0*pi *
+            phase = (1. /scf_r.EcalJ_H_list[spin].orbital_cell_Degen[idx])*exp(-im* 2.0*pi *
                 sum( k_point_cartesian .* ( plat[1,:] * scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,1] +
                  plat[2,:] * scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,2] +
                  plat[3,:] * scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,3] )) )

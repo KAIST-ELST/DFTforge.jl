@@ -1,4 +1,8 @@
+__precompile__(true)
 module DFTcommon
+using Distributed
+
+
 using ArgParse
 using ProgressMeter
 import TOML # Pkg.clone("https://github.com/wildart/TOML.jl.git")
@@ -21,6 +25,7 @@ export eigfact_hermitian,check_eigmat, sqrtm_inv
 export SPINtype, DFTtype, Wannier90type
 
 
+
 ################################################################################
 # DMFT + DFT
 ################################################################################
@@ -30,6 +35,11 @@ export Arg_DMFT_DFT,Arg_MPI
 bar_string = "================================================================"
 export bar_string;
 
+################################################################################
+
+
+
+# #=
 @enum SPINtype para_type = 1 colinear_type = 2 non_colinear_type = 4
 @enum DFTtype OpenMX = 1 Wannier90 = 2 EcalJ = 3 NULLDFT = -1
 @enum Wannier90type OpenMXWF = 1 Wannier90WF = 2 EcalJWF = 3  NULLWANNIER = -1
@@ -51,7 +61,7 @@ export nc_Hamiltonian_selection
 @enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
 
 Float_my =  Float64
-Complex_my = Complex128
+Complex_my = ComplexF64  #Complex128
 
 k_point_Tuple = Tuple{Float64,Float64,Float64};
 k_point_int_Tuple = Tuple{Int64,Int64,Int64};
@@ -61,23 +71,33 @@ k_point_rational_Tuple = Tuple{Rational{Int64},Rational{Int64},Rational{Int64}};
 export mpirun_type, excute_cmd, excute_mpi_cmd
 @enum mpirun_type mvapich = 1 openmpi = 2
 
-include("basisTransform.jl")
-include("inputHandler.jl")
 
 Hamiltonian_type = Array{Complex_my,2};
-type Kpoint_eigenstate_only
+# =#
+export nc_Hamiltonian_selection
+
+
+include("basisTransform.jl")
+export basisTransform_result_type
+#using .basisTransform
+
+include("inputHandler.jl")
+#using .inputHandler
+
+
+struct Kpoint_eigenstate_only
     Eigenstate::Array{Complex_my,2};
     Eigenvalues::Array{Float_my,1};
     k_point_int::k_point_Tuple;
     #Hamiltonian::Hamiltonian_type;
 end
-type Kpoint_eigenstate
+struct Kpoint_eigenstate
     Eigenstate::Array{Complex_my,2};
     Eigenvalues::Array{Float_my,1};
     k_point_int::k_point_Tuple;
     Hamiltonian::Hamiltonian_type;
 end
-type Hamiltonian_info_type
+struct Hamiltonian_info_type
   scf_r;
   dfttype::DFTcommon.DFTtype
   spin_type::SPINtype
@@ -186,7 +206,7 @@ function q_k_unique_points(q_point_list,k_point_list)
       end
     next!(p);
   end
-  gc();
+  GC.gc();
   kq_point_int_list = collect(keys(kq_point_dict));
   kq_point_list = collect(values(kq_point_dict));
   return (kq_point_list,kq_point_int_list);
@@ -194,7 +214,7 @@ end
 
 
 atom12_Tuple = Tuple{Int64,Int64};
-type orbital_mask_input_Type
+struct orbital_mask_input_Type
     orbital_mask1::Array{Int64,1}
     orbital_mask2::Array{Int64,1}
 
@@ -308,12 +328,12 @@ end
 function sqrtm_inv(S)
     # S3 = inv(sqrtm(S))
     # Filter small Eigen values(M1) for safe inv
-    const OLP_eigen_cut = 10.0^-10.0
-
-	n = size(S)[1]
+    #const
+    OLP_eigen_cut = 10.0^-10.0
+    n = size(S)[1]
 
     S2 = copy(S);
-	S_eigvals = zeros(n);
+    S_eigvals = zeros(n);
     eigfact_hermitian(S2,S_eigvals);
 
 

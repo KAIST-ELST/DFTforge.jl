@@ -1,6 +1,8 @@
-using MAT
-using HDF5
-using DFTcommon
+#include("../DFTcommon.jl")
+using ..DFTcommon
+#using MAT
+#using HDF5
+
 export cal_eigenstate,cal_Hamiltonian
 #export test_SmallHks
 

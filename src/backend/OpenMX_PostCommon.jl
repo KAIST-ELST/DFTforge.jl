@@ -7,7 +7,10 @@ export test_SmallHks
 export colinear_Hamiltonian,noncolinear_Hamiltonian
 export cal_colinear_raw_Hamiltonian
 const OLP_eigen_cut = 1.0e-10;
-using DFTcommon
+
+
+using ..DFTcommon
+
 include("OpenMX_read_scf.jl")
 #include("read_scf.jl")
 
@@ -356,7 +359,7 @@ end
 
 function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
     H::H_type,iH::H_type,MP,k1::Float64,k2::Float64,k3::Float64,
-    Hmode::nc_Hamiltonian_selection,scf_r::Openmxscf)
+    Hmode::DFTcommon.nc_Hamiltonian_selection,scf_r::Openmxscf)
     # Essentially same as Overlap_Band!
 	#println(size(H))
     assert(4 == size(H)[1]);
@@ -557,7 +560,7 @@ function cal_noncolinear_eigenstate_depericated(k_point,hamiltonian_info::Hamilt
   for j1 = 1:TotalOrbitalNum
       S2[:,j1] *= M1[j1];
   end
-  S2 = S2.';
+  S2 = copy(transpose(S2));
 
   ## non-collinear Eigen funtion (S^(1/2)\Psi) and Eigen values (Enk)
   ##
@@ -623,8 +626,8 @@ function cal_noncolinear_eigenstate_depericated(k_point,hamiltonian_info::Hamilt
   end
   # find Eigenvalues
 
-  H2 = H2.' ;
-  H3 = copy(H2)
+  H3 = copy(transpose(H2));
+  #H3 = copy(H2)
 
   eigfact_hermitian(H3,ko_all);
   if (!check_eigmat(H2,H3,ko_all))
@@ -632,8 +635,8 @@ function cal_noncolinear_eigenstate_depericated(k_point,hamiltonian_info::Hamilt
   end
 
 
-  H3 = H3.'
-  S3 = copy(S2.');
+  H3 = copy(transpose(H3));
+  S3 = copy(transpose(S2));
   NC_Es = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
   NC_Es2 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
   for j1=1:2*TotalOrbitalNum
@@ -647,7 +650,7 @@ function cal_noncolinear_eigenstate_depericated(k_point,hamiltonian_info::Hamilt
           NC_Es2[j1,i1] = sum_1;
       end
   end
-  NC_Es = NC_Es.';
+  NC_Es = copy(transpose(NC_Es));
   #    Psi = Psi';
   #kpoint_nc_common = Kpoint_nc_commondata_Type(NC_Es,ko_all,k_point_int);
   #return kpoint_nc_common;

@@ -125,7 +125,7 @@ Overlap_type =  Array{Array{Array{Array{Float64}}}};
 
 
 
-immutable Openmxscf
+struct Openmxscf
     atomnum::Int32
     SpinP_switch::Int32
     Catomnum::Int32
@@ -217,8 +217,8 @@ function read_scf(scf_name::AbstractString)
 
     #natn[atomnum+1][FNAN[ct_AN]+1];
     #ncn[atomnum+1][FNAN[ct_AN]+1];
-    natn =  Array{Array{Int32,}}(atomnum)
-    ncn =  Array{Array{Int32,}}(atomnum)
+    natn = Array{Array{Int32}}(undef,atomnum)
+    ncn =  Array{Array{Int32}}(undef,atomnum)
     for ii=1:atomnum
         natn[ii] = zeros(Int32,FNAN[ii]+1)
         natn[ii] = read(f,Int32,FNAN[ii]+1)
@@ -257,8 +257,8 @@ function read_scf(scf_name::AbstractString)
             rv[ii,jj] = read(f,Float64)  * DFTcommon.ang2bohr
         end
     end
-
-    if(sum((2*pi*inv(tv') .- rv)[:]) > 10.0^-10)
+    #println(tv,rv)
+    if (sum((2*pi*inv( copy(transpose(tv)) ) .- rv)[:]) > 10.0^-10)
         println("SCF reading error")
     end
 

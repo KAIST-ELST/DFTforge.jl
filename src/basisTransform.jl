@@ -1,14 +1,19 @@
+#module basisTransform
 using Rotations # Pkg.add("Rotations")
 using DataStructures
 #using DFTcommon
+
 export rot_matrixByZXaxisbase,rot_D_orbital
 export basisTransform_rule_type,orbital_rot_type
 export rot_basis!,Heff
 export ncHamiltonian_rot!
 export RotPauliX,RotPauliY,RotPauliZ,RotPauliZYZ,RotPauliZX,RotPauliZXZ,RotPauliThetaPhi
 
+################################################################################
+
+
 function RotPauliX(theta)
-	rot = zeros(Complex128 ,2,2);
+	rot = zeros(ComplexF64  ,2,2);
 	rot[1,1] = cos(theta/2);
 	rot[2,2] = cos(theta/2);
 	rot[1,2] = -im*(sin(theta/2));
@@ -17,7 +22,7 @@ function RotPauliX(theta)
 end
 
 function RotPauliY(theta)
-	rot = zeros(Complex128 ,2,2);
+	rot = zeros(ComplexF64  ,2,2);
 	rot[1,1] = cos(theta/2);
 	rot[2,2] = cos(theta/2);
 	rot[1,2] = (sin(theta/2));
@@ -26,7 +31,7 @@ function RotPauliY(theta)
 end
 
 function RotPauliZ(theta)
-	rot = zeros(Complex128 ,2,2);
+	rot = zeros(ComplexF64  ,2,2);
 	rot[1,1] = exp(-im*(theta/2))
 	rot[2,2] = exp(im*(theta/2))
 	rot[1,2] = 0;
@@ -53,7 +58,7 @@ function RotPauliThetaPhi(theta::Float_my,phi::Float_my)
 	sin_theta = sin(theta/2.0);
 	exp_nphi = exp(-im*0.5*phi);
 	exp_phi = exp(im*0.5*phi);
-	rot = zeros(Complex128 ,2,2);
+	rot = zeros(ComplexF64  ,2,2);
 	rot[1,1] = cos_theta*exp_nphi;
 	rot[2,2] = cos_theta*exp_phi;
 	rot[1,2] = -sin_theta * exp_nphi;
@@ -84,7 +89,7 @@ function ncHamiltonian_rot!(H::Array{Complex_my,2},orbital_indexs,
 end
 
 function ncHamiltonian_rot!(H::Array{Complex_my,2},orbital_indexs,
-  rot_pauli_mat::Array{Complex128,2})
+  rot_pauli_mat::Array{ComplexF64 ,2})
   TotalOrbitalNum2 =  size(H)[1];
   assert(size(H)[2] == TotalOrbitalNum2);
   assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
@@ -106,7 +111,7 @@ function ncHamiltonian_rot!(H::Array{Complex_my,2},orbital_indexs,
 end
 
 
-type orbital_rot_type
+struct orbital_rot_type
   atom1::Int
   orbital_rot::Array{Float64,2}
   orbital_list::Array{Array{Int}}
@@ -228,12 +233,12 @@ function rot_D_orbital(R::Array{Float64,2})
 end
 
 
-type orbital_merge_type
+struct orbital_merge_type
   atom1::Int
   rel_orbital2merge::Array{Array{Int}}
 end
 
-type basisTransform_rule_type
+struct basisTransform_rule_type
   orbital_rot_on::Bool;
   orbital_rot_rules::Dict{Int,orbital_rot_type}; # orbital_rot_d::orbital_rot_d_type
 
@@ -252,7 +257,10 @@ type basisTransform_rule_type
   end
 end
 
-type basisTransform_result_type
+
+export orbital_merge_type,basisTransform_rule_type,basisTransform_result_type
+
+struct basisTransform_result_type
   atomnum::Int
   orbitalNums::Array{Int}
   orbitalStartIdx_list::Array{Int}
@@ -282,7 +290,6 @@ type basisTransform_result_type
 
 end
 
-export orbital_merge_type,basisTransform_rule_type,basisTransform_result_type
 export basisTransform_init
 
 function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform::basisTransform_rule_type)
@@ -432,7 +439,9 @@ function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,w)
     return Heff
 end
 
-type energyCut_type
+struct energyCut_type
   E_low_window::Float_my
   E_upper_window::Float_my
 end
+
+#end

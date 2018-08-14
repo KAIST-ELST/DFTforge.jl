@@ -2,15 +2,21 @@
 # Input parse
 ################################################################################
 
+using ArgParse
 
-type Wannier_OptionalInfo
+export nc_Hamiltonian_selection
+export Arg_MPI
+#@enum orbital_mask_enum nomask=0 unmask=1 mask=2
+#@enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
+
+mutable struct Wannier_OptionalInfo
   atomnum::Int
   atompos::Array{Float64,2}
   atoms_orbitals_list::Array{Array{Int},1}
   Wannier_OptionalInfo() = new(0,zeros(0,3),Array{Array{Int},1}(0));
 end
 
-type Arg_Inputs
+mutable struct Arg_Inputs
   result_file::AbstractString
   result_file_dict::Dict{AbstractString,AbstractString}
   atom1::Int
@@ -50,23 +56,23 @@ type Arg_Inputs
     convert(Array{Array{Int}}, [[]]),["all"], #orbital_mask3_list,orbital_mask3_names
     convert(Array{Array{Int}}, [[]]),["all"], #orbital_mask4_list,orbital_mask4_names
     nomask,nc_allH,"",0.0,"",
-    Vector{k_point_Tuple}(0),NULLDFT,NULLWANNIER,Wannier_OptionalInfo(),
+    Vector{k_point_Tuple}(undef,0),NULLDFT,NULLWANNIER,Wannier_OptionalInfo(),
     colinear_type,
     Dict{AbstractString,Any}())
 end
 
-type kPath_band
+struct kPath_band
   K_point_list::Array{k_point_Tuple}
   K_start_point_name::AbstractString
   K_end_point_name::AbstractString
 end
-type Arg_Inputs_Band
+struct Arg_Inputs_Band
   bandplot::Bool
   K_point_groups::Array{kPath_band}
   Arg_Inputs_Band() = new(true,Array{kPath_band}(0))
 end
 
-type Arg_DMFT_DFT
+struct Arg_DMFT_DFT
   start_iter::Int
   max_iter::Int
   dmft_executable::String
@@ -80,7 +86,7 @@ type Arg_DMFT_DFT
 end
 
 
-type Arg_MPI
+struct Arg_MPI
   mpirun_type::mpirun_type
   mpirun::String
   mpirun_num::Int
@@ -943,3 +949,4 @@ function input_checker(input::Arg_Inputs)
     exit(1)
   end
 end
+#end
