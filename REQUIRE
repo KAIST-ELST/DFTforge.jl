@@ -7,6 +7,6 @@ Rotations
 #https://github.com/wildart/TOML.jl.git
 
 Plots
-Plotly
+#Plotly
 Glob
 CSV
