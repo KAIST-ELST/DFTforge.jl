@@ -1,17 +1,21 @@
 ---
 layout: default
 ---
-
 # MFT (Magentic force theory)
-Calculate spin exchange coupling parameters J from ([OpenMX](http://www.openmx-square.org/))DFT/Wannier hamiltonians via linear-response theory.
-We support the following features.
+![Jx](docs/Logo_text.svg){: height="100px" }
+![OpenMX](http://www.openmx-square.org/OpenMX_LOGO_S.PNG){: height="100px" } 
+
+
+**Jx** Calculate spin exchange coupling parameters *J* from [OpenMX](http://www.openmx-square.org/) DFT/Wannier, Wannier90 hamiltonians via linear-response theory.
+
+We support the following features:
 - J in momentum space.
-- Orbital resolved J
-- Local axis redefinition for orbital resolved J
+- Orbital resolved *J*
+- Local axis redefinition for orbital resolved *J*
 - Full [OpenMX](http://www.openmx-square.org/) DFT Hamiltonian and Wannier Hamiltonian ([OpenMX](http://www.openmx-square.org/)/Wannier90)
 
-![Logo](Logo.svg)
-
+![Logo](docs/Logo.svg)
+---
 # Quick-Start
 
 ### Install Julia ([https://julialang.org/](https://julialang.org/))
@@ -25,7 +29,7 @@ Julia was designed from the beginning for high performance. Julia programs compi
  ```bash
  JULIA_INSTALL=~/opt/bin bash -ci "$(curl –fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
  ```
- 
+
  * For OSX or Windows see: [Julia Download](https://julialang.org/downloads/)
 
 ### Install DFTforge
@@ -40,34 +44,20 @@ julia install.jl
 ```bash
 ./example_NiO_OpenMX.sh
 ```
+
+
+
+
 ---
+# References
 
-# DFTforge the DFT postprocessing environment
-Simplify obtaining Hamiltonian, Eigenvalue, Eigenvector from DFT results and Pre-caching them for parallelized calculations.
-Pre-caching results are easy to use when calculating in k and q space.
- * It consists of two parts DFTforge & DFTrefinery.
+[PhysRevB.97.125132](https://doi.org/10.1103/PhysRevB.97.125132)
+# Developer
+[Hongkee Yoon](https://github.com/bluehope)
+# Funding source
 
+![NRF](http://www.nrf.re.kr/resources/img/icon/icon_eng_logo.png) 
 
-## DFTforge
-The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT results.
-
- * read DFT results from OpenMX, Wannier90(?), EcalJ(?)
- * Calculate Phi, Enk, Hks,
-
-### Etc. functionalities
- * K-point representation in INT (for unique K,Q).
- * Gennerate K-points.
- * Generalised argument parser (support TOML sytle input).
-
-
-
-## DFTrefinery
-use DFTforge for calcuating various properties
-Wrapper module for easy access of DFT-forge, especially easy use of HDF5 cached eigenstate information.
-
- * Store Eigenvalues & Eigenvectors in HDF5 format (K,Q)
- * Read Stored Eigenvalues & Eigenvectors
- * Simple interface for K space, K,Q space calucations
- ** Generalised parallelized K,Q space calculation function wrapper.
+---
 
 
