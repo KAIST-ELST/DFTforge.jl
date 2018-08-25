@@ -1,12 +1,1 @@
-ArgParse
-ProgressMeter
-HDF5
-MAT
-DataStructures
-Rotations
-#https://github.com/wildart/TOML.jl.git
-
-Plots
-#Plotly
-Glob
-CSV
+julia 0.7
