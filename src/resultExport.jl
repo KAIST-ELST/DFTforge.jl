@@ -1,6 +1,6 @@
 
 #import MAT
-import JLD2
+import FileIO
 function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
   q_point_list::Array{k_point_Tuple},
   k_point_list::Array{k_point_Tuple},atom12_list::Vector{Tuple{Int64,Int64}},
@@ -131,7 +131,7 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
     println(map(x-> typeof(x), values(outputDict)))
   ## Write
     #MAT.matwrite(jq_output_file,outputDict);
-    JLD2.save(jq_output_file,outputDict);
+    FileIO.save(jq_output_file,outputDict);
   end
 end
 
@@ -180,7 +180,8 @@ function export2mat_K_Q_nc(Xij_Q_mean_matlab,theta_phi_list,hamiltonian_info,
         mask_name = string("_atom1m_[",",", "]_atom2m_[",",","]");
         f_name = string(f_name,mask_name,"_[",orbital_mask_name,"]","_ChemPdelta_",ChemP_delta_ev);
     end
-    result_fname = string(cal_type,"_",f_name,".mat");
+    #result_fname = string(cal_type,"_",f_name,".mat");
+    result_fname = string(cal_type,"_",f_name,".jld2");
 
     jq_output_file = joinpath(jq_output_dir,result_fname)
 
@@ -216,6 +217,7 @@ function export2mat_K_Q_nc(Xij_Q_mean_matlab,theta_phi_list,hamiltonian_info,
     end
     #println(keys(outputDict))
   ## Write
-    MAT.matwrite(jq_output_file,outputDict);
+    #MAT.matwrite(jq_output_file,outputDict);
+    FileIO.matwrite(jq_output_file,outputDict);
     end
 end
