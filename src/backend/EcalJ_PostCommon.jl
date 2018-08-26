@@ -1,5 +1,5 @@
 using ..DFTcommon
-
+using LinearAlgebra
 export EcalJscf
 export read_EcalJ_scf
 

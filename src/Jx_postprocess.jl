@@ -1,12 +1,14 @@
 __precompile__(true)
 ###
 #using ProgressMeter
-#import DFTforge
+import DFTforge
 #using DFTforge.DFTrefinery
 #using DFTcommon
 #using DFTforge.Plugins
 println("Jx_postprocess started (julia Jx_postprocess.jl --help for inputs)")
-using ArgParse
+#using ArgParse
+using DFTforge.DFTcommon.ArgParse
+#using DataStructures
 s = ArgParseSettings("Jx_postprocess.jl for J(q)->J(r):")
 @add_arg_table s begin
     "--cellvectors"
@@ -34,7 +36,7 @@ end
 #parsed_args = parse_args(ARGS, s)
 #=
 ARGS = "-q 3_3_3 ../examples/CrO2.U0.0/jq.spin.test.wannier_0.0/"
-ARGS = Array{String}(0);
+ARGS = Array{String}(undef,0);
 push!(ARGS,"--cellvectors")
 push!(ARGS,"3_3_3")
 push!(ARGS,"--baseatom")
@@ -69,7 +71,7 @@ if !(Void == typeof(parsed_args["orbital_name"]))
     orbital_name = parsed_args["orbital_name"]
 end
 # get file list
-file_list = Array{String}(0);
+file_list = Array{String}(undef,0);
 for atom_12name in atom_12name_list
     file_list_tmp = Glob.glob(joinpath(root_dir,"*"atom_12name*"*"*orbital_name*"*.mat") )
     append!(file_list,file_list_tmp)
@@ -105,6 +107,7 @@ for (k,v_filename) in enumerate(file_list)
   end
 end
 
+#cached_mat_dict = SortedDict(cached_mat_dict)
 println("================ Selected result *.mat files =============")
 #global_xyz
 
@@ -125,11 +128,11 @@ for (k,v) in cached_mat_dict
   global_xyz_tmp = s["Gxyz"];
   atom1_frac_xyz_tmp = global_xyz[atom1,:];
 
-  assert(rv == rv_tmp);
-  assert(tv == tv_tmp);
-  assert(atom1 == atom1_tmp);
-  assert(global_xyz == global_xyz_tmp);
-  assert(atom1_frac_xyz == atom1_frac_xyz_tmp);
+  @assert(rv == rv_tmp);
+  @assert(tv == tv_tmp);
+  @assert(atom1 == atom1_tmp);
+  @assert(global_xyz == global_xyz_tmp);
+  @assert(atom1_frac_xyz == atom1_frac_xyz_tmp);
 end
 
 
@@ -230,7 +233,7 @@ function get_J_idx_2(cell_vect_list, atom1, atom2, item_idx, angle_idx)
   nonzero_distance_idx = abs.(distance_scalar) .> 0.000001
   distance_scalar = distance_scalar[nonzero_distance_idx]
   J_r = J_r[nonzero_distance_idx]
-  push!(J_ij_R,deepcopy((atom1,atom2,distance_scalar,J_r)) )
+  push!(J_ij_R,deepcopy((atom1,atom2,distance_scalar,J_r,s)) )
 
   #Plots.scatter!(distance_scalar, J_r*1000.0)
 
@@ -256,9 +259,13 @@ atom12_num = size(J_ij_R)[1];
 ##=
 println("================ Writing CSV & Plotfile  =============")
 num_results = size(J_ij_R)[1]
-assert(num_results == length(file_list))
+@assert(num_results == length(file_list))
 for result_i in 1:num_results
-    basefile =  splitext(file_list[result_i])[1]
+    s = J_ij_R[result_i][6]
+    file_name = s["filename"]
+
+    basefile =  splitext(file_name)[1]
+    #basefile =  splitext(file_list[result_i])[1]
     csv_filename = basefile*".csv"
     println(" Writing CSV:", basename(csv_filename))
 

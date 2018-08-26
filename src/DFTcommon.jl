@@ -170,7 +170,7 @@ function kPoint2BrillouinZone_int_Tuple(k_point_int::k_point_int_Tuple)
 end
 
 function kPoint_gen_GammaCenter(k_point_num)
-  k_point_list = Array{k_point_Tuple}(0);
+  k_point_list = Array{k_point_Tuple}(undef,0);
 
   for kx in (0:(k_point_num[1]-1))/(k_point_num[1]) #- 1/2
       for ky in (0:(k_point_num[2]-1))/(k_point_num[2]) #- 1/2
@@ -184,7 +184,7 @@ function kPoint_gen_GammaCenter(k_point_num)
   return k_point_list;
 end
 function kPoint_gen_EquallySpaced(k_point_num)
-  k_point_list = Array{k_point_Tuple}(0);
+  k_point_list = Array{k_point_Tuple}(undef,0);
   kPoint_esp = 10.0^-8;
   for kx in (0.0:1/k_point_num[1]:(1.0-kPoint_esp))
     for ky in (0.0:1/k_point_num[2]:(1.0-kPoint_esp))
@@ -232,7 +232,7 @@ struct orbital_mask_input_Type
     function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},
       atom12::atom12_Tuple,orbital_mask_on::Bool)
 
-      new(orbital_mask1,orbital_mask2,Array{Int64}(0),Array{Int64}(0),
+      new(orbital_mask1,orbital_mask2,Array{Int64}(undef,0),Array{Int64}(undef,0),
         atom12,orbital_mask_on)
     end
     function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},

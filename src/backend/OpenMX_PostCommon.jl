@@ -2,6 +2,7 @@
 
 using MAT
 using HDF5
+using LinearAlgebra
 export update_co_linear_Energy,cal_noncolinear_eigenstate
 export test_SmallHks
 export colinear_Hamiltonian,noncolinear_Hamiltonian
@@ -96,7 +97,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamilt
   S2 = sqrtm_inv(S);
 
   #H_temp = Array(Array{Complex_my,2},scf_r.SpinP_switch+1);
-  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(0);
+  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(undef,0);
   for spin=spin_list #scf_r.SpinP_switch+1
       Coes = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
       H = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
@@ -305,7 +306,7 @@ function cal_colinear_eigenstate_deprecated(k_point::k_point_Tuple,scf_r::Openmx
   ## Coes
 
   #H_temp = Array(Array{Complex_my,2},scf_r.SpinP_switch+1);
-  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(0);
+  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(undef,0);
   for spin=spin_list #scf_r.SpinP_switch+1
       Coes = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
       H = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);

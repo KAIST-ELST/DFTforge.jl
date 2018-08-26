@@ -316,7 +316,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
     survieved_orbitals_dict = Dict{Int,Array{Int}}();
     unsurvieved_orbitals_dict = Dict{Int,Array{Int}}();
 
-    atom_survived = Array{Int}(0);
+    atom_survived = Array{Int}(undef,0);
 
     for (k,orbital_merge_rule) in basisTransform.orbital_merge_rules
       atom1_orig = orbital_merge_rule.atom1;
@@ -342,8 +342,8 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
         end
       end
       # group  survieved_orbitals & unsurvieved_orbitals
-      survieved_orbitals = Array{Int}(0);
-      unsurvieved_orbitals = Array{Int}(0);
+      survieved_orbitals = Array{Int}(undef,0);
+      unsurvieved_orbitals = Array{Int}(undef,0);
       atom1_orbital_cnt = 0;
       for atom1_rel_oribtal in 1:orbitalNums[atom1_orig]
         if atom1_orbitals_all_dict[atom1_rel_oribtal] > 0
@@ -371,10 +371,10 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
     for atom1_orig in 1:atomnum
       if !haskey(orbital_index_orig2new,atom1_orig)
         survieved_orbitals = collect(1:orbitalNums[atom1_orig]);
-        unsurvieved_orbitals = Array{Int}(0);
+        unsurvieved_orbitals = Array{Int}(undef,0);
         atom1_index_orig2new = Dict(i=>i for i in 1:orbitalNums[atom1_orig]);
         if !basisTransform.keep_unmerged_atoms
-          survieved_orbitals = Array{Int}(0);
+          survieved_orbitals = Array{Int}(undef,0);
           unsurvieved_orbitals = collect(1:orbitalNums[atom1_orig]);
           atom1_index_orig2new = Dict( i => -1 for i in 1:orbitalNums[atom1_orig])
         end
@@ -386,7 +386,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
     end
 
     atomnum_eff = length(orbital_index_new);
-    orbitalNums_eff = Array{Int}(0);
+    orbitalNums_eff = Array{Int}(undef,0);
     for (k,v) in orbital_index_new
       push!(orbitalNums_eff,v)
     end
@@ -417,7 +417,7 @@ function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,w)
     ## Merge orbitals
 
     unselected_orbitals = collect(1:TotalOrbitalNum2);
-    survieved_orbitals = Array{Int}(0);
+    survieved_orbitals = Array{Int}(undef,0);
     for (k,v) in enumerate(basisTransform.orbital_merge_rules)
         atomnum = v.atomnum
         rel_orbital2merge = v.rel_orbital2merge;

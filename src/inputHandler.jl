@@ -69,7 +69,7 @@ end
 struct Arg_Inputs_Band
   bandplot::Bool
   K_point_groups::Array{kPath_band}
-  Arg_Inputs_Band() = new(true,Array{kPath_band}(0))
+  Arg_Inputs_Band() = new(true,Array{kPath_band}(undef,0))
 end
 
 struct Arg_DMFT_DFT
@@ -117,7 +117,7 @@ function parse_int_list(num_str)
     return intarray;
 end
 function parse_Kpath(kPoint_toml,kPoint_step_num)
-  K_point_groups = Array{kPath_band}(0);
+  K_point_groups = Array{kPath_band}(undef,0);
   #kPoint_toml = toml_inputs["bandplot"]["kPath_list"]
   for (i,v) in enumerate(kPoint_toml)
     kPoint_step_num_interal = kPoint_step_num;
@@ -136,7 +136,7 @@ function parse_Kpath(kPoint_toml,kPoint_step_num)
       end
     end
     kPoint_steps = (k_point_end-k_point_start)/kPoint_step_num_interal
-    K_point_list = Array{k_point_Tuple}(0);
+    K_point_list = Array{k_point_Tuple}(undef,0);
     for steps_i in 0:kPoint_step_num_interal-1
       steps_f = steps_i*1.0;
       kPoint = (k_point_start[1] + steps_f*kPoint_steps[1]
@@ -230,7 +230,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
             result_file_1 = result_file_list_input[1]
             input.result_file = split(split(result_file_1,".")[1],"_")[1];
           end
-          result_file_list = Array{AbstractString}(0);
+          result_file_list = Array{AbstractString}(undef,0);
           for (k,v) in enumerate(result_file_list_input)
             (exits_check_dat,result_file_path) = detect_file(v , toml_realpath)
             println(result_file_path)
@@ -259,7 +259,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           result_file_1 = result_file_list_input[1]
           input.result_file = split(split(result_file_1,".")[1],"_")[1];
         end
-        result_file_list = Array{AbstractString}(0);
+        result_file_list = Array{AbstractString}(undef,0);
         for (k,v) in enumerate(result_file_list_input)
           (exits_check_dat,result_file_path) = detect_file(v * "_hr.dat", toml_realpath)
           println(result_file_path)
@@ -292,7 +292,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         result_file_1 = result_file_list_input[1]
         input.result_file = split(split(result_file_1,".")[1],"_")[1];
       end
-      result_file_list = Array{AbstractString}(0);
+      result_file_list = Array{AbstractString}(undef,0);
       for (k,v) in enumerate(result_file_list_input)
         (exits_check,result_file_path) = detect_file(v, toml_realpath)
         if (exits_check)

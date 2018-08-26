@@ -48,7 +48,7 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
   atomnum::Int,atompos::Array{Float64,2}, spin_type::SPINtype)
   @assert(atomnum == length(atoms_orbitals_list))
   #@assert( spin_type ) #TODO: spin_type check
-  Total_NumOrbs = Array{Int,1}(0);
+  Total_NumOrbs = Array{Int,1}(undef,0);
   for i in 1:length(atoms_orbitals_list)
     push!(Total_NumOrbs,length(atoms_orbitals_list[i]));
   end
@@ -70,8 +70,8 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
   SpinP_switch  = parse(Int64,split(lines[8])[end])
   # read HWR
   current_line = 10
-  start_linenums = Array{Int}(0);
-  num_degen_list = Array{Int}(0);
+  start_linenums = Array{Int}(undef,0);
+  num_degen_list = Array{Int}(undef,0);
   while (current_line <= length(lines))
     if (startswith(lines[current_line],"R"))
       #println(lines[current_line])
@@ -102,7 +102,7 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
   #R_vector_mat = zeros(length(start_linenums),3)
   Hks_R = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
   for spin in 1:SpinP_switch
-    Hks_R[spin] = Array{Array{Complex_my,2}}(0);
+    Hks_R[spin] = Array{Array{Complex_my,2}}(undef,0);
     R_vector_mat[spin] = zeros(convert(Int,length(start_linenums)/SpinP_switch),3);
   end
   spin = 1;
@@ -135,7 +135,7 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
   # re arange wannier group same atoms orbitals
   Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
   for spin in 1:SpinP_switch
-    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(0);
+    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
   end
   for spin in 1:SpinP_switch
     for i in 1:length(Hks_R[spin])
@@ -162,7 +162,7 @@ function read_wannier_OpenMX_nonCol_linear(wannier_fname,atoms_orbitals_list::Ve
   atomnum::Int,atompos::Array{Float64,2}, spin_type::DFTcommon.SPINtype)
   @assert(atomnum == length(atoms_orbitals_list))
   #@assert( spin_type ) #TODO: spin_type check
-  Total_NumOrbs = Array{Int,1}(0);
+  Total_NumOrbs = Array{Int,1}(undef,0);
   for i in 1:length(atoms_orbitals_list)
     push!(Total_NumOrbs,length(atoms_orbitals_list[i]));
   end
@@ -185,8 +185,8 @@ function read_wannier_OpenMX_nonCol_linear(wannier_fname,atoms_orbitals_list::Ve
   @assert(1 == SpinP_switch); #
   # read HWR
   current_line = 10
-  start_linenums = Array{Int}(0);
-  num_degen_list = Array{Int}(0);
+  start_linenums = Array{Int}(undef,0);
+  num_degen_list = Array{Int}(undef,0);
   while (current_line <= length(lines))
     if (startswith(lines[current_line],"R"))
       #println(lines[current_line])
@@ -219,7 +219,7 @@ function read_wannier_OpenMX_nonCol_linear(wannier_fname,atoms_orbitals_list::Ve
   #R_vector_mat = zeros(length(start_linenums),3)
   Hks_R = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
   for spin in 1:SpinP_switch
-    Hks_R[spin] = Array{Array{Complex_my,2}}(0);
+    Hks_R[spin] = Array{Array{Complex_my,2}}(undef,0);
     R_vector_mat[spin] = zeros(convert(Int,length(start_linenums)/SpinP_switch),3);
   end
   spin = 1;
@@ -255,7 +255,7 @@ function read_wannier_OpenMX_nonCol_linear(wannier_fname,atoms_orbitals_list::Ve
   # re arange wannier group same atoms orbitals
   Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
   for spin in 1:SpinP_switch
-    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(0);
+    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
   end
   for spin in 1:SpinP_switch
     for i in 1:length(Hks_R[spin])
@@ -344,7 +344,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
 
 
 
-  Total_NumOrbs = Array{Int,1}(0);
+  Total_NumOrbs = Array{Int,1}(undef,0);
   for i in 1:length(atoms_orbitals_list)
     push!(Total_NumOrbs,length(atoms_orbitals_list[i]));
   end
@@ -424,7 +424,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
 
   # Read num_degen_list
   num_degen_linenum = Int64(ceil(num_Rvector/15))
-  num_degen_list = Array{Int}(0);
+  num_degen_list = Array{Int}(undef,0);
   for num_degen_lineidx = 1:num_degen_linenum
     tmp = map( x->parse(Int64,x),split(wannier90_hr_file[4+num_degen_lineidx-1 ]));
     append!(num_degen_list,tmp)
@@ -453,7 +453,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
   R_vector_mat = Array{Array{Int,2}}(SpinP_switch)
   Hks_R = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
   for spin in 1:SpinP_switch
-    Hks_R[spin] = Array{Array{Complex128,2}}(0);
+    Hks_R[spin] = Array{Array{Complex128,2}}(undef,0);
     R_vector_mat[spin] = zeros(num_Rvector,3);
   #end
     for R_vect_idx = 1:num_Rvector
@@ -485,7 +485,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
   # re arange wannier group same atoms orbitals
   Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
   for spin in 1:SpinP_switch
-    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(0);
+    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
   end
   for spin in 1:SpinP_switch
     for i in 1:length(Hks_R[spin])
@@ -574,7 +574,7 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   @assert(atomnum == size(atompos)[1]);
 
   fractional_scale = 1.0 #1.224860;
-  Total_NumOrbs = Array{Int,1}(0);
+  Total_NumOrbs = Array{Int,1}(undef,0);
   for i in 1:length(atoms_orbitals_list)
     push!(Total_NumOrbs,length(atoms_orbitals_list[i]));
   end
@@ -630,8 +630,8 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
 
   ## Check R vectors
   # TODO: Spin up down
-  start_linenums = Array{Int}(0);
-  num_degen_list = Array{Int}(0);
+  start_linenums = Array{Int}(undef,0);
+  num_degen_list = Array{Int}(undef,0);
   start_line = 8 + TotalOrbitalNum + 2;
   R_vector_catesian = map(x->parse(Float64,x),split(lines[start_line])[4:6]) * fractional_scale;
   degen = parse(Int64, split(chomp(lines[start_line]))[7]);
@@ -672,7 +672,7 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
     end
   end
   #for spin in 1:SpinP_switch
-    Hks_R[1] = Array{Array{Complex_my,2}}(0);
+    Hks_R[1] = Array{Array{Complex_my,2}}(undef,0);
     R_vector_mat[1] = zeros(length(start_linenums),3);
 
   #end
@@ -719,7 +719,7 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   # re arange wannier group same atoms orbitals
   Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
   for spin in 1:SpinP_switch
-    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(0);
+    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
   end
   for spin in 1:SpinP_switch
     for i in 1:length(Hks_R[spin])

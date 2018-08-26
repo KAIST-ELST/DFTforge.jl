@@ -3,7 +3,9 @@ using ..DFTcommon
 using HDF5
 using ProgressMeter
 using Distributed
+
 # Julia 1.0 support
+using LinearAlgebra
 using Mmap
 using Statistics
 #
@@ -358,8 +360,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
     #for non_colinear_type spin
     # H of (real only, image only)
     if (DFTcommon.non_colinear_type == spin_type)
-      job_list_nc_realH_only = Array{Job_input_Type}(0)
-      job_list_nc_imagH_only = Array{Job_input_Type}(0)
+      job_list_nc_realH_only = Array{Job_input_Type}(undef,0)
+      job_list_nc_imagH_only = Array{Job_input_Type}(undef,0)
       for (index,job_item) in enumerate(job_list[start_idx:end_idx])
         push!(job_list_nc_realH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_realH_only, result_index));
         push!(job_list_nc_imagH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_imagH_only, result_index));
@@ -457,7 +459,7 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
   dataspace(TotalOrbitalNum3,TotalOrbitalNum3, spin_dim,Total_q_point_num ));
   # Write hamiltonian
 
-  job_list = Array{Job_input_Type}(0)
+  job_list = Array{Job_input_Type}(undef,0)
   q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
   q_points_intdic = Dict{k_point_int_Tuple,Int}();
   for (index,q) in enumerate(q_point_list)
@@ -499,8 +501,8 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
     #for non_colinear_type spin
     # H of (real only, image only)
     if (DFTcommon.non_colinear_type == spin_type)
-      job_list_nc_realH_only = Array{Job_input_Type}(0)
-      job_list_nc_imagH_only = Array{Job_input_Type}(0)
+      job_list_nc_realH_only = Array{Job_input_Type}(undef,0)
+      job_list_nc_imagH_only = Array{Job_input_Type}(undef,0)
       for (index,job_item) in enumerate(job_list[start_idx:end_idx])
         push!(job_list_nc_realH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_realH_only, result_index));
         push!(job_list_nc_imagH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_imagH_only, result_index));

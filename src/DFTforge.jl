@@ -17,6 +17,7 @@ DFTforge_VERSION = VersionNumber("0.6.4-dev+20180827");
 
 
 using Distributed
+using LinearAlgebra
 function __init__()
     if 1 == myid()
       println(" DFTforge Version :",string(DFTforge_VERSION))
