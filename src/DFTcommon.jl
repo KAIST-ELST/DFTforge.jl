@@ -11,7 +11,8 @@ export ArgParse,ProgressMeter,Distributed,Statistics
 
 
 include("../ext/TOML/src/TOML.jl")
-import ..TOML # Pkg.clone("https://github.com/wildart/TOML.jl.git")
+#import ..TOML # Pkg.clone("https://github.com/wildart/TOML.jl.git")
+import DFTforge.TOML
 
 export Kpoint_eigenstate,Kpoint_eigenstate_only
 export Complex_my,Float_my,k_point_Tuple,k_point_int_Tuple

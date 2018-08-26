@@ -90,7 +90,7 @@ end
 
 function cal_colinear_eigenstate(k_point::k_point_Tuple,
     hamiltonian_info::Hamiltonian_info_type,spin_list=1)
-    Eigenstate::Array{Kpoint_eigenstate} = Array{Kpoint_eigenstate}();
+    Eigenstate::Array{Kpoint_eigenstate} = Array{Kpoint_eigenstate}(undef,1);
     dfttype = hamiltonian_info.dfttype;
     if (DFTcommon.OpenMX == dfttype)
       #Eigenstate::DFTforge.Kpoint_eigenstate =
