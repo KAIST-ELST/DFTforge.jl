@@ -306,7 +306,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
   for (k,atom1_orig) in enumerate(1:atomnum)
     orbital_index_orig2new[atom1_orig] = Dict( i => 1 for i = 1:orbitalNums[atom1_orig]);
     survieved_orbitals_dict[atom1_orig] = collect(1:orbitalNums[atom1_orig]);
-    unsurvieved_orbitals_dict[atom1_orig] = Array{Int}();
+    unsurvieved_orbitals_dict[atom1_orig] = Array{Int}(undef,0);
   end
   #
   if basisTransform.orbital_merge_on

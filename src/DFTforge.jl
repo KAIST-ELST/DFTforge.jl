@@ -14,7 +14,7 @@ DFTforge_VERSION = VersionNumber("0.6.4-dev+20180827");
 
 #import ..DFTcommon
 #using DFTforge.DFTcommon
-
+include("../ext/TOML/src/TOML.jl")
 
 using Distributed
 using LinearAlgebra
