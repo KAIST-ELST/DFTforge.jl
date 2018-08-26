@@ -7,7 +7,7 @@ import DFTforge
 #using DFTforge.Plugins
 println("Jx_postprocess started (julia Jx_postprocess.jl --help for inputs)")
 #using ArgParse
-using DFTforge.DFTcommon.ArgParse
+using DFTforge.ArgParse
 #using DataStructures
 s = ArgParseSettings("Jx_postprocess.jl for J(q)->J(r):")
 @add_arg_table s begin
@@ -24,7 +24,7 @@ s = ArgParseSettings("Jx_postprocess.jl for J(q)->J(r):")
         default = 0
         help = ""
     "root_dir"
-        help = "root directory of *.mat files "
+        help = "root directory of *.jld2 files "
         arg_type = String
         required = true
 
@@ -49,10 +49,9 @@ push!(ARGS,"../examples/CrO2.U0.0/jq.spin.test.wannier_0.0/")
 =#
 parsed_args = parse_args(ARGS, s)
 import DataFrames
-import MAT
-import CSV
-
-import Plots
+import DFTforge.FileIO
+import DFTforge.CSV
+import DFTforge.Plots
 import Glob
 
 ###
@@ -73,7 +72,7 @@ end
 # get file list
 file_list = Array{String}(undef,0);
 for atom_12name in atom_12name_list
-    file_list_tmp = Glob.glob(joinpath(root_dir,"*"atom_12name*"*"*orbital_name*"*.mat") )
+    file_list_tmp = Glob.glob(joinpath(root_dir,"*"atom_12name*"*"*orbital_name*"*.jld2") )
     append!(file_list,file_list_tmp)
 end
 #get q points
@@ -89,7 +88,7 @@ if !(Void == typeof(parsed_args["cellvectors"]))
 end
 
 base_atom = parsed_args["baseatom"]
-println("================ Selected result *.mat files =============")
+println("================ Selected result *.jld2 files =============")
 for matfile in file_list
     println(matfile)
 end
@@ -108,7 +107,7 @@ for (k,v_filename) in enumerate(file_list)
 end
 
 #cached_mat_dict = SortedDict(cached_mat_dict)
-println("================ Selected result *.mat files =============")
+println("================ Selected result *.jld2 files =============")
 #global_xyz
 
 # Check properties

@@ -72,8 +72,8 @@ ChemP_delta_ev = arg_input.ChemP_delta_ev
 k_point_num = arg_input.k_point_num
 q_point_num = arg_input.q_point_num
  # atom 12
-atom1 = arg_input.atom1;
-atom2 = arg_input.atom2;
+#atom1 = arg_input.atom1;
+#atom2 = arg_input.atom2;
 atom12_list = arg_input.atom12_list;
 hdftmpdir = arg_input.hdftmpdir;
 
@@ -594,22 +594,22 @@ end
 ## 4.1 Do K,Q sum
 # for orbital_mask1_list,orbital_mask2_list combinations
 
-for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
-  for (orbital2_i,orbital_mask2) in enumerate(orbital_mask2_list)
+for (orbital1_i,orbital_mask1_local) in enumerate(orbital_mask1_list)
+  for (orbital2_i,orbital_mask2_local) in enumerate(orbital_mask2_list)
 
-    for (orbital3_i,orbital_mask3) in enumerate(orbital_mask3_list)
-      for (orbital4_i,orbital_mask4) in enumerate(orbital_mask4_list)
-        orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,
-          orbital_mask3,orbital_mask4,(-1,-1),false)
+    for (orbital3_i,orbital_mask3_local) in enumerate(orbital_mask3_list)
+      for (orbital4_i,orbital_mask4_local) in enumerate(orbital_mask4_list)
+        orbital_mask_input = orbital_mask_input_Type(orbital_mask1_local,orbital_mask2_local,
+          orbital_mask3_local,orbital_mask4_local,(-1,-1),false)
         if (orbital_mask_on)
-            orbital_mask_input = orbital_mask_input_Type(orbital_mask1,orbital_mask2,
-            orbital_mask3,orbital_mask4,(-1,-1),true)
+            orbital_mask_input = orbital_mask_input_Type(orbital_mask1_local,orbital_mask2_local,
+            orbital_mask3_local,orbital_mask4_local,(-1,-1),true)
         end
         orbital_mask_name = orbital_mask1_names[orbital1_i]*"_"*orbital_mask2_names[orbital2_i]*"__"*
           orbital_mask3_names[orbital3_i]*"__"*orbital_mask4_names[orbital4_i];
         println(DFTcommon.bar_string) # print ====...====
-        println(orbital_mask_name," mask1 ",orbital_mask1,"\tmask2 ",orbital_mask2,
-        "\tmask3 ",orbital_mask3,"\tmask4 ",orbital_mask4)
+        println(orbital_mask_name," mask1 ",orbital_mask1_local,"\tmask2 ",orbital_mask2_local,
+        "\tmask3 ",orbital_mask3_local,"\tmask4 ",orbital_mask4_local)
 
         # setup extra info
         energywindow_all1234_list = [
@@ -654,7 +654,7 @@ for (orbital1_i,orbital_mask1) in enumerate(orbital_mask1_list)
 
         export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,q_point_list,k_point_list,atom12_list,
         orbital_mask_on,
-        orbital_mask1,orbital_mask2,orbital_mask3,orbital_mask4,
+        orbital_mask1_local,orbital_mask2_local,orbital_mask3_local,orbital_mask4_local,
         energywindow_all1234_list,
         ChemP_delta_ev,
         optionalOutputDict,

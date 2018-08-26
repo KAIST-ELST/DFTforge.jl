@@ -350,7 +350,7 @@ function read_scf(scf_name::AbstractString)
     #end
 
     for spin = 1:SpinP_switch+1
-        DM[spin] = Array{Array{Array{Array{Float64}}}}(atomnum)
+        DM[spin] = Array{Array{Array{Array{Float64}}}}(undef,atomnum)
         init_Hamil!(DM, spin, atomnum, Total_NumOrbs,FNAN, natn)
     end
     for spin = 1:SpinP_switch+1

@@ -274,7 +274,7 @@ struct basisTransform_result_type
     survieved_orbitals_dict::SortedDict{Int,Array{Int}},
     unsurvieved_orbitals_dict::SortedDict{Int,Array{Int}})
 
-    orbitalStartIdx_list = Array{Int}(atomnum);
+    orbitalStartIdx_list = Array{Int}(undef,atomnum);
     orbitalStartIdx = 0;
     @assert(length(orbitalNums) == atomnum);
     for (k,v) in enumerate(orbitalNums)
