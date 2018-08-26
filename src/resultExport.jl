@@ -1,5 +1,6 @@
 
-import MAT
+#import MAT
+import JLD2
 function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
   q_point_list::Array{k_point_Tuple},
   k_point_list::Array{k_point_Tuple},atom12_list::Vector{Tuple{Int64,Int64}},
@@ -67,8 +68,8 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
     push!(k_point_int_list,k_point_float2int(k_point))
   end
 
-  q_point_int_list_matlab = reinterpret(Int64,q_point_int_list,(3,length(q_point_int_list)))';
-  k_point_int_list_matlab = reinterpret(Int64,k_point_int_list,(3,length(k_point_int_list)))';
+  q_point_int_list_matlab = collect(reshape(reinterpret(Int64,q_point_int_list),(3,length(q_point_int_list)))');
+  k_point_int_list_matlab = collect(reshape(reinterpret(Int64,k_point_int_list),(3,length(k_point_int_list)))');
 
   tv = scf_r.tv;
   rv = scf_r.rv;
@@ -89,7 +90,9 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
         mask_name = string("_atom1m_[",",", "]_atom2m_[",",","]");
         f_name = string(f_name,mask_name,"_[",orbital_mask_name,"]","_ChemPdelta_",ChemP_delta_ev);
     end
-    result_fname = string(cal_type,"_",f_name,".mat");
+    #result_fname = string(cal_type,"_",f_name,".mat");
+    result_fname = string(cal_type,"_",f_name,".jld2");
+
 
     jq_output_file = joinpath(jq_output_dir,result_fname)
 
@@ -124,9 +127,11 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
     for (key,value) in optionalOutputDict
       outputDict[key] = value;
     end
-    #println(keys(outputDict))
+    println(keys(outputDict))
+    println(map(x-> typeof(x), values(outputDict)))
   ## Write
-    MAT.matwrite(jq_output_file,outputDict);
+    #MAT.matwrite(jq_output_file,outputDict);
+    JLD2.save(jq_output_file,outputDict);
   end
 end
 
