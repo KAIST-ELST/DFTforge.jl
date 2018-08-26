@@ -303,7 +303,7 @@ function eigfact_hermitian(EigVect::Array{Complex_my,2},
     #EigVect_h = Hermitian(EigVect,:L);
     EigVect_h = Hermitian(EigVect);
 
-    temp = eigfact(EigVect_h);
+    temp = eigen(EigVect_h);
     p = sortperm(temp.values);
     #EigVal[:] = real(temp.values[p])[:];
 

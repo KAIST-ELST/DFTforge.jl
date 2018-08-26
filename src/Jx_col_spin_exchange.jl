@@ -231,14 +231,14 @@ toc();
     global orbital_mask3 = Array{Int64,1}();
     global orbital_mask4 = Array{Int64,1}();
     if (orbital_mask_input.orbital_mask_on)
-        orbital_mask1 = orbital_mask_input.orbital_mask1;
-        orbital_mask2 = orbital_mask_input.orbital_mask2;
+        global orbital_mask1 = orbital_mask_input.orbital_mask1;
+        global orbital_mask2 = orbital_mask_input.orbital_mask2;
 
-        orbital_mask3 = orbital_mask_input.orbital_mask3;
-        orbital_mask4 = orbital_mask_input.orbital_mask4;
-        orbital_mask_on = true;
+        global orbital_mask3 = orbital_mask_input.orbital_mask3;
+        global orbital_mask4 = orbital_mask_input.orbital_mask4;
+        global orbital_mask_on = true;
     else
-        orbital_mask_on = false;
+        global orbital_mask_on = false;
     end
     #println(orbital_mask1)
 end

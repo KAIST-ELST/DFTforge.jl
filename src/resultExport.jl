@@ -127,8 +127,8 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
     for (key,value) in optionalOutputDict
       outputDict[key] = value;
     end
-    println(keys(outputDict))
-    println(map(x-> typeof(x), values(outputDict)))
+    #println(keys(outputDict))
+    #println(map(x-> typeof(x), values(outputDict)))
   ## Write
     #MAT.matwrite(jq_output_file,outputDict);
     FileIO.save(jq_output_file,outputDict);
