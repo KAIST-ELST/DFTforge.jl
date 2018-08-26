@@ -5,14 +5,14 @@ const Hatree2eV = 27.2114;
 function init_OLPmat!(mat, atomnum, Total_NumOrbs, FNAN, natn)
     for ct_AN=1:atomnum
         TNO1 = Total_NumOrbs[ct_AN];
-        mat[ct_AN] =  Array{Array{Array{Float64}}}(FNAN[ct_AN]+1);
+        mat[ct_AN] =  Array{Array{Array{Float64}}}(undef,FNAN[ct_AN]+1);
 
         for h_AN=1:FNAN[ct_AN]+1
-            mat[ct_AN][h_AN] =  Array{Array{Float64}}(TNO1);
+            mat[ct_AN][h_AN] =  Array{Array{Float64}}(undef,TNO1);
             Gh_AN = natn[ct_AN][h_AN];
             TNO2 = Total_NumOrbs[Gh_AN];
             for i=1:TNO1
-                mat[ct_AN][h_AN][i] = Array{Float64}(TNO2);
+                mat[ct_AN][h_AN][i] = Array{Float64}(undef,TNO2);
             end
         end
     end
@@ -60,18 +60,18 @@ function init_Hamil!(mat, spin, atomnum, Total_NumOrbs, FNAN, natn)
     for ct_AN=1:atomnum
         TNO1 = Total_NumOrbs[ct_AN];
         mat[spin][ct_AN] =
-        Array{Array{Array{Float64}}}(FNAN[ct_AN]+1);
+        Array{Array{Array{Float64}}}(undef,FNAN[ct_AN]+1);
 
         for h_AN=1:FNAN[ct_AN]+1
             mat[spin][ct_AN][h_AN] =
-                    Array{Array{Float64}}(TNO1);
+                    Array{Array{Float64}}(undef,TNO1);
 
             Gh_AN = natn[ct_AN][h_AN];
             TNO2 = Total_NumOrbs[Gh_AN];
 
             for i=1:TNO1
                 mat[spin][ct_AN][h_AN][i] =
-                Array{Float64}(TNO2);
+                Array{Float64}(undef,TNO2);
             end
         end
     end

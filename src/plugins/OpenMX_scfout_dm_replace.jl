@@ -15,7 +15,7 @@ function update_scfout_rotation(orginal_scfout_fname::String, updated_scfout_fna
   rotation_dict::Dict{Int,rotation_item})
   if !(isfile(orginal_scfout_fname))
     println(" Orignal scfout dose not exists ",orginal_scfout_fname)
-    assert(falses)
+    @assert(falses)
   end
   scf_r = DFTforge.OpenMXdata.read_scf(orginal_scfout_fname);
   ##############################################################################
@@ -138,8 +138,8 @@ function update_scfout_rotation(orginal_scfout_fname::String, updated_scfout_fna
       for LB_AN = 1:scf_r_test.FNAN[GA_AN]+1 #atom_i is not atom1,2 index
           GB_AN::UInt = scf_r_test.natn[GA_AN][LB_AN]
           Rn::UInt = 1+scf_r_test.ncn[GA_AN][LB_AN]
-          assert(GB_AN == scf_r.natn[GA_AN][LB_AN])
-          assert(Rn == 1+scf_r.ncn[GA_AN][LB_AN])
+          @assert(GB_AN == scf_r.natn[GA_AN][LB_AN])
+          @assert(Rn == 1+scf_r.ncn[GA_AN][LB_AN])
           atom2_orbitalNum::UInt = scf_r.Total_NumOrbs[GB_AN]
           atom2_orbitalStart::UInt = orbitalStartIdx_list[GB_AN];
 

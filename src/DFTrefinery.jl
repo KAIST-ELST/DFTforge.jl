@@ -126,7 +126,7 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
         orbitalNums[i] = scf_r.Total_NumOrbs[i];
     end
 
-    #assert(0 == scf_r.SpinP_switch - spin_type);
+    #@assert(0 == scf_r.SpinP_switch - spin_type);
     dftresult[result_index] =
     DFTdataset(dfttype, scf_r,spin_type,
       orbitalStartIdx,orbitalNums);
@@ -166,7 +166,7 @@ function set_current_dftdataset(scf_r,
         orbitalNums[i] = scf_r.Total_NumOrbs[i];
     end
 
-    #assert(0 == scf_r.SpinP_switch - spin_type);
+    #@assert(0 == scf_r.SpinP_switch - spin_type);
     dftresult[result_index] =
     DFTdataset(dfttype, scf_r,spin_type,
       orbitalStartIdx,orbitalNums);
@@ -180,7 +180,7 @@ function set_current_dftdataset(scf_r,
         orbitalIdx += scf_r.Total_NumOrbs[i]
         orbitalNums[i] = scf_r.Total_NumOrbs[i];
     end
-    #assert(0 == scf_r.SpinP_switch - spin_type);
+    #@assert(0 == scf_r.SpinP_switch - spin_type);
     dftresult[result_index] =
     DFTdataset(dfttype, scf_r,spin_type,
       orbitalStartIdx,orbitalNums);
@@ -246,7 +246,7 @@ end
 
 #for pmap
 function cal_noncolinear_Hamiltonian(input::Job_input_Type)
-  assert(DFTcommon.non_colinear_type == input.spin_type)
+  @assert(DFTcommon.non_colinear_type == input.spin_type)
   global dftresult
   result_index = input.result_index;
   return DFTforge.cal_noncolinear_Hamiltonian(input.k_point,
@@ -294,8 +294,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
   dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim,Total_q_point_num ));
   # Write hamiltonian
 
-  job_list = Array{Job_input_Type}(0)
-  q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
+  job_list = Array{Job_input_Type}(undef,0)
+  q_points_int = Array{k_point_int_Tuple}(undef,Total_q_point_num);
   q_points_intdic = Dict{k_point_int_Tuple,Int}();
   for (index,q) in enumerate(q_point_list)
     k_point = (q[1],q[2],q[3]);
@@ -429,7 +429,7 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
   if (DFTcommon.para_type == spin_type)
       println(" Para Hamiltonian will not be treated as nc.")
       println(" Try to use 'cachecal_all_Qpoint_eigenstats' instead. ")
-      assert(false)
+      @assert(false)
   end
 
   TotalOrbitalNum2 = TotalOrbitalNum;
@@ -650,7 +650,7 @@ function cacheread_eigenstate_as_nc(k_point::k_point_Tuple,spin,cache_index=1)
   if (DFTcommon.para_type == spin_type)
       println(" Para Hamiltonian will not be treated as nc.")
       println(" Try to use 'cacheread_eigenstate' instead. ")
-      assert(false)
+      @assert(false)
   end
   Eigenstate = zeros(Complex_my,TotalOrbitalNum3,TotalOrbitalNum3);
   Eigenvalues = zeros(Float_my,TotalOrbitalNum3);
@@ -754,7 +754,7 @@ function cacheread_Hamiltonian_as_nc(k_point::k_point_Tuple,spin::Int=1,cache_in
   if (DFTcommon.para_type == spin_type)
     println(" Para Hamiltonian will not be treated as nc.")
     println(" Try to use 'cacheread_Hamiltonian' instead. ")
-    assert(false)
+    @assert(false)
   end
 
   Hamiltonian = zeros(Complex_my,TotalOrbitalNum3,TotalOrbitalNum3);
@@ -848,7 +848,7 @@ function get_TotalOrbitalNum(result_index=1)
   TotalOrbitalNum = sum(dftresult[result_index].scf_r.Total_NumOrbs);
   #print(TotalOrbitalNum)
   #print(typeof(TotalOrbitalNum))
-  assert(Int == typeof(TotalOrbitalNum));
+  @assert(Int == typeof(TotalOrbitalNum));
   return TotalOrbitalNum
 end
 function get_ChempP(result_index=1)

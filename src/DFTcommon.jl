@@ -2,9 +2,13 @@ __precompile__(true)
 module DFTcommon
 using Distributed
 
-
+using LinearAlgebra
 using ArgParse
 using ProgressMeter
+using Distributed
+using Statistics
+export ArgParse,ProgressMeter,Distributed,Statistics
+
 
 include("../ext/TOML/src/TOML.jl")
 import ..TOML # Pkg.clone("https://github.com/wildart/TOML.jl.git")
@@ -147,7 +151,7 @@ end
 function kPoint2BrillouinZone(k_point::Array{Float64,1})
     # from -0.5 0.5
     # 0.5 is treated as -0.5
-    return (rem.(k_point+2.5,1)-0.5);
+    return (rem.(k_point .+ 2.5,1) .- 0.5);
 end
 
 function kPoint2BrillouinZone_Tuple(k_point::k_point_Tuple)
@@ -323,7 +327,7 @@ function check_eigmat(A1,eig_mat,eig_val) #A1 orign  eig_mat # eig_val
       " Diff imgmax ",maximum(imag(diff_A)));
         return false
     end
-    #assert( maximum(abs(check_eig)) < 10.0^-3);
+    #@assert( maximum(abs(check_eig)) < 10.0^-3);
     return true;
 end
 
@@ -372,7 +376,7 @@ function excute_cmd(cmd::String,options,work_dir)
     println(" Error occuured while:")
     println( cmd)
     println("=================================================================")
-    assert(falses)
+    @assert(falses)
   end
 end
 
@@ -409,7 +413,7 @@ function excute_mpi_cmd(MPI_paramter::Arg_MPI, cmd::String,
     println(" Error occuured while:")
     println( cmd)
     prinltn("=================================================================")
-    assert(falses)
+    @assert(falses)
   end
 end
 

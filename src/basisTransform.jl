@@ -69,12 +69,12 @@ end
 function ncHamiltonian_rot!(H::Array{Complex_my,2},orbital_indexs,
   theta::Float_my, phi::Float_my)
   TotalOrbitalNum2 =  size(H)[1];
-  assert(size(H)[2] == TotalOrbitalNum2);
-  assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
+  @assert(size(H)[2] == TotalOrbitalNum2);
+  @assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
   TotalOrbitalNum = convert(Int64, TotalOrbitalNum2/2);
-  assert(maximum(orbital_indexs) <= TotalOrbitalNum);
+  @assert(maximum(orbital_indexs) <= TotalOrbitalNum);
   rot_theta_phi = RotPauliZ(phi)*RotPauliX(theta);
-  assert(2==size(rot_theta_phi)[1]);assert(2==size(rot_theta_phi)[2]);
+  @assert(2==size(rot_theta_phi)[1]);@assert(2==size(rot_theta_phi)[2]);
 
   Rot_mat_allbasis = eye(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
   #Rot_mat_allbasis[TotalOrbitalNum+1:TotalOrbitalNum2, 1:TotalOrbitalNum] = eye(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
@@ -91,12 +91,12 @@ end
 function ncHamiltonian_rot!(H::Array{Complex_my,2},orbital_indexs,
   rot_pauli_mat::Array{ComplexF64 ,2})
   TotalOrbitalNum2 =  size(H)[1];
-  assert(size(H)[2] == TotalOrbitalNum2);
-  assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
+  @assert(size(H)[2] == TotalOrbitalNum2);
+  @assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
   TotalOrbitalNum = convert(Int64, TotalOrbitalNum2/2);
-  assert(maximum(orbital_indexs) <= TotalOrbitalNum);
+  @assert(maximum(orbital_indexs) <= TotalOrbitalNum);
   #rot_zyz = RotPauliZYZ(alpha, beta, gamma);
-  assert(2==size(rot_pauli_mat)[1]);assert(2==size(rot_pauli_mat)[2]);
+  @assert(2==size(rot_pauli_mat)[1]);@assert(2==size(rot_pauli_mat)[2]);
 
   Rot_mat_allbasis = eye(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
 	Rot_mat_allbasis[TotalOrbitalNum+1:TotalOrbitalNum2, 1:TotalOrbitalNum] = eye(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
@@ -124,12 +124,12 @@ struct orbital_rot_type
   X_vect::Vector{Float64} # for debug
 
   function orbital_rot_type(atomnum,Z_vect,X_vect,d_orbital_list,orbital_num::Int)
-    assert(3==length(Z_vect))
-    assert(3==length(X_vect))
-    assert(orbital_num==length(d_orbital_list))
+    @assert(3==length(Z_vect))
+    @assert(3==length(X_vect))
+    @assert(orbital_num==length(d_orbital_list))
     duplicated_orbital_num = length(d_orbital_list[1])
     for (k,v) in enumerate(d_orbital_list)
-      assert(length(v) == duplicated_orbital_num);
+      @assert(length(v) == duplicated_orbital_num);
     end
     R = rot_matrixByZXaxisbase(Z_vect,X_vect);
     orbital_rot_d = rot_D_orbital(R);
@@ -145,9 +145,9 @@ function rot_basis!(mat_original,orbitalStartIdx::Array{Int},
     atom1 = v.atom1;
     orbital_num = v.orbital_num;
     duplicated_orbital_num = v.duplicated_orbital_num;
-    assert(k == atom1);
+    @assert(k == atom1);
     orbital_rot = v.orbital_rot;
-    assert(Array{Float64,2} == typeof(orbital_rot));
+    @assert(Array{Float64,2} == typeof(orbital_rot));
     for duplicated_orbital_i in 1:duplicated_orbital_num
       rel_orbital_list = map(x->x[duplicated_orbital_i], v.orbital_list);
       atom_orbitals = orbitalStartIdx[atom1] + rel_orbital_list
@@ -191,7 +191,7 @@ function rot_D_orbital(R::Array{Float64,2})
   diff = ( abs(norm(R)-1.0))
   if !( diff < 10.0^-4.0)
 	  println(" new global X, Z are not orthorgonal ", diff)
-	  assert(false)
+	  @assert(false)
   end
 
   h = 2.0
@@ -227,7 +227,7 @@ function rot_D_orbital(R::Array{Float64,2})
   DR[5,3]=R[2,1]*R[3,2]+R[3,1]*R[2,2]
   DR[5,4]=R[2,1]*R[3,3]+R[3,1]*R[2,3]
   DR[5,5]=R[2,2]*R[3,3]+R[2,3]*R[3,2]
-  assert( abs(norm(DR)-1.0) < 10.0^-4.0);
+  @assert( abs(norm(DR)-1.0) < 10.0^-4.0);
 
   return DR;
 end
@@ -276,12 +276,12 @@ struct basisTransform_result_type
 
     orbitalStartIdx_list = Array{Int}(atomnum);
     orbitalStartIdx = 0;
-    assert(length(orbitalNums) == atomnum);
+    @assert(length(orbitalNums) == atomnum);
     for (k,v) in enumerate(orbitalNums)
       orbitalStartIdx_list[k] = orbitalStartIdx
       orbitalStartIdx += v;
     end
-    assert(length(orbitalStartIdx_list) == atomnum);
+    @assert(length(orbitalStartIdx_list) == atomnum);
     println(" orbitalStartIdx_list ", orbitalStartIdx_list)
     #TODO: atomnum,orbitalNums,orbitalStartIdx_list could be changed if orbitals are merged
     new(atomnum,orbitalNums,orbitalStartIdx_list,
@@ -295,8 +295,8 @@ export basisTransform_init
 function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform::basisTransform_rule_type)
   println(" basisTransform_init ")
   # Default setting
-  assert(atomnum > 0)
-  assert(length(orbitalNums) == atomnum)
+  @assert(atomnum > 0)
+  @assert(length(orbitalNums) == atomnum)
   atomnum_eff = copy(atomnum)
   orbitalNums_eff = copy(orbitalNums)
 
@@ -360,7 +360,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
           atom1_index_orig2new[rel_orbital] = atom1_index_orig2new[rel_orbital2merge[1]]
         end
       end
-      assert(length(keys(atom1_index_orig2new))  == orbitalNums[atom1_orig])
+      @assert(length(keys(atom1_index_orig2new))  == orbitalNums[atom1_orig])
       #atom1_index_orig2new[rel_orbital] = rel_orbital2merge[1];
 
       orbital_index_orig2new[atom1_orig] = atom1_index_orig2new;
@@ -404,7 +404,7 @@ end
 function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,w)
     #FHeff[H00_, H01_, H11_, H10_, w_] := (H00 + H01.Inverse[w - H11].H10)
     (TotalOrbitalNum_1,TotalOrbitalNum_2)=size(H)
-    assert(TotalOrbitalNum_1 == TotalOrbitalNum_2)
+    @assert(TotalOrbitalNum_1 == TotalOrbitalNum_2)
     TotalOrbitalNum2 = TotalOrbitalNum_1;
 
 
@@ -425,7 +425,7 @@ function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,w)
         push!(survieved_orbitals,orbitals2merge);
         deleteat!(unselected_orbitals,v);
     end
-    assert( 0 < length(survieved_orbitals))
+    @assert( 0 < length(survieved_orbitals))
 
     ##
 

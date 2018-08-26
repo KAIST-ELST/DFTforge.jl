@@ -123,7 +123,7 @@ function parse_Kpath(kPoint_toml,kPoint_step_num)
     kPoint_step_num_interal = kPoint_step_num;
     k_point_start = (convert(Array{Float64,1}, v[1]))
     k_point_end = (convert(Array{Float64,1}, v[2]))
-    assert(3==length(k_point_start) && 3==length(k_point_end))
+    @assert(3==length(k_point_start) && 3==length(k_point_end))
     K_start_point_name = ""
     K_end_point_name = ""
     if (length(v)>=3 && (typeof(v[3][1]) <: AbstractString) )
@@ -240,7 +240,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
               push!(result_file_list,result_file_path);
             else
               println("File not found  ",v)
-              assert(false)
+              @assert(false)
             end
           end
           result_file_dict = Dict(
@@ -271,7 +271,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
             push!(result_file_list,result_file_path);
           else
             println("File not found  ",v)
-            assert(false)
+            @assert(false)
           end
 
         end
@@ -299,7 +299,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           push!(result_file_list,result_file_path);
         else
           println("File not found  ",v)
-          assert(false)
+          @assert(false)
         end
 
       end
@@ -324,17 +324,17 @@ function parse_TOML(toml_file,input::Arg_Inputs)
     end
     if (haskey(toml_inputs,"k_point_num"))
       k_point_num = convert(Array{Int,1},toml_inputs["k_point_num"]);
-      assert(3 == length(k_point_num))
+      @assert(3 == length(k_point_num))
       input.k_point_num = k_point_num
     end
     if (haskey(toml_inputs,"q_point_num"))
       q_point_num = convert(Array{Int,1},toml_inputs["q_point_num"]);
-      assert(3 == length(q_point_num))
+      @assert(3 == length(q_point_num))
       input.q_point_num = q_point_num
     end
 
     if (haskey(toml_inputs,"atom12"))
-      input.atom12_list = Vector{Tuple{Int64,Int64}}(0);
+      input.atom12_list = Vector{Tuple{Int64,Int64}}(undef,0);
       for (k,v) in enumerate(toml_inputs["atom12"])
         push!(input.atom12_list,(v[1],v[2]));
       end
@@ -404,7 +404,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                 #input.Optional["energywindow"]  = Dict{String,Array{Array{Float64,1},1}}()
                 input.Optional["energywindow"]  = Dict{String,Any}()
                 if (!haskey(toml_inputs["energywindow"],"energywindow_name"))
-                    println(" In [energywindow] the energywindow_name is missing "); assert(false);
+                    println(" In [energywindow] the energywindow_name is missing "); @assert(false);
                 end
                 input.Optional["energywindow"]["energywindow_name"] = toml_inputs["energywindow"]["energywindow_name"]
 
@@ -420,7 +420,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_all_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_all_list"] = energywindow_all_list;
@@ -431,7 +431,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_1_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_1_list"] = energywindow_1_list;
@@ -442,7 +442,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_2_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_2_list"] = energywindow_2_list;
@@ -453,7 +453,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_3_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_3_list"] = energywindow_3_list;
@@ -464,7 +464,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_4_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_4_list"] = energywindow_4_list;
@@ -520,7 +520,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
               # orbital_rot_d_type
               atom1 = convert(Int, v[1][1])
               orbital_list = convert(Array{Array{Int}},v[2:end]);
-              assert(issorted( map(v->v[1],orbital_list) ));
+              @assert(issorted( map(v->v[1],orbital_list) ));
               orbital_merge_rules[atom1] =
                 orbital_merge_type(atom1,orbital_list);
             end
@@ -606,7 +606,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         start_iter = 0;
         if (haskey(toml_inputs["DMFT"],"start_iter"))
           start_iter = toml_inputs["DMFT"]["start_iter"];
-          assert(start_iter>=0);
+          @assert(start_iter>=0);
         end
         max_iter = convert(Int64,toml_inputs["DMFT"]["max_iter"]);
         dmft_executable = toml_inputs["DMFT"]["dmft_executable"]::String
@@ -622,7 +622,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
         else
           println("openmx_input dft/*.dat dose not exists", openmx_input_full)
-          assert(false)
+          @assert(false)
         end
 
         openmx_DM_executable = toml_inputs["DMFT"]["DFT"]["openmx_DM_executable"]
@@ -709,7 +709,7 @@ function parse_input(args,input::Arg_Inputs)
         #println("  $key  =>  $(repr(val))")
         #println("  $key  =>  $val")
 
-        if (key == "atom12" && (Void != typeof(val)))
+        if (key == "atom12" && (Nothing != typeof(val)))
             atom_str_list = split(val,",")
             atom12_list = Vector{Tuple{Int64,Int64}}();
             for (atom_i, atom12_str) in enumerate(atom_str_list)

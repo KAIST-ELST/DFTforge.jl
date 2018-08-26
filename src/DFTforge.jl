@@ -10,7 +10,7 @@ export k_point_Tuple,k_point_int_Tuple
 export cal_colinear_eigenstate,cal_colinear_Hamiltonian
 export cal_colinear_eigenstate_as_nc
 export cal_nonco_linear_Eigenstate,cal_noncolinear_Hamiltonian
-DFTforge_VERSION = VersionNumber("0.6.4-dev+20180811");
+DFTforge_VERSION = VersionNumber("0.6.4-dev+20180827");
 
 #import ..DFTcommon
 #using DFTforge.DFTcommon

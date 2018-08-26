@@ -1,5 +1,5 @@
-using ProgressMeter
-using Distributed
+#using ProgressMeter
+#using Distributed
 import DFTforge
 using DFTforge.DFTrefinery
 #using DFTcommon
@@ -28,15 +28,15 @@ hdftmpdir = ""
 ## 1.1 Set Default values
 #orbital_mask1 = Array{Int64,1}();
 #orbital_mask2 = Array{Int64,1}();
-orbital_mask1_list = Array{Array{Int}}(0);
-orbital_mask1_names = Array{AbstractString}(0);
-orbital_mask2_list = Array{Array{Int}}(0);
-orbital_mask2_names = Array{AbstractString}(0);
+orbital_mask1_list = Array{Array{Int}}(undef,0);
+orbital_mask1_names = Array{AbstractString}(undef,0);
+orbital_mask2_list = Array{Array{Int}}(undef,0);
+orbital_mask2_names = Array{AbstractString}(undef,0);
 
-orbital_mask3_list = Array{Array{Int}}(0);
-orbital_mask3_names = Array{AbstractString}(0);
-orbital_mask4_list = Array{Array{Int}}(0);
-orbital_mask4_names = Array{AbstractString}(0);
+orbital_mask3_list = Array{Array{Int}}(undef,0);
+orbital_mask3_names = Array{AbstractString}(undef,0);
+orbital_mask4_list = Array{Array{Int}}(undef,0);
+orbital_mask4_names = Array{AbstractString}(undef,0);
 
 orbital_mask_option = DFTcommon.nomask;
 orbital_mask_on = false;
@@ -94,10 +94,10 @@ println(orbital_mask1_list," ",orbital_mask1_names)
 println(orbital_mask2_list," ",orbital_mask2_names)
 println(orbital_mask3_list," ",orbital_mask3_names)
 println(orbital_mask4_list," ",orbital_mask4_names)
-assert(length(orbital_mask1_list) == length(orbital_mask1_names));
-assert(length(orbital_mask2_list) == length(orbital_mask2_names));
-assert(length(orbital_mask3_list) == length(orbital_mask3_names));
-assert(length(orbital_mask4_list) == length(orbital_mask4_names));
+@assert(length(orbital_mask1_list) == length(orbital_mask1_names));
+@assert(length(orbital_mask2_list) == length(orbital_mask2_names));
+@assert(length(orbital_mask3_list) == length(orbital_mask3_names));
+@assert(length(orbital_mask4_list) == length(orbital_mask4_names));
 # Band selection
 if haskey(arg_input.Optional,"band_selection")
   band_selection_on =  arg_input.Optional["band_selection"]
