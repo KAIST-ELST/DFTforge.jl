@@ -198,7 +198,7 @@ function rot_D_orbital(R::Array{Float64,2})
 
   h = 2.0
   s3 = sqrt(3.0)
-  DR = eye(5,5)
+  DR = Matrix(1.0I,5,5);
 
   DR[1,1]=3/h*(R[3,3])^2.0-1/h
   DR[1,2]=s3/h*(R[3,1]^2.0-R[3,2]^2.0)
