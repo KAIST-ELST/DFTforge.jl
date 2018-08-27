@@ -79,7 +79,7 @@ for atom_12name in atom_12name_list
 end
 #get q points
 cellvect_num = [2,2,2];
-if !(Void == typeof(parsed_args["cellvectors"]))
+if !(Nothing == typeof(parsed_args["cellvectors"]))
     val = parsed_args["cellvectors"];
     cellvect_num_tmp =   map(x->parse(Int64,x),split(val,"_"))
     if (3 == length(cellvect_num_tmp))
@@ -96,17 +96,25 @@ for matfile in file_list
 end
 
 cached_mat_dict = Dict{Tuple{Int64,Int64},Any}();
-s = [];
+#s = [];
+global rv = zeros(Float64, 3,3)
+global tv = zeros(Float64, 3,3)
+global global_xyz = [];
+global atom1 = 0
+global atom2 = 0
 for (k,v_filename) in enumerate(file_list)
   #s = MAT.matread(v_filename);
   s = FileIO.load(v_filename);
-  atom1 = s["atom1"];
-  atom2 = s["atom2"];
+  global atom1 = s["atom1"];
+  global atom2 = s["atom2"];
 
   if ( base_atom == atom1)
     s["filename"] = v_filename
     cached_mat_dict[(atom1,atom2)] = s;
   end
+  global rv = s["rv"];
+  global tv = s["tv"];
+  global global_xyz = s["Gxyz"];
 end
 
 #cached_mat_dict = SortedDict(cached_mat_dict)
@@ -114,27 +122,24 @@ println("================ Selected result *.jld2 files =============")
 #global_xyz
 
 # Check properties
-rv = s["rv"];
-tv = s["tv"];
-atom1 = s["atom1"];
-atom2 = s["atom2"];
-global_xyz = s["Gxyz"];
-atom1_frac_xyz = global_xyz[atom1,:];
+
+#atom1_frac_xyz = global_xyz[atom1,:];
 for (k,v) in cached_mat_dict
   s = v;
 
-  rv_tmp = s["rv"]
-  tv_tmp = s["tv"]
   atom1_tmp = s["atom1"]
   atom2_tmp = s["atom2"]
+
+  rv_tmp = s["rv"]
+  tv_tmp = s["tv"]
   global_xyz_tmp = s["Gxyz"];
-  atom1_frac_xyz_tmp = global_xyz[atom1,:];
+  #atom1_frac_xyz_tmp = global_xyz[atom1,:];
 
   @assert(rv == rv_tmp);
   @assert(tv == tv_tmp);
   @assert(atom1 == atom1_tmp);
   @assert(global_xyz == global_xyz_tmp);
-  @assert(atom1_frac_xyz == atom1_frac_xyz_tmp);
+  #@assert(atom1_frac_xyz == atom1_frac_xyz_tmp);
 end
 
 
@@ -144,7 +149,7 @@ end
 
 
 function get_J(cell_vect_list, J_ij_Q_data, q_point_cart, atom1_global_xyz, atom2_global_xyz)
-  J_ij_cell_vect = zeros(Complex128,length(cell_vect_list));
+  J_ij_cell_vect = zeros(ComplexF64,length(cell_vect_list));
   J_ij_pos_vects = zeros(length(cell_vect_list),3);
 
   atom2_global_xyz_0 = atom2_global_xyz;
@@ -177,7 +182,7 @@ function get_J_idx_1(cell_vect_list, item_idx)
     #s = MAT.matread(joinpath(root_dir,file_list_same_baseatom[k]));
     q_point_fact_list = s["q_point_list"]/s["k_point_precision"];
 
-    q_point_cart =   q_point_fact_list[:,1] * rv[1,:].' + q_point_fact_list[:,2] * rv[2,:].' + q_point_fact_list[:,3] * rv[3,:].';
+    q_point_cart =   q_point_fact_list[:,1] * transpose(rv[1,:]) + q_point_fact_list[:,2] * transpose(rv[2,:]) + q_point_fact_list[:,3] * transpose(rv[3,:]);
 
 
     atom1 = s["atom1"];
@@ -185,10 +190,10 @@ function get_J_idx_1(cell_vect_list, item_idx)
     atom1_global_xyz = s["Gxyz"][atom1,:];
     atom2_global_xyz = s["Gxyz"][atom2,:]
     println("atom1,2_global_xyz: (",atom1_global_xyz," ",atom2_global_xyz,")")
-    atom1_frac_xyz[:]
+    #atom1_frac_xyz[:]
 
     (J,dist_vect) = get_J(cell_vect_list, s["Jij_Q_matlab"][item_idx, 1], q_point_cart, atom1_global_xyz[:], atom2_global_xyz[:] );
-    distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ));
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2)[:] ));
     v = sortperm(distance_scalar);
     distance_scalar = distance_scalar[v];
     J = J[v];
@@ -217,14 +222,14 @@ function get_J_idx_2(cell_vect_list, atom1, atom2, item_idx, angle_idx)
   s = cached_mat_dict[atom1,atom2]
   q_point_fact_list = s["q_point_list"]/s["k_point_precision"];
 
-  q_point_cart =   q_point_fact_list[:,1] * rv[1,:].' +
-   q_point_fact_list[:,2] * rv[2,:].'+
-   q_point_fact_list[:,3] * rv[3,:].'
+  q_point_cart =   q_point_fact_list[:,1] * transpose(rv[1,:]) +
+   q_point_fact_list[:,2] * transpose(rv[2,:])+
+   q_point_fact_list[:,3] * tranpose(rv[3,:])
 
   atom1_global_xyz = s["Gxyz"][atom1,:];
   atom2_global_xyz = s["Gxyz"][atom2,:]
   #println(atom1_global_xyz," ",atom2_global_xyz)
-  atom1_frac_xyz[:]
+  #atom1_frac_xyz[:]
 
   (J,dist_vect) = get_J(cell_vect_list, s["Jij_Q_matlab"][item_idx,angle_idx], q_point_cart, atom1_global_xyz[:], atom2_global_xyz[:] );
   distance_scalar = sqrt(real( sum(dist_vect.^2,2)[:] ));
@@ -272,7 +277,7 @@ for result_i in 1:num_results
     println(" Writing CSV:", basename(csv_filename))
 
     dist_vect = J_ij_R[result_i][3]
-    distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2) ))[:]
     #println(size(distance_scalar),size(J_ij_R[result_i][4]),size(cell_vect_list),size(dist_vect))
     CSV.write(csv_filename,
     DataFrames.DataFrame(Distance = distance_scalar,
@@ -290,7 +295,7 @@ end
 ################################################################################
 Plots.plotly()
 dist_vect = J_ij_R[1][3]
-distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2) ))[:]
 label= string(J_ij_R[1][1])*"_"*string(J_ij_R[1][2])
 
 Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0, label = label)
@@ -300,7 +305,7 @@ Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0, label = label)
 for result_i in 2:size(J_ij_R)[1]
     #println(result_i)
     dist_vect = J_ij_R[result_i][3]
-    distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,dims2=2) ))[:]
     label= string(J_ij_R[result_i][1])*"_"*string(J_ij_R[result_i][2])
 
     Plots.plot!(distance_scalar,J_ij_R[result_i][5] *1000.0, label = label)  # eV -> meV

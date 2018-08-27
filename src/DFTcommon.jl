@@ -69,7 +69,7 @@ export nc_Hamiltonian_selection
 @enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
 
 Float_my =  Float64
-Complex_my = ComplexF64  #Complex128
+Complex_my = ComplexF64  #ComplexF64
 
 k_point_Tuple = Tuple{Float64,Float64,Float64};
 k_point_int_Tuple = Tuple{Int64,Int64,Int64};
@@ -310,7 +310,7 @@ function eigfact_hermitian(EigVect::Array{Complex_my,2},
 
     EigVal[:] = (temp.values[p])[:];
     EigVect[:] = temp.vectors[:,p][:];
-    #ccall((:EigenBand_lapack3,"./lib_jx"),Void,(Ptr{Complex128},Ptr{Float64}, Int32,)
+    #ccall((:EigenBand_lapack3,"./lib_jx"),Void,(Ptr{ComplexF64},Ptr{Float64}, Int32,)
     #,EigVect,EigVect,size(EigVect)[1])
 end
 function check_eigmat(A1,eig_mat,eig_val) #A1 orign  eig_mat # eig_val

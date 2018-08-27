@@ -453,7 +453,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
   R_vector_mat = Array{Array{Int,2}}(SpinP_switch)
   Hks_R = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
   for spin in 1:SpinP_switch
-    Hks_R[spin] = Array{Array{Complex128,2}}(undef,0);
+    Hks_R[spin] = Array{Array{ComplexF64,2}}(undef,0);
     R_vector_mat[spin] = zeros(num_Rvector,3);
   #end
     for R_vect_idx = 1:num_Rvector
