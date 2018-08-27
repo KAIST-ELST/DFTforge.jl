@@ -1,3 +1,4 @@
+__precompile__(true)
 using DFTforge
 using ..DFTcommon
 using HDF5

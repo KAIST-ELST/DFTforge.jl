@@ -15,8 +15,8 @@ s = ArgParseSettings("Jx_postprocess.jl for J(q)->J(r):")
     #action = :store_true   # this makes it a flag
         help = "cellvectors ex:) 5_5_5 default 2_2_2"
         required = true
-    "--atom12"
-        help = "target atom1&2 ex1:) 1_1,1_2 or by using wild card ex2:) 1_* "     # used by the help screen
+    "--atom2"
+        help = "second atom index ex1:) 1,2 or by using wild card *"     # used by the help screen
     "--orbital_name"
         help = "used for selecting orbital ex:) [all_all] or [dz_dxy]"
     "--baseatom"
@@ -63,9 +63,10 @@ for (k,v) in parsed_args
 end
 # read inputs
 root_dir = parsed_args["root_dir"]
-atom_12name_list = [""]
-if !(Nothing == typeof(parsed_args["atom12"]))
-    atom_12name_list = split(parsed_args["atom12"],",")
+base_atom = parsed_args["baseatom"]
+atom2_name_list = [""]
+if !(Nothing == typeof(parsed_args["atom2"]))
+    atom2_name_list = split(parsed_args["atom2"],",")
 end
 orbital_name = ""
 if !(Nothing == typeof(parsed_args["orbital_name"]))
@@ -73,9 +74,10 @@ if !(Nothing == typeof(parsed_args["orbital_name"]))
 end
 # get file list
 file_list = Array{String}(undef,0);
-for atom_12name in atom_12name_list
-    file_list_tmp = Glob.glob(joinpath(root_dir,"*" * atom_12name * "*" * orbital_name * "*.jld2") )
-    append!(file_list,file_list_tmp)
+for atom2_name in atom2_name_list
+   atom_12name = string(base_atom) * "_" * string(atom2_name)
+   file_list_tmp = Glob.glob(joinpath(root_dir,"*" * atom_12name * "*" * orbital_name * "*.jld2") )
+   append!(file_list,file_list_tmp)
 end
 #get q points
 cellvect_num = [2,2,2];
@@ -89,7 +91,7 @@ if !(Nothing == typeof(parsed_args["cellvectors"]))
     end
 end
 
-base_atom = parsed_args["baseatom"]
+
 println("================ Selected result *.jld2 files =============")
 for matfile in file_list
     println(matfile)
@@ -279,15 +281,19 @@ for result_i in 1:num_results
     dist_vect = J_ij_R[result_i][3]
     distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2) ))[:]
     #println(size(distance_scalar),size(J_ij_R[result_i][4]),size(cell_vect_list),size(dist_vect))
+    Rxyz = collect(transpose(hcat(J_ij_R[result_i][4]...)))
+
     CSV.write(csv_filename,
     DataFrames.DataFrame(Distance = distance_scalar,
                          JmeV = J_ij_R[result_i][5] * 1000.0, # eV -> meV
                          #Dxyz = dist_vect[:,1],
-                         Rxyz = J_ij_R[result_i][4],
+                         Rx = Rxyz[:,1],
+                         Ry = Rxyz[:,2],
+                         Rz = Rxyz[:,3],
                          Dx = dist_vect[:,1],
                          Dy = dist_vect[:,2],
                          Dz = dist_vect[:,3]
-                        ); delim='\t' )
+                        ); delim=',' )
 end
 
 ################################################################################
@@ -305,13 +311,13 @@ Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0, label = label)
 for result_i in 2:size(J_ij_R)[1]
     #println(result_i)
     dist_vect = J_ij_R[result_i][3]
-    distance_scalar = sqrt.(real( sum(dist_vect.^2,dims2=2) ))[:]
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2) ))[:]
     label= string(J_ij_R[result_i][1])*"_"*string(J_ij_R[result_i][2])
 
     Plots.plot!(distance_scalar,J_ij_R[result_i][5] *1000.0, label = label)  # eV -> meV
 end
 
-plot_filename = "Jplot_"*join(atom_12name_list,",")*"_"*orbital_name*".html"
+plot_filename = "Jplot_"*join(atom2_name_list,",")*"_"*orbital_name*".html"
 println(" Writing Plot:",plot_filename)
 Plots.savefig(joinpath(root_dir,plot_filename))
 #Plots.plot!(J_ij_R[2][3],J_ij_R[2][4] *1000.0)
