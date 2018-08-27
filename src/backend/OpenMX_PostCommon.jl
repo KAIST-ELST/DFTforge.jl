@@ -1,6 +1,6 @@
 #module OpenMXdata
 
-using MAT
+#using MAT
 using HDF5
 using LinearAlgebra
 export update_co_linear_Energy,cal_noncolinear_eigenstate
