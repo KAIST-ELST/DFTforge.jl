@@ -228,7 +228,7 @@ function rot_D_orbital(R::Array{Float64,2})
   DR[5,3]=R[2,1]*R[3,2]+R[3,1]*R[2,2]
   DR[5,4]=R[2,1]*R[3,3]+R[3,1]*R[2,3]
   DR[5,5]=R[2,2]*R[3,3]+R[2,3]*R[3,2]
-  @assert( abs(norm(DR)-1.0) < 10.0^-4.0);
+  @assert( abs(opnorm(DR,2)-1.0) < 10.0^-4.0); # julia 0.6 assert( abs(norm(DR)-1.0) < 10.0^-4.0);
 
   return DR;
 end
