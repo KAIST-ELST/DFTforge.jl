@@ -153,8 +153,8 @@ function rot_basis!(mat_original,orbitalStartIdx::Array{Int},
       rel_orbital_list = map(x->x[duplicated_orbital_i], v.orbital_list);
       atom_orbitals = orbitalStartIdx[atom1] .+ rel_orbital_list
       # gen orbital_rot_full
-      orbital_rot_full = eye(size(mat_original)[1]);
-	  orbital_rot_full = Matrix(1.0I, m, m);
+      #orbital_rot_full = eye(size(mat_original)[1]);
+	  orbital_rot_full = Matrix(1.0I, size(mat_original)[1], size(mat_original)[1]);
       orbital_rot_full[atom_orbitals,atom_orbitals] = orbital_rot
       # actual rotation
       # Aroted = U * A * A'
