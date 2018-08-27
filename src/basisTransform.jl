@@ -2,6 +2,7 @@
 using Rotations # Pkg.add("Rotations")
 using DataStructures
 #using DFTcommon
+using LinearAlgebra
 
 export rot_matrixByZXaxisbase,rot_D_orbital
 export basisTransform_rule_type,orbital_rot_type
@@ -188,7 +189,7 @@ end
 
 function rot_D_orbital(R::Array{Float64,2})
   # From Jae-Hoon Sim's orbital rotation code
-  diff = ( abs(norm(R)-1.0))
+  diff = ( abs(opnorm(R,2)-1.0)) # Julia 0.6 diff = ( abs(norm(R)-1.0))
   if !( diff < 10.0^-4.0)
 	  println(" new global X, Z are not orthorgonal ", diff)
 	  @assert(false)
