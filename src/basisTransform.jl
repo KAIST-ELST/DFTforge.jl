@@ -173,7 +173,7 @@ function rot_matrixByZXaxisbase(Z_vect::Vector{Float64},X_vect::Vector{Float64})
   R[3,:] = Z_vect
 
 
-  return R';
+  return collect(R');
 end
 #=
 function rot_matrixByZYXangle(theta_Z::Float64,theta_Y::Float64::Float64)
