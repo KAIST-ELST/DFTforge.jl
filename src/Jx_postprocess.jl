@@ -93,10 +93,6 @@ end
 
 
 println("================ Selected result *.jld2 files =============")
-for matfile in file_list
-    println(matfile)
-end
-
 cached_mat_dict = Dict{Tuple{Int64,Int64},Any}();
 #s = [];
 global rv = zeros(Float64, 3,3)
@@ -106,11 +102,12 @@ global atom1 = 0
 global atom2 = 0
 for (k,v_filename) in enumerate(file_list)
   #s = MAT.matread(v_filename);
+  println(v_filename)
   s = FileIO.load(v_filename);
   global atom1 = s["atom1"];
   global atom2 = s["atom2"];
 
-  if ( base_atom == atom1)
+  if (base_atom == atom1)
     s["filename"] = v_filename
     cached_mat_dict[(atom1,atom2)] = s;
   end
@@ -132,6 +129,7 @@ for (k,v) in cached_mat_dict
   atom1_tmp = s["atom1"]
   atom2_tmp = s["atom2"]
 
+  #println([atom1_tmp, atom2_tmp])
   rv_tmp = s["rv"]
   tv_tmp = s["tv"]
   global_xyz_tmp = s["Gxyz"];
@@ -191,7 +189,8 @@ function get_J_idx_1(cell_vect_list, item_idx)
     atom2 = s["atom2"];
     atom1_global_xyz = s["Gxyz"][atom1,:];
     atom2_global_xyz = s["Gxyz"][atom2,:]
-    println("atom1,2_global_xyz: (",atom1_global_xyz," ",atom2_global_xyz,")")
+    println(k, "atom_(i, j):(",atom1,", ",atom2,") global_xyz:(",
+      atom1_global_xyz," ",atom2_global_xyz,")")
     #atom1_frac_xyz[:]
 
     (J,dist_vect) = get_J(cell_vect_list, s["Jij_Q_matlab"][item_idx, 1], q_point_cart, atom1_global_xyz[:], atom2_global_xyz[:] );
@@ -319,7 +318,7 @@ end
 
 plot_filename = "Jplot_" * string(base_atom) * "_" *
    join(atom2_name_list,",") * "_" * orbital_name * ".html"
-   
+
 println(" Writing Plot:",plot_filename)
 Plots.savefig(joinpath(root_dir,plot_filename))
 #Plots.plot!(J_ij_R[2][3],J_ij_R[2][4] *1000.0)
