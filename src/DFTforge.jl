@@ -25,8 +25,9 @@ using Statistics
 using CSV
 using FileIO
 using DataFrames
+using Glob
 #using Plots
-export ArgParse,ProgressMeter,Distributed,Statistics,CSV,FileIO,DataFrames#,Plots
+export ArgParse,ProgressMeter,Distributed,Statistics,CSV,FileIO,DataFrames,Glob#,Plots
 ##
 function __init__()
     if 1 == myid()
