@@ -48,7 +48,7 @@ push!(ARGS,"all_all")
 push!(ARGS,"../examples/CrO2.U0.0/jq.spin.test.wannier_0.0/")
 =#
 parsed_args = parse_args(ARGS, s)
-import DataFrames
+import DFTforge.DataFrames
 import DFTforge.FileIO
 import DFTforge.CSV
 import DFTforge.Plots
