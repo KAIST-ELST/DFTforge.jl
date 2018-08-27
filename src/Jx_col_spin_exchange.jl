@@ -4,7 +4,7 @@ import DFTforge
 using DFTforge.DFTrefinery
 #using DFTcommon
 using DFTforge.DFTcommon;
-import MAT
+##import MAT
 # Julia 1.0
 using Statistics
 #
@@ -438,7 +438,7 @@ num_return = 8; #local scope
       for orbit3 in orbital_mask3
           deleteat!(orbital_mask3_tmp, find(orbital_mask3_tmp.==orbit3))
       end
-      Es_m_kq_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:]  = 0.0;
+      Es_m_kq_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:]   = 0.0;
       Es_m_kq_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:] = 0.0;
     end
 

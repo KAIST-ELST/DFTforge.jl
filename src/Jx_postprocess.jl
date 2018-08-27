@@ -51,8 +51,10 @@ parsed_args = parse_args(ARGS, s)
 import DFTforge.DataFrames
 import DFTforge.FileIO
 import DFTforge.CSV
-import DFTforge.Plots
+import Plots
 import Glob
+
+using Statistics
 
 ###
 println("================ User input =============")
@@ -62,17 +64,17 @@ end
 # read inputs
 root_dir = parsed_args["root_dir"]
 atom_12name_list = [""]
-if !(Void == typeof(parsed_args["atom12"]))
+if !(Nothing == typeof(parsed_args["atom12"]))
     atom_12name_list = split(parsed_args["atom12"],",")
 end
 orbital_name = ""
-if !(Void == typeof(parsed_args["orbital_name"]))
+if !(Nothing == typeof(parsed_args["orbital_name"]))
     orbital_name = parsed_args["orbital_name"]
 end
 # get file list
 file_list = Array{String}(undef,0);
 for atom_12name in atom_12name_list
-    file_list_tmp = Glob.glob(joinpath(root_dir,"*"atom_12name*"*"*orbital_name*"*.jld2") )
+    file_list_tmp = Glob.glob(joinpath(root_dir,"*" * atom_12name * "*" * orbital_name * "*.jld2") )
     append!(file_list,file_list_tmp)
 end
 #get q points
@@ -96,7 +98,8 @@ end
 cached_mat_dict = Dict{Tuple{Int64,Int64},Any}();
 s = [];
 for (k,v_filename) in enumerate(file_list)
-  s = MAT.matread(v_filename);
+  #s = MAT.matread(v_filename);
+  s = FileIO.load(v_filename);
   atom1 = s["atom1"];
   atom2 = s["atom2"];
 
@@ -146,7 +149,7 @@ function get_J(cell_vect_list, J_ij_Q_data, q_point_cart, atom1_global_xyz, atom
 
   atom2_global_xyz_0 = atom2_global_xyz;
 
-  for (k,v) in Enumerate(cell_vect_list)
+  for (k,v) in enumerate(cell_vect_list)
   #k = 1
   #cell_vect_list[1]
     v = cell_vect_list[k][:]
@@ -202,7 +205,7 @@ function get_J_idx_1(cell_vect_list, item_idx)
     J_r                 = J_r[nonzero_distance_idx]
 
     push!(J_ij_R,deepcopy(
-    (atom1, atom2, dist_vect, cell_vect_list2, J_r, s["filename"])) )
+    (atom1, atom2, dist_vect, cell_vect_list2, J_r, s)) )
     #Plots.scatter!(distance_scalar, J_r*1000.0)
   end
   return J_ij_R;
@@ -260,8 +263,8 @@ println("================ Writing CSV & Plotfile  =============")
 num_results = size(J_ij_R)[1]
 @assert(num_results == length(file_list))
 for result_i in 1:num_results
-    s = J_ij_R[result_i][6]
-    file_name = s["filename"]
+    s_tmp = J_ij_R[result_i][6]
+    file_name = s_tmp["filename"]
 
     basefile =  splitext(file_name)[1]
     #basefile =  splitext(file_list[result_i])[1]
