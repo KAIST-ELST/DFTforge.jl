@@ -5,14 +5,14 @@ const Hatree2eV = 27.2114;
 function init_OLPmat!(mat, atomnum, Total_NumOrbs, FNAN, natn)
     for ct_AN=1:atomnum
         TNO1 = Total_NumOrbs[ct_AN];
-        mat[ct_AN] =  Array{Array{Array{Float64}}}(FNAN[ct_AN]+1);
+        mat[ct_AN] =  Array{Array{Array{Float64}}}(undef,FNAN[ct_AN]+1);
 
         for h_AN=1:FNAN[ct_AN]+1
-            mat[ct_AN][h_AN] =  Array{Array{Float64}}(TNO1);
+            mat[ct_AN][h_AN] =  Array{Array{Float64}}(undef,TNO1);
             Gh_AN = natn[ct_AN][h_AN];
             TNO2 = Total_NumOrbs[Gh_AN];
             for i=1:TNO1
-                mat[ct_AN][h_AN][i] = Array{Float64}(TNO2);
+                mat[ct_AN][h_AN][i] = Array{Float64}(undef,TNO2);
             end
         end
     end
@@ -25,7 +25,8 @@ function read_OLPmat!(f, mat, atomnum, Total_NumOrbs, FNAN, natn)
           Gh_AN = natn[ct_AN][h_AN];
           TNO2 = Total_NumOrbs[Gh_AN];
           for i=1:TNO1
-              mat[ct_AN][h_AN][i] = read(f,Float64,TNO2)
+              #mat[ct_AN][h_AN][i] = read(f,Float64,TNO2)
+              read!(f,mat[ct_AN][h_AN][i])
           end
       end
   end
@@ -60,18 +61,18 @@ function init_Hamil!(mat, spin, atomnum, Total_NumOrbs, FNAN, natn)
     for ct_AN=1:atomnum
         TNO1 = Total_NumOrbs[ct_AN];
         mat[spin][ct_AN] =
-        Array{Array{Array{Float64}}}(FNAN[ct_AN]+1);
+        Array{Array{Array{Float64}}}(undef,FNAN[ct_AN]+1);
 
         for h_AN=1:FNAN[ct_AN]+1
             mat[spin][ct_AN][h_AN] =
-                    Array{Array{Float64}}(TNO1);
+                    Array{Array{Float64}}(undef,TNO1);
 
             Gh_AN = natn[ct_AN][h_AN];
             TNO2 = Total_NumOrbs[Gh_AN];
 
             for i=1:TNO1
                 mat[spin][ct_AN][h_AN][i] =
-                Array{Float64}(TNO2);
+                Array{Float64}(undef,TNO2);
             end
         end
     end
@@ -85,7 +86,9 @@ function read_Hamil(f, mat, spin, atomnum, Total_NumOrbs, FNAN, natn, scalefacto
             Gh_AN = natn[ct_AN][h_AN];
             TNO2 = Total_NumOrbs[Gh_AN];
             for i=1:TNO1
-                mat[spin][ct_AN][h_AN][i] = read(f,Float64,TNO2)*scalefactor
+                #mat[spin][ct_AN][h_AN][i] = read(f,Float64,TNO2)*scalefactor
+                read!(f,mat[spin][ct_AN][h_AN][i])
+                mat[spin][ct_AN][h_AN][i] *= scalefactor
                 #for j =1:TNO2
                 #    Hks[spin][ct_AN][h_AN][i][j] = read(f,Float64)
                 #end
@@ -221,7 +224,9 @@ function read_scf(scf_name::AbstractString)
     ncn =  Array{Array{Int32}}(undef,atomnum)
     for ii=1:atomnum
         natn[ii] = zeros(Int32,FNAN[ii]+1)
-        natn[ii] = read(f,Int32,FNAN[ii]+1)
+        #natn[ii] = read(f,Int32,FNAN[ii]+1)
+        read!(f,natn[ii])
+
         #natn[ii] = zeros(Int32,FNAN[ii])
         #read(f,Int32);
         #natn[ii] = read(f,Int32,FNAN[ii])
@@ -229,7 +234,8 @@ function read_scf(scf_name::AbstractString)
     #println(natn)
     for ii=1:atomnum
         ncn[ii] = zeros(Int32,FNAN[ii]+1)
-        ncn[ii] = read(f,Int32,FNAN[ii]+1)
+        #ncn[ii] = read(f,Int32,FNAN[ii]+1)
+        read!(f,ncn[ii])
         #ncn[ii] = zeros(Int32,FNAN[ii])
         #read(f,Int32);
         #ncn[ii] = read(f,Int32,FNAN[ii])
@@ -350,7 +356,7 @@ function read_scf(scf_name::AbstractString)
     #end
 
     for spin = 1:SpinP_switch+1
-        DM[spin] = Array{Array{Array{Array{Float64}}}}(atomnum)
+        DM[spin] = Array{Array{Array{Array{Float64}}}}(undef,atomnum)
         init_Hamil!(DM, spin, atomnum, Total_NumOrbs,FNAN, natn)
     end
     for spin = 1:SpinP_switch+1
@@ -360,7 +366,9 @@ function read_scf(scf_name::AbstractString)
     # Solver
     #############
     Solver = read(f,Int32)
-    d_vec = read(f,Float64,10)
+    #d_vec = read(f,Float64,10)
+    d_vec = Array{Float64}(undef,10);
+    read!(f,d_vec)
     ChemP  = d_vec[1] * Hatree2eV;
     E_Temp = d_vec[2];
     dipole_moment_core = zeros(3,)

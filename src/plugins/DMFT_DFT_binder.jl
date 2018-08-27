@@ -68,7 +68,7 @@ if !(isfile(openmx_input))
 end
 if input_error_check
   println(" error occurred")
-  assert(false)
+  @assert(false)
 end
 
 function check_openmxInput(openmx_input_fname::String, systemName)
@@ -86,16 +86,16 @@ function check_openmxInput(openmx_input_fname::String, systemName)
       key_str = line_splited[1];
       if ("scf.restart" == key_str)
         val = line_splited[2];
-        assert("onDM" == val);
+        @assert("onDM" == val);
       elseif ("scf.maxIter" == key_str)
         val = line_splited[2];
-        assert("0" == val);
+        @assert("0" == val);
       elseif ("HS.fileout" == key_str)
         val = line_splited[2];
-        assert("on" == lowercase(val));
+        @assert("on" == lowercase(val));
       elseif ("System.Name" == key_str)
         val = line_splited[2];
-        assert(systemName == val);
+        @assert(systemName == val);
       end
     end
   end

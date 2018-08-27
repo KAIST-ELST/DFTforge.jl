@@ -1,5 +1,5 @@
 using ..DFTcommon
-
+using LinearAlgebra
 export EcalJscf
 export read_EcalJ_scf
 
@@ -118,16 +118,16 @@ function read_EcalJ_scf(result_file_dict::Dict{AbstractString,AbstractString},
         EcalJ_info_dn = read_EcalJ_scf_interal(result_file_dict["result_file_down"])
 
         Total_NumOrbs = EcalJ_info_up.Total_NumOrbs;
-        assert(EcalJ_info_up.Total_NumOrbs == EcalJ_info_dn.Total_NumOrbs);
-        #assert(EcalJ_info_up.EcalJ_H_list[1].orbital_cell_Degen
+        @assert(EcalJ_info_up.Total_NumOrbs == EcalJ_info_dn.Total_NumOrbs);
+        #@assert(EcalJ_info_up.EcalJ_H_list[1].orbital_cell_Degen
         #    == EcalJ_info_dn.EcalJ_H_list[1].orbital_cell_Degen)
 
         #tv = EcalJ_info_up.tv;
-        assert(EcalJ_info_up.tv ==  EcalJ_info_dn.tv;)
+        @assert(EcalJ_info_up.tv ==  EcalJ_info_dn.tv);
         #rv = EcalJ_info_up.rv;
-        assert(EcalJ_info_up.rv == EcalJ_info_dn.rv);
+        @assert(EcalJ_info_up.rv == EcalJ_info_dn.rv);
         #Gxyz = EcalJ_info_up.Gxyz;
-        assert(EcalJ_info_up.Gxyz == EcalJ_info_dn.Gxyz)
+        @assert(EcalJ_info_up.Gxyz == EcalJ_info_dn.Gxyz)
 
         EcalJ_H_list = Array{EcalJ_H,1}(0);
         push!(EcalJ_H_list, deepcopy(EcalJ_info_up.EcalJ_H_list[1]) )
@@ -187,7 +187,7 @@ function read_EcalJ_scf_interal(scf_name::String)
         append!(ib_table,tmp)
     end
     atomnum = length(unique( ib_table))
-    #assert( atomnum == length(unique( ib_table))) # Check atom num
+    #@assert( atomnum == length(unique( ib_table))) # Check atom num
 
     # Generate Total_NumOrbs
     Total_NumOrbs = Array{Int64}(atomnum)
@@ -195,7 +195,7 @@ function read_EcalJ_scf_interal(scf_name::String)
         Total_NumOrbs[atom_i] = sum( ib_table .== atom_i)
     end
     TotalOrbitalNum = sum(Total_NumOrbs);
-    assert(TotalOrbitalNum == sum(Total_NumOrbs)) # Check TotalOrbitalNum
+    @assert(TotalOrbitalNum == sum(Total_NumOrbs)) # Check TotalOrbitalNum
     println(Total_NumOrbs," ",TotalOrbitalNum)
     # npair
     start_line = next_delimiter + 1
@@ -206,7 +206,7 @@ function read_EcalJ_scf_interal(scf_name::String)
     qlat[1,:] = map(x->parse(Float64,x),split(lines[start_line]))
     qlat[2,:] = map(x->parse(Float64,x),split(lines[start_line+1]))
     qlat[3,:] = map(x->parse(Float64,x),split(lines[start_line+2]))
-    assert(sum(abs.(qlat - rv_inv * alat/ang2bohr )) < 10.0^-4)
+    @assert(sum(abs.(qlat - rv_inv * alat/ang2bohr )) < 10.0^-4)
     # Read atom Pos
     start_line = start_line+4
     #ib_table = Array{Int64}(0)
@@ -214,7 +214,7 @@ function read_EcalJ_scf_interal(scf_name::String)
 
     next_delimiter = search_next_delimiter(start_line)
     atomnum_tmp = next_delimiter - start_line
-    assert(atomnum == atomnum_tmp)
+    @assert(atomnum == atomnum_tmp)
 
     Gxyz_cartesian = zeros(atomnum,3)
     Gxyz_frac = zeros(atomnum,3)

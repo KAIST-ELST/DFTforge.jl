@@ -10,13 +10,25 @@ export k_point_Tuple,k_point_int_Tuple
 export cal_colinear_eigenstate,cal_colinear_Hamiltonian
 export cal_colinear_eigenstate_as_nc
 export cal_nonco_linear_Eigenstate,cal_noncolinear_Hamiltonian
-DFTforge_VERSION = VersionNumber("0.6.4-dev+20180811");
+DFTforge_VERSION = VersionNumber("0.6.4-dev+20180827");
 
 #import ..DFTcommon
 #using DFTforge.DFTcommon
-
+include("../ext/TOML/src/TOML.jl")
 
 using Distributed
+using LinearAlgebra
+## to export
+using ArgParse
+using ProgressMeter
+using Statistics
+using CSV
+using FileIO
+using DataFrames
+using Glob
+#using Plots
+export ArgParse,ProgressMeter,Distributed,Statistics,CSV,FileIO,DataFrames,Glob#,Plots
+##
 function __init__()
     if 1 == myid()
       println(" DFTforge Version :",string(DFTforge_VERSION))
@@ -89,7 +101,7 @@ end
 
 function cal_colinear_eigenstate(k_point::k_point_Tuple,
     hamiltonian_info::Hamiltonian_info_type,spin_list=1)
-    Eigenstate::Array{Kpoint_eigenstate} = Array{Kpoint_eigenstate}();
+    Eigenstate::Array{Kpoint_eigenstate} = Array{Kpoint_eigenstate}(undef,1);
     dfttype = hamiltonian_info.dfttype;
     if (DFTcommon.OpenMX == dfttype)
       #Eigenstate::DFTforge.Kpoint_eigenstate =

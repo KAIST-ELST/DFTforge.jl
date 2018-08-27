@@ -14,7 +14,7 @@ function Overlap_Band!(wannier_r::Wannierdatatype,spin::Int,
   TotalOrbitalNum::Int64,k1,k2,k3)
   #HWR_mat_list::Array{Array{Complex_my,2}}
   FNAN = length(wannier_r.Hks_R[spin]);
-  assert(size(wannier_r.R_vector_mat[spin])[1] == FNAN)
+  @assert(size(wannier_r.R_vector_mat[spin])[1] == FNAN)
   k_point::Array{Float_my,1} = [k1,k2,k3];
   for LB_AN = 1:FNAN
     kRn::Float_my = sum(wannier_r.R_vector_mat[spin][LB_AN,:].*k_point);
@@ -48,7 +48,7 @@ function cal_Hamiltonian(k_point::k_point_Tuple,   # wannier_r::Wannierdatatype,
   Overlap_Band!(wannier_r, spin, Hout, TotalOrbitalNum2, k_point[1], k_point[2], k_point[3])
   if hamiltonian_info.basisTransform_rule.orbital_rot_on
     if (DFTcommon.non_colinear_type == spin_type)
-      throw(AssertionError("Non-collinear spin basis rotation not supported yet "));
+      throw(assertionError("Non-collinear spin basis rotation not supported yet "));
     end
     Hout = Heff(Hout,orbitalStartIdx_list, hamiltonian_info.basisTransform_rule, 0.0);
     #println( sum(abs(H2-H)) )
@@ -67,7 +67,7 @@ function cal_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamiltonian_inf
     TotalOrbitalNum2 = TotalOrbitalNum*2;
   end
 
-  kpoint_common_list = Array{Kpoint_eigenstate}(0);
+  kpoint_common_list = Array{Kpoint_eigenstate}(undef,0);
 
   for spin in spin_list
     Hout = cal_Hamiltonian(k_point, hamiltonian_info, spin)

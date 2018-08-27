@@ -1,20 +1,22 @@
 __precompile__(true)
 ###
 #using ProgressMeter
-#import DFTforge
+import DFTforge
 #using DFTforge.DFTrefinery
 #using DFTcommon
 #using DFTforge.Plugins
 println("Jx_postprocess started (julia Jx_postprocess.jl --help for inputs)")
-using ArgParse
+#using ArgParse
+using DFTforge.ArgParse
+#using DataStructures
 s = ArgParseSettings("Jx_postprocess.jl for J(q)->J(r):")
 @add_arg_table s begin
     "--cellvectors"
     #action = :store_true   # this makes it a flag
         help = "cellvectors ex:) 5_5_5 default 2_2_2"
         required = true
-    "--atom12"
-        help = "target atom1&2 ex1:) 1_1,1_2 or by using wild card ex2:) 1_* "     # used by the help screen
+    "--atom2"
+        help = "second atom index ex1:) 1,2 or by using wild card *"     # used by the help screen
     "--orbital_name"
         help = "used for selecting orbital ex:) [all_all] or [dz_dxy]"
     "--baseatom"
@@ -22,7 +24,7 @@ s = ArgParseSettings("Jx_postprocess.jl for J(q)->J(r):")
         default = 0
         help = ""
     "root_dir"
-        help = "root directory of *.mat files "
+        help = "root directory of *.jld2 files "
         arg_type = String
         required = true
 
@@ -34,7 +36,7 @@ end
 #parsed_args = parse_args(ARGS, s)
 #=
 ARGS = "-q 3_3_3 ../examples/CrO2.U0.0/jq.spin.test.wannier_0.0/"
-ARGS = Array{String}(0);
+ARGS = Array{String}(undef,0);
 push!(ARGS,"--cellvectors")
 push!(ARGS,"3_3_3")
 push!(ARGS,"--baseatom")
@@ -46,12 +48,13 @@ push!(ARGS,"all_all")
 push!(ARGS,"../examples/CrO2.U0.0/jq.spin.test.wannier_0.0/")
 =#
 parsed_args = parse_args(ARGS, s)
-import DataFrames
-import MAT
-import CSV
-
+import DFTforge.DataFrames
+import DFTforge.FileIO
+import DFTforge.CSV
 import Plots
 import Glob
+
+using Statistics
 
 ###
 println("================ User input =============")
@@ -60,23 +63,25 @@ for (k,v) in parsed_args
 end
 # read inputs
 root_dir = parsed_args["root_dir"]
-atom_12name_list = [""]
-if !(Void == typeof(parsed_args["atom12"]))
-    atom_12name_list = split(parsed_args["atom12"],",")
+base_atom = parsed_args["baseatom"]
+atom2_name_list = [""]
+if !(Nothing == typeof(parsed_args["atom2"]))
+    atom2_name_list = split(parsed_args["atom2"],",")
 end
 orbital_name = ""
-if !(Void == typeof(parsed_args["orbital_name"]))
+if !(Nothing == typeof(parsed_args["orbital_name"]))
     orbital_name = parsed_args["orbital_name"]
 end
 # get file list
-file_list = Array{String}(0);
-for atom_12name in atom_12name_list
-    file_list_tmp = Glob.glob(joinpath(root_dir,"*"atom_12name*"*"*orbital_name*"*.mat") )
-    append!(file_list,file_list_tmp)
+file_list = Array{String}(undef,0);
+for atom2_name in atom2_name_list
+   atom_12name = string(base_atom) * "_" * string(atom2_name)
+   file_list_tmp = Glob.glob(joinpath(root_dir,"*" * atom_12name * "*" * orbital_name * "*.jld2") )
+   append!(file_list,file_list_tmp)
 end
 #get q points
 cellvect_num = [2,2,2];
-if !(Void == typeof(parsed_args["cellvectors"]))
+if !(Nothing == typeof(parsed_args["cellvectors"]))
     val = parsed_args["cellvectors"];
     cellvect_num_tmp =   map(x->parse(Int64,x),split(val,"_"))
     if (3 == length(cellvect_num_tmp))
@@ -86,50 +91,55 @@ if !(Void == typeof(parsed_args["cellvectors"]))
     end
 end
 
-base_atom = parsed_args["baseatom"]
-println("================ Selected result *.mat files =============")
-for matfile in file_list
-    println(matfile)
-end
 
+println("================ Selected result *.jld2 files =============")
 cached_mat_dict = Dict{Tuple{Int64,Int64},Any}();
-s = [];
+#s = [];
+global rv = zeros(Float64, 3,3)
+global tv = zeros(Float64, 3,3)
+global global_xyz = [];
+global atom1 = 0
+global atom2 = 0
 for (k,v_filename) in enumerate(file_list)
-  s = MAT.matread(v_filename);
-  atom1 = s["atom1"];
-  atom2 = s["atom2"];
+  #s = MAT.matread(v_filename);
+  println(v_filename)
+  s = FileIO.load(v_filename);
+  global atom1 = s["atom1"];
+  global atom2 = s["atom2"];
 
-  if ( base_atom == atom1)
+  if (base_atom == atom1)
     s["filename"] = v_filename
     cached_mat_dict[(atom1,atom2)] = s;
   end
+  global rv = s["rv"];
+  global tv = s["tv"];
+  global global_xyz = s["Gxyz"];
 end
 
-println("================ Selected result *.mat files =============")
+#cached_mat_dict = SortedDict(cached_mat_dict)
+println("================ Selected result *.jld2 files =============")
 #global_xyz
 
 # Check properties
-rv = s["rv"];
-tv = s["tv"];
-atom1 = s["atom1"];
-atom2 = s["atom2"];
-global_xyz = s["Gxyz"];
-atom1_frac_xyz = global_xyz[atom1,:];
+
+#atom1_frac_xyz = global_xyz[atom1,:];
 for (k,v) in cached_mat_dict
   s = v;
 
-  rv_tmp = s["rv"]
-  tv_tmp = s["tv"]
   atom1_tmp = s["atom1"]
   atom2_tmp = s["atom2"]
-  global_xyz_tmp = s["Gxyz"];
-  atom1_frac_xyz_tmp = global_xyz[atom1,:];
 
-  assert(rv == rv_tmp);
-  assert(tv == tv_tmp);
-  assert(atom1 == atom1_tmp);
-  assert(global_xyz == global_xyz_tmp);
-  assert(atom1_frac_xyz == atom1_frac_xyz_tmp);
+  #println([atom1_tmp, atom2_tmp])
+  rv_tmp = s["rv"]
+  tv_tmp = s["tv"]
+  global_xyz_tmp = s["Gxyz"];
+  #atom1_frac_xyz_tmp = global_xyz[atom1,:];
+
+  @assert(rv == rv_tmp);
+  @assert(tv == tv_tmp);
+  @assert(atom1 == atom1_tmp);
+  @assert(global_xyz == global_xyz_tmp);
+  #@assert(atom1_frac_xyz == atom1_frac_xyz_tmp);
 end
 
 
@@ -139,12 +149,12 @@ end
 
 
 function get_J(cell_vect_list, J_ij_Q_data, q_point_cart, atom1_global_xyz, atom2_global_xyz)
-  J_ij_cell_vect = zeros(Complex128,length(cell_vect_list));
+  J_ij_cell_vect = zeros(ComplexF64,length(cell_vect_list));
   J_ij_pos_vects = zeros(length(cell_vect_list),3);
 
   atom2_global_xyz_0 = atom2_global_xyz;
 
-  for (k,v) in Enumerate(cell_vect_list)
+  for (k,v) in enumerate(cell_vect_list)
   #k = 1
   #cell_vect_list[1]
     v = cell_vect_list[k][:]
@@ -172,18 +182,19 @@ function get_J_idx_1(cell_vect_list, item_idx)
     #s = MAT.matread(joinpath(root_dir,file_list_same_baseatom[k]));
     q_point_fact_list = s["q_point_list"]/s["k_point_precision"];
 
-    q_point_cart =   q_point_fact_list[:,1] * rv[1,:].' + q_point_fact_list[:,2] * rv[2,:].' + q_point_fact_list[:,3] * rv[3,:].';
+    q_point_cart =   q_point_fact_list[:,1] * transpose(rv[1,:]) + q_point_fact_list[:,2] * transpose(rv[2,:]) + q_point_fact_list[:,3] * transpose(rv[3,:]);
 
 
     atom1 = s["atom1"];
     atom2 = s["atom2"];
     atom1_global_xyz = s["Gxyz"][atom1,:];
     atom2_global_xyz = s["Gxyz"][atom2,:]
-    println("atom1,2_global_xyz: (",atom1_global_xyz," ",atom2_global_xyz,")")
-    atom1_frac_xyz[:]
+    println(k, "atom_(i, j):(",atom1,", ",atom2,") global_xyz:(",
+      atom1_global_xyz," ",atom2_global_xyz,")")
+    #atom1_frac_xyz[:]
 
     (J,dist_vect) = get_J(cell_vect_list, s["Jij_Q_matlab"][item_idx, 1], q_point_cart, atom1_global_xyz[:], atom2_global_xyz[:] );
-    distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ));
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2)[:] ));
     v = sortperm(distance_scalar);
     distance_scalar = distance_scalar[v];
     J = J[v];
@@ -200,7 +211,7 @@ function get_J_idx_1(cell_vect_list, item_idx)
     J_r                 = J_r[nonzero_distance_idx]
 
     push!(J_ij_R,deepcopy(
-    (atom1, atom2, dist_vect, cell_vect_list2, J_r, s["filename"])) )
+    (atom1, atom2, dist_vect, cell_vect_list2, J_r, s)) )
     #Plots.scatter!(distance_scalar, J_r*1000.0)
   end
   return J_ij_R;
@@ -212,14 +223,14 @@ function get_J_idx_2(cell_vect_list, atom1, atom2, item_idx, angle_idx)
   s = cached_mat_dict[atom1,atom2]
   q_point_fact_list = s["q_point_list"]/s["k_point_precision"];
 
-  q_point_cart =   q_point_fact_list[:,1] * rv[1,:].' +
-   q_point_fact_list[:,2] * rv[2,:].'+
-   q_point_fact_list[:,3] * rv[3,:].'
+  q_point_cart =   q_point_fact_list[:,1] * transpose(rv[1,:]) +
+   q_point_fact_list[:,2] * transpose(rv[2,:])+
+   q_point_fact_list[:,3] * tranpose(rv[3,:])
 
   atom1_global_xyz = s["Gxyz"][atom1,:];
   atom2_global_xyz = s["Gxyz"][atom2,:]
   #println(atom1_global_xyz," ",atom2_global_xyz)
-  atom1_frac_xyz[:]
+  #atom1_frac_xyz[:]
 
   (J,dist_vect) = get_J(cell_vect_list, s["Jij_Q_matlab"][item_idx,angle_idx], q_point_cart, atom1_global_xyz[:], atom2_global_xyz[:] );
   distance_scalar = sqrt(real( sum(dist_vect.^2,2)[:] ));
@@ -230,7 +241,7 @@ function get_J_idx_2(cell_vect_list, atom1, atom2, item_idx, angle_idx)
   nonzero_distance_idx = abs.(distance_scalar) .> 0.000001
   distance_scalar = distance_scalar[nonzero_distance_idx]
   J_r = J_r[nonzero_distance_idx]
-  push!(J_ij_R,deepcopy((atom1,atom2,distance_scalar,J_r)) )
+  push!(J_ij_R,deepcopy((atom1,atom2,distance_scalar,J_r,s)) )
 
   #Plots.scatter!(distance_scalar, J_r*1000.0)
 
@@ -256,24 +267,32 @@ atom12_num = size(J_ij_R)[1];
 ##=
 println("================ Writing CSV & Plotfile  =============")
 num_results = size(J_ij_R)[1]
-assert(num_results == length(file_list))
+@assert(num_results == length(file_list))
 for result_i in 1:num_results
-    basefile =  splitext(file_list[result_i])[1]
+    s_tmp = J_ij_R[result_i][6]
+    file_name = s_tmp["filename"]
+
+    basefile =  splitext(file_name)[1]
+    #basefile =  splitext(file_list[result_i])[1]
     csv_filename = basefile*".csv"
     println(" Writing CSV:", basename(csv_filename))
 
     dist_vect = J_ij_R[result_i][3]
-    distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2) ))[:]
     #println(size(distance_scalar),size(J_ij_R[result_i][4]),size(cell_vect_list),size(dist_vect))
+    Rxyz = collect(transpose(hcat(J_ij_R[result_i][4]...)))
+
     CSV.write(csv_filename,
     DataFrames.DataFrame(Distance = distance_scalar,
                          JmeV = J_ij_R[result_i][5] * 1000.0, # eV -> meV
                          #Dxyz = dist_vect[:,1],
-                         Rxyz = J_ij_R[result_i][4],
+                         Rx = Rxyz[:,1],
+                         Ry = Rxyz[:,2],
+                         Rz = Rxyz[:,3],
                          Dx = dist_vect[:,1],
                          Dy = dist_vect[:,2],
                          Dz = dist_vect[:,3]
-                        ); delim='\t' )
+                        ); delim=',' )
 end
 
 ################################################################################
@@ -281,7 +300,7 @@ end
 ################################################################################
 Plots.plotly()
 dist_vect = J_ij_R[1][3]
-distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2) ))[:]
 label= string(J_ij_R[1][1])*"_"*string(J_ij_R[1][2])
 
 Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0, label = label)
@@ -291,13 +310,15 @@ Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0, label = label)
 for result_i in 2:size(J_ij_R)[1]
     #println(result_i)
     dist_vect = J_ij_R[result_i][3]
-    distance_scalar = sqrt.(real( sum(dist_vect.^2,2)[:] ))
+    distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2) ))[:]
     label= string(J_ij_R[result_i][1])*"_"*string(J_ij_R[result_i][2])
 
     Plots.plot!(distance_scalar,J_ij_R[result_i][5] *1000.0, label = label)  # eV -> meV
 end
 
-plot_filename = "Jplot_"*join(atom_12name_list,",")*"_"*orbital_name*".html"
+plot_filename = "Jplot_" * string(base_atom) * "_" *
+   join(atom2_name_list,",") * "_" * orbital_name * ".html"
+
 println(" Writing Plot:",plot_filename)
 Plots.savefig(joinpath(root_dir,plot_filename))
 #Plots.plot!(J_ij_R[2][3],J_ij_R[2][4] *1000.0)

@@ -1,7 +1,8 @@
 #module OpenMXdata
 
-using MAT
+#using MAT
 using HDF5
+using LinearAlgebra
 export update_co_linear_Energy,cal_noncolinear_eigenstate
 export test_SmallHks
 export colinear_Hamiltonian,noncolinear_Hamiltonian
@@ -27,14 +28,14 @@ function Overlap_Band!(OLP::Overlap_type,
     TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:]);
     #orbitalStartIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
 
-    #assert(TotalOrbitalNum==orbitalStartIdx);
+    #@assert(TotalOrbitalNum==orbitalStartIdx);
 
 
     #println(TotalOrbitalNum)
     #S_size::Int = orbitalNum + 0;
     S1 = zeros(Float64,TotalOrbitalNum,TotalOrbitalNum);
     S2 = zeros(Float64,TotalOrbitalNum,TotalOrbitalNum);
-    assert(size(S) == size(S1));
+    @assert(size(S) == size(S1));
 
     for GA_AN=1:scf_r.atomnum
 
@@ -96,7 +97,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamilt
   S2 = sqrtm_inv(S);
 
   #H_temp = Array(Array{Complex_my,2},scf_r.SpinP_switch+1);
-  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(0);
+  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(undef,0);
   for spin=spin_list #scf_r.SpinP_switch+1
       Coes = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
       H = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
@@ -132,8 +133,8 @@ function colinear_Hamiltonian_as_nc!(Hout::Array{Complex{Float_my},2},
     Hmode::nc_Hamiltonian_selection,scf_r::Openmxscf)
     # Essentially same as Overlap_Band!
 	#println(size(H))
-    assert(2 == size(H)[1]);
-    #assert(3 == size(iH)[1]);
+    @assert(2 == size(H)[1]);
+    #@assert(3 == size(iH)[1]);
 
     k_point::Array{Float_my,1} = [k1,k2,k3];
     TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
@@ -143,11 +144,11 @@ function colinear_Hamiltonian_as_nc!(Hout::Array{Complex{Float_my},2},
         MP[i] = orbitalStartIdx;
         orbitalStartIdx += scf_r.Total_NumOrbs[i]
     end
-    assert(TotalOrbitalNum==orbitalStartIdx);
+    @assert(TotalOrbitalNum==orbitalStartIdx);
 
     # non collinear Hamiltonian: the matrix size is 2*TotalOrbitalNum,2*TotalOrbitalNum
     #Hout = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum);
-    assert((2*TotalOrbitalNum,2*TotalOrbitalNum) == size(Hout));
+    @assert((2*TotalOrbitalNum,2*TotalOrbitalNum) == size(Hout));
 
     for GA_AN=1:scf_r.atomnum
         atom1_orbitalNum = scf_r.Total_NumOrbs[GA_AN];
@@ -305,7 +306,7 @@ function cal_colinear_eigenstate_deprecated(k_point::k_point_Tuple,scf_r::Openmx
   ## Coes
 
   #H_temp = Array(Array{Complex_my,2},scf_r.SpinP_switch+1);
-  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(0);
+  kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(undef,0);
   for spin=spin_list #scf_r.SpinP_switch+1
       Coes = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
       H = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
@@ -362,8 +363,8 @@ function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
     Hmode::DFTcommon.nc_Hamiltonian_selection,scf_r::Openmxscf)
     # Essentially same as Overlap_Band!
 	#println(size(H))
-    assert(4 == size(H)[1]);
-    assert(3 == size(iH)[1]);
+    @assert(4 == size(H)[1]);
+    @assert(3 == size(iH)[1]);
 
     k_point::Array{Float_my,1} = [k1,k2,k3];
     TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
@@ -373,11 +374,11 @@ function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
         MP[i] = orbitalStartIdx;
         orbitalStartIdx += scf_r.Total_NumOrbs[i]
     end
-    assert(TotalOrbitalNum==orbitalStartIdx);
+    @assert(TotalOrbitalNum==orbitalStartIdx);
 
     # non collinear Hamiltonian: the matrix size is 2*TotalOrbitalNum,2*TotalOrbitalNum
     #Hout = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum);
-    assert((2*TotalOrbitalNum,2*TotalOrbitalNum) == size(Hout));
+    @assert((2*TotalOrbitalNum,2*TotalOrbitalNum) == size(Hout));
 
     for GA_AN=1:scf_r.atomnum
         atom1_orbitalNum = scf_r.Total_NumOrbs[GA_AN];

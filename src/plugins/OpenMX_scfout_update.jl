@@ -8,11 +8,11 @@ export update_scfout;
 function update_scfout(orginal_scfout_fname::String, updated_scfout_fname::String, dm_fname::String, mixing::Float64=0.5)
   if !(isfile(orginal_scfout_fname))
     println(" Orignal scfout dose not exists ",orginal_scfout_fname)
-    assert(falses)
+    @assert(falses)
   end
   if !(isfile(dm_fname))
     println(" update DM dose not exists ",dm_fname)
-    assert(falses)
+    @assert(falses)
   end
   scf_r = DFTforge.OpenMXdata.read_scf(orginal_scfout_fname);
 
@@ -68,7 +68,7 @@ function update_scfout(orginal_scfout_fname::String, updated_scfout_fname::Strin
   # Updated DM matrix
   # TODO: iDM is not updated yet
   ##############################################################################
-  tic()
+  #tic()
   for line_index = 1:line_num
     #line_index = 888746;
     lmn_cell_vector = convert(Array{Int32},csv_result[line_index,1:3])
@@ -90,10 +90,10 @@ function update_scfout(orginal_scfout_fname::String, updated_scfout_fname::Strin
       atom_j_orbital_rel = convert(Int64,(atom_j_orbital + spin_j_updown) / 2);
 
 
-      #assert(atom_j_orbital_rel <= orbitalStartIdx_list[atom_j]);
+      #@assert(atom_j_orbital_rel <= orbitalStartIdx_list[atom_j]);
       spin = 1;
       if (DFTcommon.colinear_type == spin_type )
-        assert(spin_i_updown == spin_j_updown)
+        @assert(spin_i_updown == spin_j_updown)
         spin = spin_i_updown + 1
       elseif (DFTcommon.non_colinear_type == spin_type)
         if (0 == spin_i_updown && 0 == spin_j_updown)
@@ -111,13 +111,13 @@ function update_scfout(orginal_scfout_fname::String, updated_scfout_fname::Strin
         println(line_index," a1")
         println(lmnij_key)
         println(spin," ",atom_i," ",LB_AN," ",atom_i_orbital_rel," ",atom_j_orbital_rel," ",atom_j);
-        assert(false)
+        @assert(false)
       end
       if (atom_i_orbital_rel <= orbitalNums[atom_i]) && (atom_j_orbital_rel <= orbitalNums[atom_j])
       else
         println(line_index, " a2")
         println(spin," ",atom_i," ",LB_AN," ",atom_i_orbital_rel," ",atom_j_orbital_rel," ",atom_j);
-        assert(false)
+        @assert(false)
       end
       try
 
@@ -139,14 +139,14 @@ function update_scfout(orginal_scfout_fname::String, updated_scfout_fname::Strin
         println(ee)
         println(line_index," a3")
         println(spin," ",atom_i," ",LB_AN," ",atom_i_orbital_rel," ",atom_j_orbital_rel," ",atom_j);
-        assert(false)
+        @assert(false)
       end
       #scf_r.iDM[spin][atom_i][LB_AN][atom_i_orbital_rel][atom_j_orbital_rel] = iDM_ij; # TODO: Waitfor OpenMX tobe patched
 
       #println( LB_AN)
     end
   end
-  toc()
+  #toc()
   sum(0 .== csv_result[:,7])
   println(" DM delta ",DM_delta_orig)
 
@@ -179,8 +179,8 @@ function update_scfout(orginal_scfout_fname::String, updated_scfout_fname::Strin
       for LB_AN = 1:scf_r_test.FNAN[GA_AN]+1 #atom_i is not atom1,2 index
           GB_AN::UInt = scf_r_test.natn[GA_AN][LB_AN]
           Rn::UInt = 1+scf_r_test.ncn[GA_AN][LB_AN]
-          assert(GB_AN == scf_r.natn[GA_AN][LB_AN])
-          assert(Rn == 1+scf_r.ncn[GA_AN][LB_AN])
+          @assert(GB_AN == scf_r.natn[GA_AN][LB_AN])
+          @assert(Rn == 1+scf_r.ncn[GA_AN][LB_AN])
           atom2_orbitalNum::UInt = scf_r.Total_NumOrbs[GB_AN]
           atom2_orbitalStart::UInt = orbitalStartIdx_list[GB_AN];
 

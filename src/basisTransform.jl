@@ -2,6 +2,7 @@
 using Rotations # Pkg.add("Rotations")
 using DataStructures
 #using DFTcommon
+using LinearAlgebra
 
 export rot_matrixByZXaxisbase,rot_D_orbital
 export basisTransform_rule_type,orbital_rot_type
@@ -69,12 +70,12 @@ end
 function ncHamiltonian_rot!(H::Array{Complex_my,2},orbital_indexs,
   theta::Float_my, phi::Float_my)
   TotalOrbitalNum2 =  size(H)[1];
-  assert(size(H)[2] == TotalOrbitalNum2);
-  assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
+  @assert(size(H)[2] == TotalOrbitalNum2);
+  @assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
   TotalOrbitalNum = convert(Int64, TotalOrbitalNum2/2);
-  assert(maximum(orbital_indexs) <= TotalOrbitalNum);
+  @assert(maximum(orbital_indexs) <= TotalOrbitalNum);
   rot_theta_phi = RotPauliZ(phi)*RotPauliX(theta);
-  assert(2==size(rot_theta_phi)[1]);assert(2==size(rot_theta_phi)[2]);
+  @assert(2==size(rot_theta_phi)[1]);@assert(2==size(rot_theta_phi)[2]);
 
   Rot_mat_allbasis = eye(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
   #Rot_mat_allbasis[TotalOrbitalNum+1:TotalOrbitalNum2, 1:TotalOrbitalNum] = eye(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
@@ -91,12 +92,12 @@ end
 function ncHamiltonian_rot!(H::Array{Complex_my,2},orbital_indexs,
   rot_pauli_mat::Array{ComplexF64 ,2})
   TotalOrbitalNum2 =  size(H)[1];
-  assert(size(H)[2] == TotalOrbitalNum2);
-  assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
+  @assert(size(H)[2] == TotalOrbitalNum2);
+  @assert(TotalOrbitalNum2 % 2 == 0); # Dimension must be even Number
   TotalOrbitalNum = convert(Int64, TotalOrbitalNum2/2);
-  assert(maximum(orbital_indexs) <= TotalOrbitalNum);
+  @assert(maximum(orbital_indexs) <= TotalOrbitalNum);
   #rot_zyz = RotPauliZYZ(alpha, beta, gamma);
-  assert(2==size(rot_pauli_mat)[1]);assert(2==size(rot_pauli_mat)[2]);
+  @assert(2==size(rot_pauli_mat)[1]);@assert(2==size(rot_pauli_mat)[2]);
 
   Rot_mat_allbasis = eye(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
 	Rot_mat_allbasis[TotalOrbitalNum+1:TotalOrbitalNum2, 1:TotalOrbitalNum] = eye(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
@@ -124,12 +125,12 @@ struct orbital_rot_type
   X_vect::Vector{Float64} # for debug
 
   function orbital_rot_type(atomnum,Z_vect,X_vect,d_orbital_list,orbital_num::Int)
-    assert(3==length(Z_vect))
-    assert(3==length(X_vect))
-    assert(orbital_num==length(d_orbital_list))
+    @assert(3==length(Z_vect))
+    @assert(3==length(X_vect))
+    @assert(orbital_num==length(d_orbital_list))
     duplicated_orbital_num = length(d_orbital_list[1])
     for (k,v) in enumerate(d_orbital_list)
-      assert(length(v) == duplicated_orbital_num);
+      @assert(length(v) == duplicated_orbital_num);
     end
     R = rot_matrixByZXaxisbase(Z_vect,X_vect);
     orbital_rot_d = rot_D_orbital(R);
@@ -145,14 +146,15 @@ function rot_basis!(mat_original,orbitalStartIdx::Array{Int},
     atom1 = v.atom1;
     orbital_num = v.orbital_num;
     duplicated_orbital_num = v.duplicated_orbital_num;
-    assert(k == atom1);
+    @assert(k == atom1);
     orbital_rot = v.orbital_rot;
-    assert(Array{Float64,2} == typeof(orbital_rot));
+    @assert(Array{Float64,2} == typeof(orbital_rot));
     for duplicated_orbital_i in 1:duplicated_orbital_num
       rel_orbital_list = map(x->x[duplicated_orbital_i], v.orbital_list);
-      atom_orbitals = orbitalStartIdx[atom1] + rel_orbital_list
+      atom_orbitals = orbitalStartIdx[atom1] .+ rel_orbital_list
       # gen orbital_rot_full
-      orbital_rot_full = eye(size(mat_original)[1]);
+      #orbital_rot_full = eye(size(mat_original)[1]);
+	  orbital_rot_full = Matrix(1.0I, size(mat_original)[1], size(mat_original)[1]);
       orbital_rot_full[atom_orbitals,atom_orbitals] = orbital_rot
       # actual rotation
       # Aroted = U * A * A'
@@ -173,7 +175,7 @@ function rot_matrixByZXaxisbase(Z_vect::Vector{Float64},X_vect::Vector{Float64})
   R[3,:] = Z_vect
 
 
-  return R';
+  return collect(R');
 end
 #=
 function rot_matrixByZYXangle(theta_Z::Float64,theta_Y::Float64::Float64)
@@ -188,15 +190,15 @@ end
 
 function rot_D_orbital(R::Array{Float64,2})
   # From Jae-Hoon Sim's orbital rotation code
-  diff = ( abs(norm(R)-1.0))
+  diff = ( abs(opnorm(R,2)-1.0)) # Julia 0.6 diff = ( abs(norm(R)-1.0))
   if !( diff < 10.0^-4.0)
 	  println(" new global X, Z are not orthorgonal ", diff)
-	  assert(false)
+	  @assert(false)
   end
 
   h = 2.0
   s3 = sqrt(3.0)
-  DR = eye(5,5)
+  DR = Matrix(1.0I,5,5);
 
   DR[1,1]=3/h*(R[3,3])^2.0-1/h
   DR[1,2]=s3/h*(R[3,1]^2.0-R[3,2]^2.0)
@@ -227,7 +229,7 @@ function rot_D_orbital(R::Array{Float64,2})
   DR[5,3]=R[2,1]*R[3,2]+R[3,1]*R[2,2]
   DR[5,4]=R[2,1]*R[3,3]+R[3,1]*R[2,3]
   DR[5,5]=R[2,2]*R[3,3]+R[2,3]*R[3,2]
-  assert( abs(norm(DR)-1.0) < 10.0^-4.0);
+  @assert( abs(opnorm(DR,2)-1.0) < 10.0^-4.0); # julia 0.6 assert( abs(norm(DR)-1.0) < 10.0^-4.0);
 
   return DR;
 end
@@ -274,14 +276,14 @@ struct basisTransform_result_type
     survieved_orbitals_dict::SortedDict{Int,Array{Int}},
     unsurvieved_orbitals_dict::SortedDict{Int,Array{Int}})
 
-    orbitalStartIdx_list = Array{Int}(atomnum);
+    orbitalStartIdx_list = Array{Int}(undef,atomnum);
     orbitalStartIdx = 0;
-    assert(length(orbitalNums) == atomnum);
+    @assert(length(orbitalNums) == atomnum);
     for (k,v) in enumerate(orbitalNums)
       orbitalStartIdx_list[k] = orbitalStartIdx
       orbitalStartIdx += v;
     end
-    assert(length(orbitalStartIdx_list) == atomnum);
+    @assert(length(orbitalStartIdx_list) == atomnum);
     println(" orbitalStartIdx_list ", orbitalStartIdx_list)
     #TODO: atomnum,orbitalNums,orbitalStartIdx_list could be changed if orbitals are merged
     new(atomnum,orbitalNums,orbitalStartIdx_list,
@@ -295,8 +297,8 @@ export basisTransform_init
 function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform::basisTransform_rule_type)
   println(" basisTransform_init ")
   # Default setting
-  assert(atomnum > 0)
-  assert(length(orbitalNums) == atomnum)
+  @assert(atomnum > 0)
+  @assert(length(orbitalNums) == atomnum)
   atomnum_eff = copy(atomnum)
   orbitalNums_eff = copy(orbitalNums)
 
@@ -306,7 +308,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
   for (k,atom1_orig) in enumerate(1:atomnum)
     orbital_index_orig2new[atom1_orig] = Dict( i => 1 for i = 1:orbitalNums[atom1_orig]);
     survieved_orbitals_dict[atom1_orig] = collect(1:orbitalNums[atom1_orig]);
-    unsurvieved_orbitals_dict[atom1_orig] = Array{Int}();
+    unsurvieved_orbitals_dict[atom1_orig] = Array{Int}(undef,0);
   end
   #
   if basisTransform.orbital_merge_on
@@ -316,7 +318,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
     survieved_orbitals_dict = Dict{Int,Array{Int}}();
     unsurvieved_orbitals_dict = Dict{Int,Array{Int}}();
 
-    atom_survived = Array{Int}(0);
+    atom_survived = Array{Int}(undef,0);
 
     for (k,orbital_merge_rule) in basisTransform.orbital_merge_rules
       atom1_orig = orbital_merge_rule.atom1;
@@ -342,8 +344,8 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
         end
       end
       # group  survieved_orbitals & unsurvieved_orbitals
-      survieved_orbitals = Array{Int}(0);
-      unsurvieved_orbitals = Array{Int}(0);
+      survieved_orbitals = Array{Int}(undef,0);
+      unsurvieved_orbitals = Array{Int}(undef,0);
       atom1_orbital_cnt = 0;
       for atom1_rel_oribtal in 1:orbitalNums[atom1_orig]
         if atom1_orbitals_all_dict[atom1_rel_oribtal] > 0
@@ -360,7 +362,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
           atom1_index_orig2new[rel_orbital] = atom1_index_orig2new[rel_orbital2merge[1]]
         end
       end
-      assert(length(keys(atom1_index_orig2new))  == orbitalNums[atom1_orig])
+      @assert(length(keys(atom1_index_orig2new))  == orbitalNums[atom1_orig])
       #atom1_index_orig2new[rel_orbital] = rel_orbital2merge[1];
 
       orbital_index_orig2new[atom1_orig] = atom1_index_orig2new;
@@ -371,10 +373,10 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
     for atom1_orig in 1:atomnum
       if !haskey(orbital_index_orig2new,atom1_orig)
         survieved_orbitals = collect(1:orbitalNums[atom1_orig]);
-        unsurvieved_orbitals = Array{Int}(0);
+        unsurvieved_orbitals = Array{Int}(undef,0);
         atom1_index_orig2new = Dict(i=>i for i in 1:orbitalNums[atom1_orig]);
         if !basisTransform.keep_unmerged_atoms
-          survieved_orbitals = Array{Int}(0);
+          survieved_orbitals = Array{Int}(undef,0);
           unsurvieved_orbitals = collect(1:orbitalNums[atom1_orig]);
           atom1_index_orig2new = Dict( i => -1 for i in 1:orbitalNums[atom1_orig])
         end
@@ -386,7 +388,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
     end
 
     atomnum_eff = length(orbital_index_new);
-    orbitalNums_eff = Array{Int}(0);
+    orbitalNums_eff = Array{Int}(undef,0);
     for (k,v) in orbital_index_new
       push!(orbitalNums_eff,v)
     end
@@ -404,7 +406,7 @@ end
 function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,w)
     #FHeff[H00_, H01_, H11_, H10_, w_] := (H00 + H01.Inverse[w - H11].H10)
     (TotalOrbitalNum_1,TotalOrbitalNum_2)=size(H)
-    assert(TotalOrbitalNum_1 == TotalOrbitalNum_2)
+    @assert(TotalOrbitalNum_1 == TotalOrbitalNum_2)
     TotalOrbitalNum2 = TotalOrbitalNum_1;
 
 
@@ -417,7 +419,7 @@ function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,w)
     ## Merge orbitals
 
     unselected_orbitals = collect(1:TotalOrbitalNum2);
-    survieved_orbitals = Array{Int}(0);
+    survieved_orbitals = Array{Int}(undef,0);
     for (k,v) in enumerate(basisTransform.orbital_merge_rules)
         atomnum = v.atomnum
         rel_orbital2merge = v.rel_orbital2merge;
@@ -425,7 +427,7 @@ function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,w)
         push!(survieved_orbitals,orbitals2merge);
         deleteat!(unselected_orbitals,v);
     end
-    assert( 0 < length(survieved_orbitals))
+    @assert( 0 < length(survieved_orbitals))
 
     ##
 

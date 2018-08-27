@@ -2,10 +2,18 @@ __precompile__(true)
 module DFTcommon
 using Distributed
 
+using LinearAlgebra
 
-using ArgParse
 using ProgressMeter
-import TOML # Pkg.clone("https://github.com/wildart/TOML.jl.git")
+using Distributed
+using Statistics
+export ArgParse,ProgressMeter,Distributed,Statistics
+
+
+#include("../ext/TOML/src/TOML.jl")
+#import ..TOML # Pkg.clone("https://github.com/wildart/TOML.jl.git")
+#import DFTforge.TOML
+using ..TOML
 
 export Kpoint_eigenstate,Kpoint_eigenstate_only
 export Complex_my,Float_my,k_point_Tuple,k_point_int_Tuple
@@ -61,7 +69,7 @@ export nc_Hamiltonian_selection
 @enum nc_Hamiltonian_selection nc_allH=0 nc_realH_only=1 nc_imagH_only=2
 
 Float_my =  Float64
-Complex_my = ComplexF64  #Complex128
+Complex_my = ComplexF64  #ComplexF64
 
 k_point_Tuple = Tuple{Float64,Float64,Float64};
 k_point_int_Tuple = Tuple{Int64,Int64,Int64};
@@ -145,7 +153,7 @@ end
 function kPoint2BrillouinZone(k_point::Array{Float64,1})
     # from -0.5 0.5
     # 0.5 is treated as -0.5
-    return (rem.(k_point+2.5,1)-0.5);
+    return (rem.(k_point .+ 2.5,1) .- 0.5);
 end
 
 function kPoint2BrillouinZone_Tuple(k_point::k_point_Tuple)
@@ -164,7 +172,7 @@ function kPoint2BrillouinZone_int_Tuple(k_point_int::k_point_int_Tuple)
 end
 
 function kPoint_gen_GammaCenter(k_point_num)
-  k_point_list = Array{k_point_Tuple}(0);
+  k_point_list = Array{k_point_Tuple}(undef,0);
 
   for kx in (0:(k_point_num[1]-1))/(k_point_num[1]) #- 1/2
       for ky in (0:(k_point_num[2]-1))/(k_point_num[2]) #- 1/2
@@ -178,7 +186,7 @@ function kPoint_gen_GammaCenter(k_point_num)
   return k_point_list;
 end
 function kPoint_gen_EquallySpaced(k_point_num)
-  k_point_list = Array{k_point_Tuple}(0);
+  k_point_list = Array{k_point_Tuple}(undef,0);
   kPoint_esp = 10.0^-8;
   for kx in (0.0:1/k_point_num[1]:(1.0-kPoint_esp))
     for ky in (0.0:1/k_point_num[2]:(1.0-kPoint_esp))
@@ -196,7 +204,7 @@ function q_k_unique_points(q_point_list,k_point_list)
   kq_point_dict = Dict{k_point_int_Tuple,k_point_Tuple}();
   p = Progress( length(q_point_list),"Computing unique K points from K,K+Q... ");
   p.barglyphs=BarGlyphs("[=> ]")
-  p.output = STDOUT
+  p.output = stdout
   for q_point in q_point_list
       for k_point in k_point_list
         kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
@@ -226,7 +234,7 @@ struct orbital_mask_input_Type
     function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},
       atom12::atom12_Tuple,orbital_mask_on::Bool)
 
-      new(orbital_mask1,orbital_mask2,Array{Int64}(0),Array{Int64}(0),
+      new(orbital_mask1,orbital_mask2,Array{Int64}(undef,0),Array{Int64}(undef,0),
         atom12,orbital_mask_on)
     end
     function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},
@@ -296,13 +304,13 @@ function eigfact_hermitian(EigVect::Array{Complex_my,2},
     #EigVect_h = Hermitian(EigVect,:L);
     EigVect_h = Hermitian(EigVect);
 
-    temp = eigfact(EigVect_h);
+    temp = eigen(EigVect_h);
     p = sortperm(temp.values);
     #EigVal[:] = real(temp.values[p])[:];
 
     EigVal[:] = (temp.values[p])[:];
     EigVect[:] = temp.vectors[:,p][:];
-    #ccall((:EigenBand_lapack3,"./lib_jx"),Void,(Ptr{Complex128},Ptr{Float64}, Int32,)
+    #ccall((:EigenBand_lapack3,"./lib_jx"),Void,(Ptr{ComplexF64},Ptr{Float64}, Int32,)
     #,EigVect,EigVect,size(EigVect)[1])
 end
 function check_eigmat(A1,eig_mat,eig_val) #A1 orign  eig_mat # eig_val
@@ -321,7 +329,7 @@ function check_eigmat(A1,eig_mat,eig_val) #A1 orign  eig_mat # eig_val
       " Diff imgmax ",maximum(imag(diff_A)));
         return false
     end
-    #assert( maximum(abs(check_eig)) < 10.0^-3);
+    #@assert( maximum(abs(check_eig)) < 10.0^-3);
     return true;
 end
 
@@ -370,7 +378,7 @@ function excute_cmd(cmd::String,options,work_dir)
     println(" Error occuured while:")
     println( cmd)
     println("=================================================================")
-    assert(falses)
+    @assert(falses)
   end
 end
 
@@ -407,7 +415,7 @@ function excute_mpi_cmd(MPI_paramter::Arg_MPI, cmd::String,
     println(" Error occuured while:")
     println( cmd)
     prinltn("=================================================================")
-    assert(falses)
+    @assert(falses)
   end
 end
 

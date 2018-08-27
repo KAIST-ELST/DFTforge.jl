@@ -1,5 +1,6 @@
 
-import MAT
+##import MAT
+import FileIO
 function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
   q_point_list::Array{k_point_Tuple},
   k_point_list::Array{k_point_Tuple},atom12_list::Vector{Tuple{Int64,Int64}},
@@ -12,7 +13,7 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
       q_point_list,
       k_point_list,atom12_list,
       orbital_mask_on,
-      orbital_mask1,orbital_mask2,Array{Int}(0),Array{Int}(0),
+      orbital_mask1,orbital_mask2,Array{Int}(undef,0),Array{Int}(undef,0),
       ChemP_delta_ev,
       optionalOutputDict,
       jq_output_dir,cal_name,
@@ -67,8 +68,8 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
     push!(k_point_int_list,k_point_float2int(k_point))
   end
 
-  q_point_int_list_matlab = reinterpret(Int64,q_point_int_list,(3,length(q_point_int_list)))';
-  k_point_int_list_matlab = reinterpret(Int64,k_point_int_list,(3,length(k_point_int_list)))';
+  q_point_int_list_matlab = collect(reshape(reinterpret(Int64,q_point_int_list),(3,length(q_point_int_list)))');
+  k_point_int_list_matlab = collect(reshape(reinterpret(Int64,k_point_int_list),(3,length(k_point_int_list)))');
 
   tv = scf_r.tv;
   rv = scf_r.rv;
@@ -89,7 +90,9 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
         mask_name = string("_atom1m_[",",", "]_atom2m_[",",","]");
         f_name = string(f_name,mask_name,"_[",orbital_mask_name,"]","_ChemPdelta_",ChemP_delta_ev);
     end
-    result_fname = string(cal_type,"_",f_name,".mat");
+    #result_fname = string(cal_type,"_",f_name,".mat");
+    result_fname = string(cal_type,"_",f_name,".jld2");
+
 
     jq_output_file = joinpath(jq_output_dir,result_fname)
 
@@ -125,8 +128,10 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
       outputDict[key] = value;
     end
     #println(keys(outputDict))
+    #println(map(x-> typeof(x), values(outputDict)))
   ## Write
-    MAT.matwrite(jq_output_file,outputDict);
+    #MAT.matwrite(jq_output_file,outputDict);
+    FileIO.save(jq_output_file,outputDict);
   end
 end
 
@@ -175,7 +180,8 @@ function export2mat_K_Q_nc(Xij_Q_mean_matlab,theta_phi_list,hamiltonian_info,
         mask_name = string("_atom1m_[",",", "]_atom2m_[",",","]");
         f_name = string(f_name,mask_name,"_[",orbital_mask_name,"]","_ChemPdelta_",ChemP_delta_ev);
     end
-    result_fname = string(cal_type,"_",f_name,".mat");
+    #result_fname = string(cal_type,"_",f_name,".mat");
+    result_fname = string(cal_type,"_",f_name,".jld2");
 
     jq_output_file = joinpath(jq_output_dir,result_fname)
 
@@ -211,6 +217,7 @@ function export2mat_K_Q_nc(Xij_Q_mean_matlab,theta_phi_list,hamiltonian_info,
     end
     #println(keys(outputDict))
   ## Write
-    MAT.matwrite(jq_output_file,outputDict);
+    #MAT.matwrite(jq_output_file,outputDict);
+    FileIO.matwrite(jq_output_file,outputDict);
     end
 end

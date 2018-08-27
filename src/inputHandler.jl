@@ -69,7 +69,7 @@ end
 struct Arg_Inputs_Band
   bandplot::Bool
   K_point_groups::Array{kPath_band}
-  Arg_Inputs_Band() = new(true,Array{kPath_band}(0))
+  Arg_Inputs_Band() = new(true,Array{kPath_band}(undef,0))
 end
 
 struct Arg_DMFT_DFT
@@ -117,13 +117,13 @@ function parse_int_list(num_str)
     return intarray;
 end
 function parse_Kpath(kPoint_toml,kPoint_step_num)
-  K_point_groups = Array{kPath_band}(0);
+  K_point_groups = Array{kPath_band}(undef,0);
   #kPoint_toml = toml_inputs["bandplot"]["kPath_list"]
   for (i,v) in enumerate(kPoint_toml)
     kPoint_step_num_interal = kPoint_step_num;
     k_point_start = (convert(Array{Float64,1}, v[1]))
     k_point_end = (convert(Array{Float64,1}, v[2]))
-    assert(3==length(k_point_start) && 3==length(k_point_end))
+    @assert(3==length(k_point_start) && 3==length(k_point_end))
     K_start_point_name = ""
     K_end_point_name = ""
     if (length(v)>=3 && (typeof(v[3][1]) <: AbstractString) )
@@ -136,7 +136,7 @@ function parse_Kpath(kPoint_toml,kPoint_step_num)
       end
     end
     kPoint_steps = (k_point_end-k_point_start)/kPoint_step_num_interal
-    K_point_list = Array{k_point_Tuple}(0);
+    K_point_list = Array{k_point_Tuple}(undef,0);
     for steps_i in 0:kPoint_step_num_interal-1
       steps_f = steps_i*1.0;
       kPoint = (k_point_start[1] + steps_f*kPoint_steps[1]
@@ -171,7 +171,7 @@ end
 function parse_TOML(toml_file,input::Arg_Inputs)
 
   if (isfile(toml_file))
-    toml_inputs = TOML.parse(readstring(input.TOMLinput))
+    toml_inputs = TOML.parse(read(input.TOMLinput,String))
     toml_realpath = realpath(input.TOMLinput);
     toml_dir =  dirname(toml_realpath)
     println(" TOML file: ",toml_realpath)
@@ -230,7 +230,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
             result_file_1 = result_file_list_input[1]
             input.result_file = split(split(result_file_1,".")[1],"_")[1];
           end
-          result_file_list = Array{AbstractString}(0);
+          result_file_list = Array{AbstractString}(undef,0);
           for (k,v) in enumerate(result_file_list_input)
             (exits_check_dat,result_file_path) = detect_file(v , toml_realpath)
             println(result_file_path)
@@ -240,7 +240,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
               push!(result_file_list,result_file_path);
             else
               println("File not found  ",v)
-              assert(false)
+              @assert(false)
             end
           end
           result_file_dict = Dict(
@@ -259,7 +259,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           result_file_1 = result_file_list_input[1]
           input.result_file = split(split(result_file_1,".")[1],"_")[1];
         end
-        result_file_list = Array{AbstractString}(0);
+        result_file_list = Array{AbstractString}(undef,0);
         for (k,v) in enumerate(result_file_list_input)
           (exits_check_dat,result_file_path) = detect_file(v * "_hr.dat", toml_realpath)
           println(result_file_path)
@@ -271,7 +271,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
             push!(result_file_list,result_file_path);
           else
             println("File not found  ",v)
-            assert(false)
+            @assert(false)
           end
 
         end
@@ -292,14 +292,14 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         result_file_1 = result_file_list_input[1]
         input.result_file = split(split(result_file_1,".")[1],"_")[1];
       end
-      result_file_list = Array{AbstractString}(0);
+      result_file_list = Array{AbstractString}(undef,0);
       for (k,v) in enumerate(result_file_list_input)
         (exits_check,result_file_path) = detect_file(v, toml_realpath)
         if (exits_check)
           push!(result_file_list,result_file_path);
         else
           println("File not found  ",v)
-          assert(false)
+          @assert(false)
         end
 
       end
@@ -324,17 +324,17 @@ function parse_TOML(toml_file,input::Arg_Inputs)
     end
     if (haskey(toml_inputs,"k_point_num"))
       k_point_num = convert(Array{Int,1},toml_inputs["k_point_num"]);
-      assert(3 == length(k_point_num))
+      @assert(3 == length(k_point_num))
       input.k_point_num = k_point_num
     end
     if (haskey(toml_inputs,"q_point_num"))
       q_point_num = convert(Array{Int,1},toml_inputs["q_point_num"]);
-      assert(3 == length(q_point_num))
+      @assert(3 == length(q_point_num))
       input.q_point_num = q_point_num
     end
 
     if (haskey(toml_inputs,"atom12"))
-      input.atom12_list = Vector{Tuple{Int64,Int64}}(0);
+      input.atom12_list = Vector{Tuple{Int64,Int64}}(undef,0);
       for (k,v) in enumerate(toml_inputs["atom12"])
         push!(input.atom12_list,(v[1],v[2]));
       end
@@ -380,17 +380,17 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           #  input.orbital_mask_name = toml_inputs["orbitals"]["orbital_mask_name"]
           #end
           input.orbital_mask1_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask1_list"])
-          input.orbital_mask1_names = split(toml_inputs["orbitals"]["orbital_mask1_names"],r"\[|\]|,",keep=false)
+          input.orbital_mask1_names = split(toml_inputs["orbitals"]["orbital_mask1_names"],r"\[|\]|,",keepempty=false)
           input.orbital_mask2_list = convert(Array{Array{Int}},toml_inputs["orbitals"]["orbital_mask2_list"])
-          input.orbital_mask2_names = split(toml_inputs["orbitals"]["orbital_mask2_names"],r"\[|\]|,",keep=false)
+          input.orbital_mask2_names = split(toml_inputs["orbitals"]["orbital_mask2_names"],r"\[|\]|,",keepempty=false)
 
           if (haskey(toml_inputs["orbitals"],"orbital_mask3_list"))
             input.orbital_mask3_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask3_list"])
-            input.orbital_mask3_names = split(toml_inputs["orbitals"]["orbital_mask3_names"],r"\[|\]|,",keep=false)
+            input.orbital_mask3_names = split(toml_inputs["orbitals"]["orbital_mask3_names"],r"\[|\]|,",keepempty=false)
           end
           if (haskey(toml_inputs["orbitals"],"orbital_mask4_list"))
             input.orbital_mask4_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask4_list"])
-            input.orbital_mask4_names = split(toml_inputs["orbitals"]["orbital_mask4_names"],r"\[|\]|,",keep=false)
+            input.orbital_mask4_names = split(toml_inputs["orbitals"]["orbital_mask4_names"],r"\[|\]|,",keepempty=false)
           end
 
         end
@@ -404,7 +404,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                 #input.Optional["energywindow"]  = Dict{String,Array{Array{Float64,1},1}}()
                 input.Optional["energywindow"]  = Dict{String,Any}()
                 if (!haskey(toml_inputs["energywindow"],"energywindow_name"))
-                    println(" In [energywindow] the energywindow_name is missing "); assert(false);
+                    println(" In [energywindow] the energywindow_name is missing "); @assert(false);
                 end
                 input.Optional["energywindow"]["energywindow_name"] = toml_inputs["energywindow"]["energywindow_name"]
 
@@ -420,7 +420,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_all_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_all_list"] = energywindow_all_list;
@@ -431,7 +431,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_1_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_1_list"] = energywindow_1_list;
@@ -442,7 +442,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_2_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_2_list"] = energywindow_2_list;
@@ -453,7 +453,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_3_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_3_list"] = energywindow_3_list;
@@ -464,7 +464,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
                     for eRange in energywindow_4_list
                         if (2 != length(eRange))
                             println(" energywindow required lowerBound & upperBound  ", eRange);
-                            assert(false);
+                            @assert(false);
                         end
                     end
                     input.Optional["energywindow"]["energywindow_4_list"] = energywindow_4_list;
@@ -520,7 +520,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
               # orbital_rot_d_type
               atom1 = convert(Int, v[1][1])
               orbital_list = convert(Array{Array{Int}},v[2:end]);
-              assert(issorted( map(v->v[1],orbital_list) ));
+              @assert(issorted( map(v->v[1],orbital_list) ));
               orbital_merge_rules[atom1] =
                 orbital_merge_type(atom1,orbital_list);
             end
@@ -606,7 +606,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         start_iter = 0;
         if (haskey(toml_inputs["DMFT"],"start_iter"))
           start_iter = toml_inputs["DMFT"]["start_iter"];
-          assert(start_iter>=0);
+          @assert(start_iter>=0);
         end
         max_iter = convert(Int64,toml_inputs["DMFT"]["max_iter"]);
         dmft_executable = toml_inputs["DMFT"]["dmft_executable"]::String
@@ -622,7 +622,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
         else
           println("openmx_input dft/*.dat dose not exists", openmx_input_full)
-          assert(false)
+          @assert(false)
         end
 
         openmx_DM_executable = toml_inputs["DMFT"]["DFT"]["openmx_DM_executable"]
@@ -709,7 +709,7 @@ function parse_input(args,input::Arg_Inputs)
         #println("  $key  =>  $(repr(val))")
         #println("  $key  =>  $val")
 
-        if (key == "atom12" && (Void != typeof(val)))
+        if (key == "atom12" && (Nothing != typeof(val)))
             atom_str_list = split(val,",")
             atom12_list = Vector{Tuple{Int64,Int64}}();
             for (atom_i, atom12_str) in enumerate(atom_str_list)
@@ -809,7 +809,7 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om1names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask1_names = split(val,r"\[|\]|,",keep=false)
+            input.orbital_mask1_names = split(val,r"\[|\]|,",keepempty=false)
         end
         if (key =="om2" && typeof(val) <: AbstractString)
             #input.orbital_mask2 = parse_int_list(val)
@@ -819,7 +819,7 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om2names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask2_names = split(val,r"\[|\]|,",keep=false)
+            input.orbital_mask2_names = split(val,r"\[|\]|,",keepempty=false)
         end
 
         if (key =="om3" && typeof(val) <: AbstractString)
@@ -830,7 +830,7 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om3names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask3_names = split(val,r"\[|\]|,",keep=false)
+            input.orbital_mask3_names = split(val,r"\[|\]|,",keepempty=false)
         end
         if (key =="om4" && typeof(val) <: AbstractString)
             #input.orbital_mask2 = parse_int_list(val)
@@ -840,7 +840,7 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om4names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask4_names = split(val,r"\[|\]|,",keep=false)
+            input.orbital_mask4_names = split(val,r"\[|\]|,",keepempty=false)
         end
 
         if ("ommode"==key)

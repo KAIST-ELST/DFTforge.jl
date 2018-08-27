@@ -1,9 +1,12 @@
+__precompile__(true)
 using DFTforge
 using ..DFTcommon
 using HDF5
 using ProgressMeter
 using Distributed
+
 # Julia 1.0 support
+using LinearAlgebra
 using Mmap
 using Statistics
 #
@@ -126,7 +129,7 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
         orbitalNums[i] = scf_r.Total_NumOrbs[i];
     end
 
-    #assert(0 == scf_r.SpinP_switch - spin_type);
+    #@assert(0 == scf_r.SpinP_switch - spin_type);
     dftresult[result_index] =
     DFTdataset(dfttype, scf_r,spin_type,
       orbitalStartIdx,orbitalNums);
@@ -166,7 +169,7 @@ function set_current_dftdataset(scf_r,
         orbitalNums[i] = scf_r.Total_NumOrbs[i];
     end
 
-    #assert(0 == scf_r.SpinP_switch - spin_type);
+    #@assert(0 == scf_r.SpinP_switch - spin_type);
     dftresult[result_index] =
     DFTdataset(dfttype, scf_r,spin_type,
       orbitalStartIdx,orbitalNums);
@@ -180,7 +183,7 @@ function set_current_dftdataset(scf_r,
         orbitalIdx += scf_r.Total_NumOrbs[i]
         orbitalNums[i] = scf_r.Total_NumOrbs[i];
     end
-    #assert(0 == scf_r.SpinP_switch - spin_type);
+    #@assert(0 == scf_r.SpinP_switch - spin_type);
     dftresult[result_index] =
     DFTdataset(dfttype, scf_r,spin_type,
       orbitalStartIdx,orbitalNums);
@@ -246,7 +249,7 @@ end
 
 #for pmap
 function cal_noncolinear_Hamiltonian(input::Job_input_Type)
-  assert(DFTcommon.non_colinear_type == input.spin_type)
+  @assert(DFTcommon.non_colinear_type == input.spin_type)
   global dftresult
   result_index = input.result_index;
   return DFTforge.cal_noncolinear_Hamiltonian(input.k_point,
@@ -294,8 +297,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
   dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim,Total_q_point_num ));
   # Write hamiltonian
 
-  job_list = Array{Job_input_Type}(0)
-  q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
+  job_list = Array{Job_input_Type}(undef,0)
+  q_points_int = Array{k_point_int_Tuple}(undef,Total_q_point_num);
   q_points_intdic = Dict{k_point_int_Tuple,Int}();
   for (index,q) in enumerate(q_point_list)
     k_point = (q[1],q[2],q[3]);
@@ -311,7 +314,7 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
   p = Progress(ceil(Int, 1.0+length(q_point_list)/batch_size),
   "Computing Eigenstates(q)...");
   p.barglyphs=BarGlyphs("[=> ]")
-  p.output = STDOUT
+  p.output = stdout
   while cnt <= Total_q_point_num
     # pmap
     start_idx = cnt;
@@ -358,8 +361,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
     #for non_colinear_type spin
     # H of (real only, image only)
     if (DFTcommon.non_colinear_type == spin_type)
-      job_list_nc_realH_only = Array{Job_input_Type}(0)
-      job_list_nc_imagH_only = Array{Job_input_Type}(0)
+      job_list_nc_realH_only = Array{Job_input_Type}(undef,0)
+      job_list_nc_imagH_only = Array{Job_input_Type}(undef,0)
       for (index,job_item) in enumerate(job_list[start_idx:end_idx])
         push!(job_list_nc_realH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_realH_only, result_index));
         push!(job_list_nc_imagH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_imagH_only, result_index));
@@ -429,7 +432,7 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
   if (DFTcommon.para_type == spin_type)
       println(" Para Hamiltonian will not be treated as nc.")
       println(" Try to use 'cachecal_all_Qpoint_eigenstats' instead. ")
-      assert(false)
+      @assert(false)
   end
 
   TotalOrbitalNum2 = TotalOrbitalNum;
@@ -457,7 +460,7 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
   dataspace(TotalOrbitalNum3,TotalOrbitalNum3, spin_dim,Total_q_point_num ));
   # Write hamiltonian
 
-  job_list = Array{Job_input_Type}(0)
+  job_list = Array{Job_input_Type}(undef,0)
   q_points_int = Array{k_point_int_Tuple}(Total_q_point_num);
   q_points_intdic = Dict{k_point_int_Tuple,Int}();
   for (index,q) in enumerate(q_point_list)
@@ -474,7 +477,7 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
   p = Progress(ceil(Int, 1.0+length(q_point_list)/batch_size),
   "Computing Eigenstates as nc(q)...");
   p.barglyphs=BarGlyphs("[=> ]")
-  p.output = STDOUT
+  p.output = stdout
   while cnt <= Total_q_point_num
     # pmap
     start_idx = cnt;
@@ -499,8 +502,8 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
     #for non_colinear_type spin
     # H of (real only, image only)
     if (DFTcommon.non_colinear_type == spin_type)
-      job_list_nc_realH_only = Array{Job_input_Type}(0)
-      job_list_nc_imagH_only = Array{Job_input_Type}(0)
+      job_list_nc_realH_only = Array{Job_input_Type}(undef,0)
+      job_list_nc_imagH_only = Array{Job_input_Type}(undef,0)
       for (index,job_item) in enumerate(job_list[start_idx:end_idx])
         push!(job_list_nc_realH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_realH_only, result_index));
         push!(job_list_nc_imagH_only,Job_input_Type(job_item.k_point ,spin_type, DFTcommon.nc_imagH_only, result_index));
@@ -650,7 +653,7 @@ function cacheread_eigenstate_as_nc(k_point::k_point_Tuple,spin,cache_index=1)
   if (DFTcommon.para_type == spin_type)
       println(" Para Hamiltonian will not be treated as nc.")
       println(" Try to use 'cacheread_eigenstate' instead. ")
-      assert(false)
+      @assert(false)
   end
   Eigenstate = zeros(Complex_my,TotalOrbitalNum3,TotalOrbitalNum3);
   Eigenvalues = zeros(Float_my,TotalOrbitalNum3);
@@ -754,7 +757,7 @@ function cacheread_Hamiltonian_as_nc(k_point::k_point_Tuple,spin::Int=1,cache_in
   if (DFTcommon.para_type == spin_type)
     println(" Para Hamiltonian will not be treated as nc.")
     println(" Try to use 'cacheread_Hamiltonian' instead. ")
-    assert(false)
+    @assert(false)
   end
 
   Hamiltonian = zeros(Complex_my,TotalOrbitalNum3,TotalOrbitalNum3);
@@ -848,7 +851,7 @@ function get_TotalOrbitalNum(result_index=1)
   TotalOrbitalNum = sum(dftresult[result_index].scf_r.Total_NumOrbs);
   #print(TotalOrbitalNum)
   #print(typeof(TotalOrbitalNum))
-  assert(Int == typeof(TotalOrbitalNum));
+  @assert(Int == typeof(TotalOrbitalNum));
   return TotalOrbitalNum
 end
 function get_ChempP(result_index=1)
@@ -960,7 +963,7 @@ function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
   p = Progress( ceil(Int, length(q_point_list)/10),
     string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
   p.barglyphs=BarGlyphs("[=> ]")
-  p.output = STDOUT
+  p.output = stdout
   for (q_i,q_point) in enumerate(q_point_list)
     q_point_int = k_point_float2int(q_point);
 
@@ -1025,7 +1028,7 @@ function Qspace_Ksum_atomlist_parallel_nc(kq_function,q_point_list,k_point_list,
   p = Progress( ceil(Int, length(q_point_list)/progress_step),
     string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
   p.barglyphs=BarGlyphs("[=> ]")
-  p.output = STDOUT
+  p.output = stdout
   for (q_i,q_point) in enumerate(q_point_list)
     q_point_int = k_point_float2int(q_point);
 
