@@ -317,7 +317,9 @@ for result_i in 2:size(J_ij_R)[1]
     Plots.plot!(distance_scalar,J_ij_R[result_i][5] *1000.0, label = label)  # eV -> meV
 end
 
-plot_filename = "Jplot_"*join(atom2_name_list,",")*"_"*orbital_name*".html"
+plot_filename = "Jplot_" * string(base_atom) * "_" *
+   join(atom2_name_list,",") * "_" * orbital_name * ".html"
+   
 println(" Writing Plot:",plot_filename)
 Plots.savefig(joinpath(root_dir,plot_filename))
 #Plots.plot!(J_ij_R[2][3],J_ij_R[2][4] *1000.0)
