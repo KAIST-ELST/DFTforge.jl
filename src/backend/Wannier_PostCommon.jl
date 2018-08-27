@@ -67,7 +67,7 @@ function cal_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamiltonian_inf
     TotalOrbitalNum2 = TotalOrbitalNum*2;
   end
 
-  kpoint_common_list = Array{Kpoint_eigenstate}(0);
+  kpoint_common_list = Array{Kpoint_eigenstate}(undef,0);
 
   for spin in spin_list
     Hout = cal_Hamiltonian(k_point, hamiltonian_info, spin)

@@ -214,9 +214,9 @@ GC.gc();
 
 ## 2.4 Send Eigenstate info to child processes
 DFTforge.pwork(cacheset,eigenstate_cache)
-tic();
-DFTforge.pwork(cacheread_lampup,kq_point_list)
-toc();
+#tic();
+@time DFTforge.pwork(cacheread_lampup,kq_point_list)
+#toc();
 ################################################################################
 
 ##############################################################################
@@ -428,35 +428,35 @@ num_return = 8; #local scope
     if (length(orbital_mask1)>0)
       orbital_mask1_tmp = collect(1:orbitalNums[atom1]);
       for orbit1 in orbital_mask1
-          deleteat!(orbital_mask1_tmp, find(orbital_mask1_tmp.==orbit1))
+          deleteat!(orbital_mask1_tmp, findall(orbital_mask1_tmp .== orbit1))
       end
-      Es_n_k_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask1_tmp,:]   = 0.0;
-      Es_n_k_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask1_tmp,:] = 0.0;
+      Es_n_k_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask1_tmp,:]   .= 0.0;
+      Es_n_k_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask1_tmp,:] .= 0.0;
     end
     if (length(orbital_mask3)>0)
       orbital_mask3_tmp = collect(1:orbitalNums[atom1]);
       for orbit3 in orbital_mask3
-          deleteat!(orbital_mask3_tmp, find(orbital_mask3_tmp.==orbit3))
+          deleteat!(orbital_mask3_tmp, findall(orbital_mask3_tmp .== orbit3))
       end
-      Es_m_kq_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:]   = 0.0;
-      Es_m_kq_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:] = 0.0;
+      Es_m_kq_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:]   .= 0.0;
+      Es_m_kq_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:] .= 0.0;
     end
 
     if (length(orbital_mask2)>0)
       orbital_mask2_tmp = collect(1:orbitalNums[atom2]);
       for orbit2 in orbital_mask2
-          deleteat!(orbital_mask2_tmp, find(orbital_mask2_tmp.==orbit2))
+          deleteat!(orbital_mask2_tmp, findall(orbital_mask2_tmp .== orbit2))
       end
-      Es_n_k_up_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:]  = 0.0;
-      Es_n_k_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:] = 0.0;
+      Es_n_k_up_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:]  .= 0.0;
+      Es_n_k_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:] .= 0.0;
     end
     if (length(orbital_mask4)>0)
       orbital_mask4_tmp = collect(1:orbitalNums[atom2]);
       for orbit4 in orbital_mask4
-          deleteat!(orbital_mask4_tmp, find(orbital_mask4_tmp.==orbit4))
+          deleteat!(orbital_mask4_tmp, findall(orbital_mask4_tmp .== orbit4))
       end
-      Es_m_kq_up_atom2[orbitalStartIdx_list[atom2]+orbital_mask4_tmp,:]   = 0.0;
-      Es_m_kq_down_atom2[orbitalStartIdx_list[atom2]+orbital_mask4_tmp,:] = 0.0;
+      Es_m_kq_up_atom2[orbitalStartIdx_list[atom2]+orbital_mask4_tmp,:]   .= 0.0;
+      Es_m_kq_down_atom2[orbitalStartIdx_list[atom2]+orbital_mask4_tmp,:] .= 0.0;
     end
 
     ## Do auctual calucations

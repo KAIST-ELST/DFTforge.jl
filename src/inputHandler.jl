@@ -171,7 +171,7 @@ end
 function parse_TOML(toml_file,input::Arg_Inputs)
 
   if (isfile(toml_file))
-    toml_inputs = TOML.parse(readstring(input.TOMLinput))
+    toml_inputs = TOML.parse(read(input.TOMLinput,String))
     toml_realpath = realpath(input.TOMLinput);
     toml_dir =  dirname(toml_realpath)
     println(" TOML file: ",toml_realpath)
@@ -380,17 +380,17 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           #  input.orbital_mask_name = toml_inputs["orbitals"]["orbital_mask_name"]
           #end
           input.orbital_mask1_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask1_list"])
-          input.orbital_mask1_names = split(toml_inputs["orbitals"]["orbital_mask1_names"],r"\[|\]|,",keep=false)
+          input.orbital_mask1_names = split(toml_inputs["orbitals"]["orbital_mask1_names"],r"\[|\]|,",keepempty=false)
           input.orbital_mask2_list = convert(Array{Array{Int}},toml_inputs["orbitals"]["orbital_mask2_list"])
-          input.orbital_mask2_names = split(toml_inputs["orbitals"]["orbital_mask2_names"],r"\[|\]|,",keep=false)
+          input.orbital_mask2_names = split(toml_inputs["orbitals"]["orbital_mask2_names"],r"\[|\]|,",keepempty=false)
 
           if (haskey(toml_inputs["orbitals"],"orbital_mask3_list"))
             input.orbital_mask3_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask3_list"])
-            input.orbital_mask3_names = split(toml_inputs["orbitals"]["orbital_mask3_names"],r"\[|\]|,",keep=false)
+            input.orbital_mask3_names = split(toml_inputs["orbitals"]["orbital_mask3_names"],r"\[|\]|,",keepempty=false)
           end
           if (haskey(toml_inputs["orbitals"],"orbital_mask4_list"))
             input.orbital_mask4_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask4_list"])
-            input.orbital_mask4_names = split(toml_inputs["orbitals"]["orbital_mask4_names"],r"\[|\]|,",keep=false)
+            input.orbital_mask4_names = split(toml_inputs["orbitals"]["orbital_mask4_names"],r"\[|\]|,",keepempty=false)
           end
 
         end
@@ -809,7 +809,7 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om1names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask1_names = split(val,r"\[|\]|,",keep=false)
+            input.orbital_mask1_names = split(val,r"\[|\]|,",keepempty=false)
         end
         if (key =="om2" && typeof(val) <: AbstractString)
             #input.orbital_mask2 = parse_int_list(val)
@@ -819,7 +819,7 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om2names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask2_names = split(val,r"\[|\]|,",keep=false)
+            input.orbital_mask2_names = split(val,r"\[|\]|,",keepempty=false)
         end
 
         if (key =="om3" && typeof(val) <: AbstractString)
@@ -830,7 +830,7 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om3names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask3_names = split(val,r"\[|\]|,",keep=false)
+            input.orbital_mask3_names = split(val,r"\[|\]|,",keepempty=false)
         end
         if (key =="om4" && typeof(val) <: AbstractString)
             #input.orbital_mask2 = parse_int_list(val)
@@ -840,7 +840,7 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om4names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask4_names = split(val,r"\[|\]|,",keep=false)
+            input.orbital_mask4_names = split(val,r"\[|\]|,",keepempty=false)
         end
 
         if ("ommode"==key)

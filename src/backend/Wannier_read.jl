@@ -82,7 +82,7 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
     current_line+= 1
   end
   if (length(start_linenums) > 1)
-    linePer_R =  start_linenums[2:end] - start_linenums[1:end-1] - 1;
+    linePer_R =  start_linenums[2:end] .- start_linenums[1:end-1] .- 1;
     @assert(0 == sum(false .==(linePer_R[1] .== linePer_R)))
     @assert(Float64(Int64(sqrt(linePer_R[1]))) == sqrt(linePer_R[1]))
     @assert(TotalOrbitalNum == Int64(sqrt(linePer_R[1])));
@@ -98,9 +98,9 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
     end
   end
 
-  R_vector_mat = Array{Array{Int,2}}(SpinP_switch)
+  R_vector_mat = Array{Array{Int,2}}(undef,SpinP_switch)
   #R_vector_mat = zeros(length(start_linenums),3)
-  Hks_R = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
+  Hks_R = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
   for spin in 1:SpinP_switch
     Hks_R[spin] = Array{Array{Complex_my,2}}(undef,0);
     R_vector_mat[spin] = zeros(convert(Int,length(start_linenums)/SpinP_switch),3);
@@ -133,7 +133,7 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
     cnt += 1;
   end
   # re arange wannier group same atoms orbitals
-  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
+  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
   for spin in 1:SpinP_switch
     Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
   end
@@ -373,15 +373,15 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
 
   #ChemP = 8.1400
   # Read Chemical potentail
-  chemp_line = findfirst(map(x-> sum("fermi_energy".==split(x,['=',' '],keep=false)), wannier90_win_file_lowercase));
+  chemp_line = findfirst(map(x-> sum("fermi_energy".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
   if (0==chemp_line)
       println(" No fermi_energy found in " * wannier_fname * ".win ex) fermi_energy = 1.234 !eV ")
       @assert(true)
   end
-  ChemP = parse(Float64, split(wannier90_win_file_lowercase[chemp_line],['=',' '],keep=false)[2])
+  ChemP = parse(Float64, split(wannier90_win_file_lowercase[chemp_line],['=',' '],keepempty=false)[2])
 
-  num_wann_line  = findfirst(map(x-> sum("num_wann".==split(x,['=',' '],keep=false)), wannier90_win_file_lowercase));
-  num_wann = parse(Int64, split(wannier90_win_file_lowercase[num_wann_line],['=',' '],keep=false)[2]);
+  num_wann_line  = findfirst(map(x-> sum("num_wann".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
+  num_wann = parse(Int64, split(wannier90_win_file_lowercase[num_wann_line],['=',' '],keepempty=false)[2]);
 
   # Read position vector
   #=
