@@ -68,7 +68,7 @@ function update_scfout(orginal_scfout_fname::String, updated_scfout_fname::Strin
   # Updated DM matrix
   # TODO: iDM is not updated yet
   ##############################################################################
-  tic()
+  #tic()
   for line_index = 1:line_num
     #line_index = 888746;
     lmn_cell_vector = convert(Array{Int32},csv_result[line_index,1:3])
@@ -146,7 +146,7 @@ function update_scfout(orginal_scfout_fname::String, updated_scfout_fname::Strin
       #println( LB_AN)
     end
   end
-  toc()
+  #toc()
   sum(0 .== csv_result[:,7])
   println(" DM delta ",DM_delta_orig)
 

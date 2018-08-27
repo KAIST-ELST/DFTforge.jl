@@ -447,7 +447,7 @@ num_return = 8; #local scope
       for orbit2 in orbital_mask2
           deleteat!(orbital_mask2_tmp, findall(orbital_mask2_tmp .== orbit2))
       end
-      Es_n_k_up_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:]  .= 0.0;
+      Es_n_k_up_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:]   .= 0.0;
       Es_n_k_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:] .= 0.0;
     end
     if (length(orbital_mask4)>0)
