@@ -33,7 +33,9 @@ Julia was designed from the beginning for high performance. Julia programs compi
 [Using Julia auto-installer for Linux](https://github.com/abelsiqueira/jill)
 
  ```bash
- JULIA_INSTALL=~/opt/bin bash -ci "$(curl –fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
+echo 'export PATH=~/opt/bin:$PATH' >>~/.profile
+echo 'export PATH=~/opt/bin:$PATH' >>~/.bashrc
+JULIA_INSTALL=~/opt/bin bash -ci "$(curl –fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
  ```
 
  * For OSX or Windows see: [Julia Download](https://julialang.org/downloads/)
