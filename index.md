@@ -1,7 +1,10 @@
 ---
 layout: default
 ---
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true)
+
 # MFT (Magentic force theory)
+
 ![Jx](docs/Logo_text.svg){: height="100px" }
 
 
@@ -23,9 +26,12 @@ We support the following features:
 Julia was designed from the beginning for high performance. Julia programs compile to efficient native code for multiple platforms via LLVM.
 [See Julia benchmark compared to C, Fortran, Pythons, Matlab & more...](https://julialang.org/benchmarks/).
 
- * For Linux system: 
+**Currently we support latest Julia 1.0/0.7.**
+
+ * For Linux system:
 
 [Using Julia auto-installer for Linux](https://github.com/abelsiqueira/jill)
+
  ```bash
  JULIA_INSTALL=~/opt/bin bash -ci "$(curl –fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
  ```
