@@ -3,7 +3,7 @@ layout: default
 ---
 # MFT (Magentic force theory)
 ![Jx](docs/Logo_text.svg){: height="100px" }
-![OpenMX](http://www.openmx-square.org/OpenMX_LOGO_S.PNG){: height="100px" } 
+
 
 
 **JX** Calculate spin exchange coupling parameters *J* from [OpenMX](http://www.openmx-square.org/) DFT/Wannier, [Wannier90](http://www.wannier.org/) hamiltonians via linear-response theory.
@@ -34,7 +34,7 @@ Julia was designed from the beginning for high performance. Julia programs compi
 
 ### Install DFTforge
 ```bash
-git clone https://github.com/ElectronicStructureTheory-KAIST/DFTforge.jl/
+git clone github.com/KAIST-ELST/DFTforge.jl
 julia install.jl
 ```
 
@@ -44,7 +44,6 @@ julia install.jl
 ```bash
 ./example_NiO_OpenMX.sh
 ```
-
 
 
 
