@@ -1,7 +1,9 @@
 ---
 layout: default
 ---
-![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true)
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true) 
+
+##### Please stay tuned. Public release via GitHub will be ready soon! (updated: 2018-09-06 )
 
 # MFT (Magentic force theory)
 
