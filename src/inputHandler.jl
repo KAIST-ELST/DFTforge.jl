@@ -185,16 +185,15 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         input.DFT_type = Wannier90
       end
     end
-    if (haskey(toml_inputs,"Wannier90type"))
-      result_type::AbstractString = toml_inputs["Wannier90type"]
+    if (haskey(toml_inputs,"Wanniertype"))
+      result_type::AbstractString = toml_inputs["Wanniertype"]
       if ( lowercase("openmx") == lowercase(result_type) )
         input.Wannier90_type = OpenMXWF;
       elseif ( lowercase("Wannier90") == lowercase(result_type))
         input.Wannier90_type = Wannier90WF;
       elseif ( lowercase("ecalj") == lowercase(result_type))
         input.Wannier90_type = EcalJWF;
-      elseif ( lowercase("wien2k") == lowercase(result_type))
-
+      #elseif ( lowercase("wien2k") == lowercase(result_type))
       end
     end
 
