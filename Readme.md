@@ -1,6 +1,8 @@
 
 ![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true) 
 
+[Homepage & How to use](https://kaist-elst.github.io/DFTforge.jl/)
+
 ##### Please stay tuned. Public release via GitHub will be ready soon! (updated: 2018-09-06 )
 We are waiting few more Julia packages to be stabilized.
 
@@ -21,4 +23,3 @@ We support the following features:
 ![Logo](docs/Logo.svg)
 ---
 
-[Homepage & How to use](https://kaist-elst.github.io/DFTforge.jl/)
