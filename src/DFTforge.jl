@@ -10,7 +10,8 @@ export k_point_Tuple,k_point_int_Tuple
 export cal_colinear_eigenstate,cal_colinear_Hamiltonian
 export cal_colinear_eigenstate_as_nc
 export cal_nonco_linear_Eigenstate,cal_noncolinear_Hamiltonian
-DFTforge_VERSION = VersionNumber("0.6.4-dev+20180827");
+include("UpdateCheck.jl")
+#DFTforge_VERSION = VersionNumber("0.6.4-dev+20180827");
 
 #import ..DFTcommon
 #using DFTforge.DFTcommon
@@ -29,16 +30,20 @@ using Glob
 #using Plots
 export ArgParse,ProgressMeter,Distributed,Statistics,CSV,FileIO,DataFrames,Glob#,Plots
 ##
+#=
 function __init__()
     if 1 == myid()
       println(" DFTforge Version :",string(DFTforge_VERSION))
     end
 end
 
+
 export get_DFTforge_VERSION
 function get_DFTforge_VERSION()
   return DFTforge_VERSION;
 end
+
+=#
 #@enum DFTtype OpenMX = 1 Wannier90 = 2
 #@enum SPINtype para_type = 1 colinear_type = 2 non_colinear_type = 4
 include("DFTcommon.jl")
