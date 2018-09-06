@@ -1,55 +1,26 @@
+---
+layout: default
+---
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true) 
 
-# QuickStart Guide
+##### Please stay tuned. Public release via GitHub will be ready soon! (updated: 2018-09-06 )
+We are waiting few more Julia packages to be stabilized.
 
-## Install
-### Install Julia
+# MFT (Magentic force theory)
 
-For Linux system:
-```
-JULIA_INSTALL=~/opt/bin bash -ci "$(curl –fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
-```
-For OSX or Windows see: https://julialang.org/downloads/
+![Jx](docs/Logo_text.svg){: height="100px" }
 
-### Install DFTforge in Julia
 
-```sh
-git clone https://github.com/ElectronicStructureTheory-KAIST/DFTforge.jl/
-julia install.jl
-```
 
-## Run example
+**JX** Calculate spin exchange coupling parameters *J* from [OpenMX](http://www.openmx-square.org/) DFT/Wannier, [Wannier90](http://www.wannier.org/) hamiltonians via linear-response theory.
 
- * G-type AFM NiO example
-```
-./example_NiO_OpenMX.sh
-```
+We support the following features:
+- J in momentum space.
+- Orbital resolved *J*
+- Local axis redefinition for orbital resolved *J*
+- Full [OpenMX](http://www.openmx-square.org/) DFT Hamiltonian and Wannier Hamiltonian ([OpenMX](http://www.openmx-square.org/)/[Wannier90](http://www.wannier.org/))
+
+![Logo](docs/Logo.svg)
 ---
 
-# DFT postprocessing environment
-Simplify obtaining Hamiltonian, Eigenvalue, Eigenvector from DFT results and Pre-caching them for parallelized calculations.
-Pre-caching results are easy to use when calculating in k and q space.
- * It consists of two parts DFTforge & DFTrefinery.
- 
-
-
-## DFTforge
-The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT results.
-
- * read DFT results from OpenMX, Wannier90(?), EcalJ(?)
- * Calculate Phi, Enk, Hks,
-
-### Etc. functionalities
- * K-point representation in INT (for unique K,Q).
- * Gennerate K-points.
- * Generalised argument parser (support TOML sytle input).
-
-
-
-## DFTrefinery
-use DFTforge for calcuating various properties
-Wrapper module for easy access of DFT-forge, especially easy use of HDF5 cached eigenstate information.
-
- * Store Eigenvalues & Eigenvectors in HDF5 format (K,Q)
- * Read Stored Eigenvalues & Eigenvectors
- * Simple interface for K space, K,Q space calucations
- ** Generalised parallelized K,Q space calculation function wrapper.
+[Document with homepage](https://kaist-elst.github.io/DFTforge.jl/)
