@@ -299,17 +299,17 @@ function read_wannier_Wannier90(result_file_dict::Dict{AbstractString,AbstractSt
       @assert(Wannier_info_up.rv == Wannier_info_down.rv);
       Gxyz = Wannier_info_up.Gxyz;
       @assert(Wannier_info_up.Gxyz == Wannier_info_down.Gxyz)
-      Hks_R_raw = Array{Array{Array{Complex_my,2}}}(2)
+      Hks_R_raw = Array{Array{Array{Complex_my,2}}}(undef,2)
       Hks_R_raw[1] = Wannier_info_up.Hks_R_raw[1];
       Hks_R_raw[2] = Wannier_info_down.Hks_R_raw[1];
 
-      Hks_R = Array{Array{Array{Complex_my,2}}}(2)
+      Hks_R = Array{Array{Array{Complex_my,2}}}(undef,2)
       Hks_R[1] = Wannier_info_up.Hks_R[1];
       Hks_R[2] = Wannier_info_down.Hks_R[1];
 
 
       #R_vector_mat = Wannier_info_up.R_vector_mat;
-      R_vector_mat = Array{Array{Int,2}}(2)
+      R_vector_mat = Array{Array{Int,2}}(undef,2)
       @assert(Wannier_info_up.R_vector_mat == Wannier_info_down.R_vector_mat);
       R_vector_mat[1]  = Wannier_info_up.R_vector_mat[1]
       R_vector_mat[2]  = Wannier_info_down.R_vector_mat[1]
@@ -373,14 +373,19 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
 
   #ChemP = 8.1400
   # Read Chemical potentail
-  chemp_line = findfirst(map(x-> sum("fermi_energy".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
-  if (0==chemp_line)
-      println(" No fermi_energy found in " * wannier_fname * ".win ex) fermi_energy = 1.234 !eV ")
-      @assert(true)
+  chemp_line = 0
+  try
+    chemp_line = findfirst( 0 .< map(x-> sum("fermi_energy".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
+    if (0==chemp_line)
+        println(" No fermi_energy found in " * wannier_fname * ".win ex) fermi_energy = 1.234 !eV ")
+        @assert(true)
+    end
+  catch
+    println(" No fermi_energy found in " * wannier_fname * ".win ex) fermi_energy = 1.234 !eV ")
   end
   ChemP = parse(Float64, split(wannier90_win_file_lowercase[chemp_line],['=',' '],keepempty=false)[2])
 
-  num_wann_line  = findfirst(map(x-> sum("num_wann".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
+  num_wann_line  = findfirst( 0 .< map(x-> sum("num_wann".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
   num_wann = parse(Int64, split(wannier90_win_file_lowercase[num_wann_line],['=',' '],keepempty=false)[2]);
 
   # Read position vector
@@ -450,8 +455,8 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
 
   SpinP_switch = 1
   spin = 1
-  R_vector_mat = Array{Array{Int,2}}(SpinP_switch)
-  Hks_R = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
+  R_vector_mat = Array{Array{Int,2}}(undef,SpinP_switch)
+  Hks_R = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
   for spin in 1:SpinP_switch
     Hks_R[spin] = Array{Array{ComplexF64,2}}(undef,0);
     R_vector_mat[spin] = zeros(num_Rvector,3);
@@ -483,7 +488,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
   end
 
   # re arange wannier group same atoms orbitals
-  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
+  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
   for spin in 1:SpinP_switch
     Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
   end

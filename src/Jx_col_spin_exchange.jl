@@ -1,5 +1,5 @@
 #using ProgressMeter
-#using Distributed
+using Distributed
 import DFTforge
 using DFTforge.DFTrefinery
 #using DFTcommon
