@@ -892,7 +892,7 @@ function input_checker(input::Arg_Inputs)
     exit_programe = true;
     #exit(1);
   end
-  if !isfile(input.result_file) && (0 == length(input.result_file_dict))
+  if !isfile(input.result_file) && (0 == length(input.result_file_dict)) && (0 == length(input.result_file_dict))
     println(" result file is not found ", input.result_file );
   end
   for (k,v) in input.result_file_dict
