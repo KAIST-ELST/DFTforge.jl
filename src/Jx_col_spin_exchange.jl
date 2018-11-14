@@ -447,7 +447,7 @@ num_return = 8; #local scope
       for orbit2 in orbital_mask2
           deleteat!(orbital_mask2_tmp, findall(orbital_mask2_tmp .== orbit2))
       end
-      Es_n_k_up_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:]   .= 0.0;
+      Es_n_k_up_atom2[orbitalStartIdx_list[atom2]   .+ orbital_mask2_tmp,:] .= 0.0;
       Es_n_k_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:] .= 0.0;
     end
     if (length(orbital_mask4)>0)
@@ -455,8 +455,8 @@ num_return = 8; #local scope
       for orbit4 in orbital_mask4
           deleteat!(orbital_mask4_tmp, findall(orbital_mask4_tmp .== orbit4))
       end
-      Es_m_kq_up_atom2[orbitalStartIdx_list[atom2]+orbital_mask4_tmp,:]   .= 0.0;
-      Es_m_kq_down_atom2[orbitalStartIdx_list[atom2]+orbital_mask4_tmp,:] .= 0.0;
+      Es_m_kq_up_atom2[orbitalStartIdx_list[atom2]   .+ orbital_mask4_tmp,:] .= 0.0;
+      Es_m_kq_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask4_tmp,:] .= 0.0;
     end
 
     ## Do auctual calucations
@@ -475,8 +475,10 @@ num_return = 8; #local scope
     # Index convention: Enk_Emkq[nk,mkq]
     Enk_down_Emkq_up =
       En_k_down[:]*ones(1,TotalOrbitalNum2) - ones(TotalOrbitalNum2,1)*Em_kq_up[:]' ;
+    #Enk_down_Emkq_up .+= im*0.0001;
     Enk_up_Emkq_down =
       En_k_up[:]*ones(1,TotalOrbitalNum2) - ones(TotalOrbitalNum2,1)*Em_kq_down[:]' ;
+    #Enk_up_Emkq_down .+= im*0.0001;
     #Enk_Emkq += im*0.001;
 
     V1_G = 0.5*(Hks_G_up[atom1_orbitals,atom1_orbitals] - Hks_G_down[atom1_orbitals,atom1_orbitals]);

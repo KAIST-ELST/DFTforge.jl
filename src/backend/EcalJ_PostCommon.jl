@@ -45,7 +45,7 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
     TotalOrbitalNum = sum(scf_r.Total_NumOrbs);
     plat = scf_r.plat;
 
-    kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(0);
+    kpoint_eigenstate_list =  Array{Kpoint_eigenstate}(undef,0);
     for spin=spin_list
         Hk = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
         S  = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
@@ -92,7 +92,7 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
 =#
         # Wihtout Cut
         ##=
-        Sq = sqrtm(S)
+        Sq = sqrt(S)
         S2 = inv(Sq);
         # =#
 
@@ -129,7 +129,7 @@ function read_EcalJ_scf(result_file_dict::Dict{AbstractString,AbstractString},
         #Gxyz = EcalJ_info_up.Gxyz;
         @assert(EcalJ_info_up.Gxyz == EcalJ_info_dn.Gxyz)
 
-        EcalJ_H_list = Array{EcalJ_H,1}(0);
+        EcalJ_H_list = Array{EcalJ_H,1}(undef,0);
         push!(EcalJ_H_list, deepcopy(EcalJ_info_up.EcalJ_H_list[1]) )
         push!(EcalJ_H_list, deepcopy(EcalJ_info_dn.EcalJ_H_list[1]) )
 
@@ -150,10 +150,10 @@ function read_EcalJ_scf_interal(scf_name::String)
     close(f)
     function search_next_delimiter(search_line)
         while(search_line < length(lines)  )
-        if( contains(lines[search_line], "===="))
-            break;
-        end
-        search_line+=1
+            if (occursin("====" , lines[search_line]))
+                break;
+            end
+            search_line+=1
         end
         return search_line
     end
@@ -168,21 +168,26 @@ function read_EcalJ_scf_interal(scf_name::String)
 
     #tv =   plat * alat *  (1.0/ang2bohr) # borh -> ang
     tv =   plat * alat/ang2bohr
-    rv = 2*pi*inv(tv') # Check required
-    rv_inv = inv(tv')
+    println("tv: ",tv)
+    tv_ad = zeros(3,3)
+    adjoint!(tv_ad, tv);
+    rv = 2*pi*inv(tv_ad) # Check required
+    rv_inv = inv(tv_ad)
 
     #tmp = map(x->parse(Int64,x),split(lines[10])[[2,4]]  )
     #atomnum = tmp[1]
     #TotalOrbitalNum = tmp[2]
 
     # Read Total_NumOrbs
-    ib_table = Array{Int64}(0)
+    ib_table = Array{Int64}(undef,0)
 
     #start_line = next_delimiter+1
     start_line = 12
     start_line = 10
     next_delimiter = search_next_delimiter(start_line)
+    println("next_delimiter ", next_delimiter)
     for current_line = start_line:next_delimiter-1
+        println(current_line," : ", lines[current_line])
         tmp = map(x->parse(Int64,x),split(lines[current_line]))
         append!(ib_table,tmp)
     end
@@ -190,7 +195,7 @@ function read_EcalJ_scf_interal(scf_name::String)
     #@assert( atomnum == length(unique( ib_table))) # Check atom num
 
     # Generate Total_NumOrbs
-    Total_NumOrbs = Array{Int64}(atomnum)
+    Total_NumOrbs = Array{Int64}(undef,atomnum)
     for atom_i = 1:atomnum
         Total_NumOrbs[atom_i] = sum( ib_table .== atom_i)
     end
@@ -249,8 +254,7 @@ function read_EcalJ_scf_interal(scf_name::String)
 
         orbital_cell_orbitals[cnt,:] = tmp[1:2];
         orbital_cell_indexs[cnt,:] = tmp[3:5];
-
-        orbital_cell_Degen[cnt,:] = tmp[6]
+        orbital_cell_Degen[cnt] = tmp[6]
 
         tmp2 = map(x->parse(Float64,x),split(lines[current_line])[7:10])
 
@@ -273,7 +277,7 @@ function read_EcalJ_scf_interal(scf_name::String)
 
     # Store to EcalJ_H_list
 
-    EcalJ_H_list = Array{EcalJ_H,1}(0);
+    EcalJ_H_list = Array{EcalJ_H,1}(undef,0);
     push!(EcalJ_H_list,EcalJ_H( orbital_cell_orbitals,orbital_cell_indexs,orbital_cell_Degen,orbital_cell_H,orbital_cell_S ) )
 
     E_Temp = 300.0
