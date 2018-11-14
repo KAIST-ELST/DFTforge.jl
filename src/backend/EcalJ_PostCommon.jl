@@ -168,9 +168,9 @@ function read_EcalJ_scf_interal(scf_name::String)
 
     #tv =   plat * alat *  (1.0/ang2bohr) # borh -> ang
     tv =   plat * alat/ang2bohr
-    println("tv: ",tv)
-    tv_ad = zeros(3,3)
-    adjoint!(tv_ad, tv);
+    # println("tv: ",tv)
+    tv_ad = collect(tv');
+    #adjoint!(tv_ad, tv);
     rv = 2*pi*inv(tv_ad) # Check required
     rv_inv = inv(tv_ad)
 
