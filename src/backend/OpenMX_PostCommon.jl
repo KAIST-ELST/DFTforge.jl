@@ -118,9 +118,9 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamilt
       #
       #Coes = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
 
-      #Coes = S3*Ev_H2;
-      #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,ko,k_point,H);
-      kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Eigen_vect, Eigen_value,k_point,Hk_tilta);
+      Coes = S2*Eigen_vect;
+      #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,Eigen_value,k_point,H);  # Onsite
+      kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Eigen_vect, Eigen_value,k_point,Hk_tilta); # Lowdin
       #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,ko,k_point,H);
       push!(kpoint_eigenstate_list,kpoint_common);
   end

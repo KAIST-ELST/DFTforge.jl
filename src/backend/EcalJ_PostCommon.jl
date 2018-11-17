@@ -103,8 +103,8 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
         eigfact_hermitian(Eigen_vect,Eigen_value);
 
         Coes = S2 * Eigen_vect;
-        #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes, Eigen_value, k_point_frac_input, Hk);
-        kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Eigen_vect, Eigen_value, k_point_frac_input, Hk_tilta);
+        #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes, Eigen_value, k_point_frac_input, Hk); # Onsite
+        kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Eigen_vect, Eigen_value, k_point_frac_input, Hk_tilta); # Lowdin
         push!(kpoint_eigenstate_list,kpoint_common);
 
     end
