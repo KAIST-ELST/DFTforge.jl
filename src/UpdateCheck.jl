@@ -66,7 +66,7 @@ if update_required
     end
 
   # ziped src https://github.com/KAIST-ELST/DFTforge.jl/archive/master.zip
-  finally
+  catch
     Base.Filesystem.touch(markerfilePath)
   end
 end

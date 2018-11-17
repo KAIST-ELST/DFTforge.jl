@@ -64,7 +64,7 @@ function read_wannier_OpenMX_ParaCol_linear(wannier_fname,atoms_orbitals_list::V
   tv[3,:] = map(x->parse(Float64,x),split(lines[7]))
   tv = tv/ang2bohr; # all angstrong
 
-  rv = 2*pi*inv(tv'); # Check required
+  rv = 2*pi*inv(collect(tv')); # Check required
 
   ChemP = parse(Float64,split(lines[9])[end])* Hatree2eV
   SpinP_switch  = parse(Int64,split(lines[8])[end])
