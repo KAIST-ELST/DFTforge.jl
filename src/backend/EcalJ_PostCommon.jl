@@ -38,7 +38,14 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
 # Internally k_point_cartesian is used
     scf_r = hamiltonian_info.scf_r;
     k_point_frac = [k_point_frac_input[1],k_point_frac_input[2],k_point_frac_input[3]];
-
+    orbitalStartIdx_list = zeros(Int,scf_r.atomnum)
+    orbitalNums = copy(scf_r.Total_NumOrbs);
+    #MPF = Array(Int,scf_r.atomnum)
+    orbitalStartIdx = 0
+    for i = 1:scf_r.atomnum
+        orbitalStartIdx_list[i] = orbitalStartIdx;
+        orbitalStartIdx += orbitalNums[i]
+    end
 
     k_point_cartesian = scf_r.qlat'* k_point_frac;
     #k_point_cartesian = (k_point_frac'* scf_r.qlat)[:];
@@ -92,6 +99,15 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
 =#
         # Wihtout Cut
         ##=
+        # S rotation  & Merge
+        if hamiltonian_info.basisTransform_rule.orbital_rot_on
+          S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+        end
+        # H rotation & Merge
+        if hamiltonian_info.basisTransform_rule.orbital_rot_on
+          Hk = Heff(Hk,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+          #println( sum(abs(H2-H)) )
+        end
         Sq = sqrt(S)
         S2 = inv(Sq);
         # =#
@@ -284,9 +300,41 @@ function read_EcalJ_scf_interal(scf_name::String)
     EcalJ_info = EcalJscf(atomnum,Total_NumOrbs,1,tv,rv,qlat,Gxyz_cartesian,ChemP,
         E_Temp, DFTcommon.para_type,
         EcalJ_H_list, plat )
+    lines = [];
     return EcalJ_info;
 end
 
 function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamiltonian_info_type)
 
 end
+
+#=
+===== PDOS file structure (dos.isp*) =========================
+(add +1 since, 1st columun is energy in these pdos files.)
+ For s,p,d,f the indices 1-16 correspond to:
+     index   l    m     polynomial
+        1    0    0        1
+   -----------------------------
+        2    1   -1        y
+        3    1    0        z
+        4    1    1        x
+   -----------------------------
+        5    2   -2        xy
+        6    2   -1        yz
+        7    2    0        3z^2-1
+        8    2    1        xz
+        9    2    2        x^2-y^2
+   -----------------------------
+        10   3   -3        y(3x^2-y^2)
+        11   3   -2        xyz
+        12   3   -1        y(5z^2-1)
+        13   3    0        z(5z^2-3)
+        14   3    1        x(5z^2-1)
+        15   3    2        z(x^2-y^2)
+        16   3    3        x(x^2-3y^2)
+  ------------------------
+  higher is lm ordered. See Ylm definition in lmto/fpgw doc.
+
+NOTE: site index --> run 'lmchk foobar'
+==============================================================
+=#
