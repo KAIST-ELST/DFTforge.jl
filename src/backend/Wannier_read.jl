@@ -368,15 +368,14 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
   tv[2,:] = map(x->parse(Float64,x),split(wannier90_win_file_lowercase[cell_vect_end_line-1]))
   tv[3,:] = map(x->parse(Float64,x),split(wannier90_win_file_lowercase[cell_vect_end_line-0]))
 
-
-  rv = 2*pi*inv(tv'); # Check required
+  rv = 2*pi*inv(collect(tv')); # Check required
 
   #ChemP = 8.1400
   # Read Chemical potentail
   chemp_line = 0
   try
     chemp_line = findfirst( 0 .< map(x-> sum("fermi_energy".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
-    if (0==chemp_line)
+    if (nothing==chemp_line)
         println(" No fermi_energy found in " * wannier_fname * ".win ex) fermi_energy = 1.234 !eV ")
         @assert(true)
     end

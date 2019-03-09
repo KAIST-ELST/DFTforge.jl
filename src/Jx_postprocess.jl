@@ -52,7 +52,7 @@ import DFTforge.DataFrames
 import DFTforge.FileIO
 import DFTforge.CSV
 import Plots
-import Glob
+import DFTforge.Glob
 
 using Statistics
 
