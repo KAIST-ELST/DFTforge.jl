@@ -242,7 +242,7 @@ function read_EcalJ_scf_interal(scf_name::String)
     cnt = 1
     for current_line = start_line:next_delimiter-1
         tmp = map(x->parse(Float64,x),split(lines[current_line]))
-        Gxyz_cartesian[cnt,:] = tmp
+        Gxyz_cartesian[cnt,:] = tmp * (alat/ang2bohr)
         cnt += 1
     end
     Gxyz_cartesian
