@@ -225,16 +225,33 @@ function read_EcalJ_scf_interal(scf_name::String)
     TotalOrbitalNum = sum(Total_NumOrbs);
     @assert(TotalOrbitalNum == sum(Total_NumOrbs)) # Check TotalOrbitalNum
     println(Total_NumOrbs," ",TotalOrbitalNum)
-    # npair
+
+    ## l_table & k_table will be skiped
+    ## Search l_table -> k_table -> npair
+    for search_iter in 1:3
     start_line = next_delimiter + 1
     next_delimiter = search_next_delimiter(start_line)
+        #println(lines[next_delimiter])
+        if occursin("npair",lines[next_delimiter])
+            break;
+        else
+
+        end
+    end
+
+    ## npair
+    start_line = next_delimiter + 1
+    next_delimiter = search_next_delimiter(start_line) # stop at "====== qlat"
     # qlat
     start_line =  next_delimiter + 1
     qlat = zeros(3,3)
+    println(lines[start_line])
     qlat[1,:] = map(x->parse(Float64,x),split(lines[start_line]))
     qlat[2,:] = map(x->parse(Float64,x),split(lines[start_line+1]))
     qlat[3,:] = map(x->parse(Float64,x),split(lines[start_line+2]))
     @assert(sum(abs.(qlat - rv_inv * alat/ang2bohr )) < 10.0^-4)
+    #qlat ./= (alat/ang2bohr );
+
     # Read atom Pos
     start_line = start_line+4
     #ib_table = Array{Int64}(0)
