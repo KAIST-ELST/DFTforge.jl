@@ -47,7 +47,7 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
         orbitalStartIdx += orbitalNums[i]
     end
 
-    k_point_cartesian = scf_r.qlat'* k_point_frac;
+    #k_point_cartesian = scf_r.qlat'* k_point_frac;
     #k_point_cartesian = (k_point_frac'* scf_r.qlat)[:];
     TotalOrbitalNum = sum(scf_r.Total_NumOrbs);
     plat = scf_r.plat;
@@ -66,13 +66,20 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
 
             #phase = (1./scf_r.EcalJ_H_list[spin].orbital_cell_Degen[idx])*exp(-im* 2.0*pi *
             #    sum( k_point_cartesian .* ( plat * scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,:]  )  ) )
+
+            #=
             phase = (1. /scf_r.EcalJ_H_list[spin].orbital_cell_Degen[idx])*exp(-im* 2.0*pi *
                 sum( k_point_cartesian .* ( plat[1,:] * scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,1] +
                  plat[2,:] * scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,2] +
                  plat[3,:] * scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,3] )) )
+            =#
+            kRn::Float_my = sum( scf_r.EcalJ_H_list[spin].orbital_cell_indexs[idx,1:3] .* k_point_frac); # Check for - sign
+            phase2 = (1. /scf_r.EcalJ_H_list[spin].orbital_cell_Degen[idx]) *
+            (cos(-2.0*pi*kRn) + im*sin(-2.0*pi*kRn))
 
-            Hk[alpha,beta] += scf_r.EcalJ_H_list[spin].orbital_cell_H[idx]*phase;
-            S[alpha,beta] += scf_r.EcalJ_H_list[spin].orbital_cell_S[idx]*phase
+
+            Hk[alpha,beta] += scf_r.EcalJ_H_list[spin].orbital_cell_H[idx]*phase2;
+            S[alpha,beta] += scf_r.EcalJ_H_list[spin].orbital_cell_S[idx]*phase2
         end
 
         Hk *= Ry2eV;
