@@ -29,7 +29,7 @@ export parse_input,Arg_Inputs,parse_TOML,read_toml
 export kPath_band,Arg_Inputs_Band
 
 
-export eigfact_hermitian,check_eigmat, sqrtm_inv
+export eigfact_hermitian,check_eigmat, sqrtm_inv, cal_eigenVectVal
 export SPINtype, DFTtype, Wannier90type
 
 
@@ -100,7 +100,7 @@ struct Kpoint_eigenstate_only
     #Hamiltonian::Hamiltonian_type;
 end
 struct Kpoint_eigenstate
-    Eigenstate::Array{Complex_my,2};
+    Eigenstate::Array{Complex_my,2}; #[orbital index, energy index]
     Eigenvalues::Array{Float_my,1};
     k_point_int::k_point_Tuple;
     Hamiltonian::Hamiltonian_type;
@@ -358,6 +358,45 @@ function sqrtm_inv(S)
     S3 = S2 * M2 * S2'
     return S3
 end
+
+function cal_eigenVectVal(Hk::Array{Complex{Float64},2},S::Array{Complex{Float64},2}; OLP_eigen_cut = 1.0E-7 )
+    n = size(S)[1]
+
+    U = copy(S);
+    S_eigvals = zeros(n);
+    eigfact_hermitian(U,S_eigvals);
+
+    #ni_start =  findfirst(OLP_eigen_cut .< S_eigvals ); # find idx to cut ( if ni_start == 1, nothing should happen)
+    M1 = zeros(size(S_eigvals))
+    #M1[S_eigvals.>OLP_eigen_cut] = 1.0 ./sqrt.(S_eigvals[S_eigvals.>OLP_eigen_cut]);
+    selected_S_mask = OLP_eigen_cut .< S_eigvals
+
+    M1= 1.0 ./sqrt.(S_eigvals);
+
+    #S2 = zeros(Complex_my, n,n2)
+
+    S2 = zeros(Complex_my, n, n ) #sum(selected_S_mask))
+    for j1 = 1:n # ni_start:n
+        if OLP_eigen_cut < S_eigvals[j1]
+            S2[:,j1] = M1[j1] * U[:,j1]
+        else
+            println(S_eigvals[j1])
+        end
+    end
+    S2 = S2[:,selected_S_mask]
+
+    Hk_tilta_zz = S2' * (Hk * S2)
+    Eigen_vect = copy(Hk_tilta_zz)
+    Eigen_value = zeros( size(S2)[2]);
+
+    eigfact_hermitian(Eigen_vect,Eigen_value);
+    #Psi = U * Eigen_vect; #[orbital index , Enk]
+    Psi = U[:,selected_S_mask] * Eigen_vect;
+    Hk_tilta_orbitalbasis = U[:,selected_S_mask] * Hk_tilta_zz * adjoint(U[:,selected_S_mask])
+    return Psi, Eigen_value, Hk_tilta_orbitalbasis
+    #return Eigen_vect,Eigen_value;
+end
+
 ################################################################################
 # Excute cmd
 ################################################################################

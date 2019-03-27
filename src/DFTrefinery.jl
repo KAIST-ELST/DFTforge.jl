@@ -44,6 +44,7 @@ mutable struct Eigenstate_hdf5
   spin_type::SPINtype
   TotalOrbitalNum::Int
   dftresult::Hamiltonian_info_type
+  Energy_idx_num::Array{Int64,2}
   Eigenvect_real::Array{Float64,4}
   Eigenvect_imag::Array{Float64,4}
   Eigenvalues::Array{Float64,3}
@@ -281,6 +282,9 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
 
   #print(spin_dim )
   fid_hdf = h5open(hdf_cache_name,"w");
+  hdf5_energy_idx_num = d_create(fid_hdf,"Energy_idx_num",datatype(Int64),
+  dataspace(spin_dim, Total_q_point_num));
+
   hdf5_eigenstate_real = d_create(fid_hdf,"Eigenvect_real",datatype(Float64),
   dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
@@ -295,6 +299,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
 
   hdf5_hamiltonian_imag = d_create(fid_hdf,"Hamiltonian_imag",datatype(Float64),
   dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim,Total_q_point_num ));
+
+
   # Write hamiltonian
 
   job_list = Array{Job_input_Type}(undef,0)
@@ -325,31 +331,40 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
     ii = 1;
     if (DFTcommon.colinear_type == spin_type || DFTcommon.para_type == spin_type)
       for jj = start_idx:end_idx
+        # energy_idx_num could be smaller then TotalOrbitalNum2 when overlap is small
+        energy_idx_num = length(temp[ii][1].Eigenvalues)
 
-        hdf5_eigenstate_real[:,:,1,jj] = real(temp[ii][1].Eigenstate);
-        hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii][1].Eigenstate);
-        hdf5_eigenvalues[:,1,jj] = temp[ii][1].Eigenvalues;
+        hdf5_eigenstate_real[:,1:energy_idx_num,1,jj] = real(temp[ii][1].Eigenstate);
+        hdf5_eigenstate_imag[:,1:energy_idx_num,1,jj] = imag(temp[ii][1].Eigenstate);
+        hdf5_eigenvalues[1:energy_idx_num,1,jj] = temp[ii][1].Eigenvalues;
 
         hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii][1].Hamiltonian);
         hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii][1].Hamiltonian);
 
+        hdf5_energy_idx_num[1,jj] = energy_idx_num;
+
         if (DFTcommon.colinear_type == spin_type )
-          hdf5_eigenstate_real[:,:,2,jj] = real(temp[ii][2].Eigenstate);
-          hdf5_eigenstate_imag[:,:,2,jj] = imag(temp[ii][2].Eigenstate);
-          hdf5_eigenvalues[:,2,jj] = temp[ii][2].Eigenvalues;
+          energy_idx_num = length(temp[ii][2].Eigenvalues)
+
+          hdf5_eigenstate_real[:,1:energy_idx_num,2,jj] = real(temp[ii][2].Eigenstate);
+          hdf5_eigenstate_imag[:,1:energy_idx_num,2,jj] = imag(temp[ii][2].Eigenstate);
+          hdf5_eigenvalues[1:energy_idx_num,2,jj] = temp[ii][2].Eigenvalues;
 
           hdf5_hamiltonian_real[:,:,2,jj] = real(temp[ii][2].Hamiltonian);
           hdf5_hamiltonian_imag[:,:,2,jj] = imag(temp[ii][2].Hamiltonian);
 
+          hdf5_energy_idx_num[2,jj] = energy_idx_num;
         end
 
         ii += 1;
       end
     elseif (DFTcommon.non_colinear_type == spin_type)
       for jj = start_idx:end_idx
-        hdf5_eigenstate_real[:,:,1,jj] = real(temp[ii].Eigenstate);
-        hdf5_eigenstate_imag[:,:,1,jj] = imag(temp[ii].Eigenstate);
-        hdf5_eigenvalues[:,1,jj] = temp[ii].Eigenvalues;
+        energy_idx_num = length(temp[ii][1].Eigenvalues)
+
+        hdf5_eigenstate_real[:,1:energy_idx_num,1,jj] = real(temp[ii].Eigenstate);
+        hdf5_eigenstate_imag[:,1:energy_idx_num,1,jj] = imag(temp[ii].Eigenstate);
+        hdf5_eigenvalues[1:energy_idx_num,1,jj] = temp[ii].Eigenvalues;
 
         hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii].Hamiltonian);
         hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii].Hamiltonian);
@@ -372,12 +387,13 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
 
       ii = 1;
       for jj = start_idx:end_idx
+        energy_idx_num = length(temp[ii][1].Eigenvalues)
 
-        hdf5_hamiltonian_real[:,:,2,jj] = real(tmp_realH_only[ii]);
-        hdf5_hamiltonian_imag[:,:,2,jj] = imag(tmp_realH_only[ii]);
+        hdf5_hamiltonian_real[:,1:energy_idx_num,2,jj] = real(tmp_realH_only[ii]);
+        hdf5_hamiltonian_imag[:,1:energy_idx_num,2,jj] = imag(tmp_realH_only[ii]);
 
-        hdf5_hamiltonian_real[:,:,3,jj] = real(tmp_imagH_only[ii]);
-        hdf5_hamiltonian_imag[:,:,3,jj] = imag(tmp_imagH_only[ii]);
+        hdf5_hamiltonian_real[:,1:energy_idx_num,3,jj] = real(tmp_imagH_only[ii]);
+        hdf5_hamiltonian_imag[:,1:energy_idx_num,3,jj] = imag(tmp_imagH_only[ii]);
 
         ii += 1;
       end
@@ -422,6 +438,8 @@ end
 function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple},
   hdf_cache_name,
   result_index=1,cache_index=1)
+  println(" Deprecated function ")
+  exit(0)
   global dftresult;
 
   Total_q_point_num = length(q_point_list)
@@ -566,6 +584,7 @@ function cacheset(eigenstate_cache::Eigenstate_hdf5,cache_index=1)
 
   eigenstate_list[cache_index] = eigenstate_cache;
 
+  eigenstate_list[cache_index].Energy_idx_num = readmmap(fid_hdf["Energy_idx_num"]);
   eigenstate_list[cache_index].Eigenvect_real = readmmap(fid_hdf["Eigenvect_real"]);
   eigenstate_list[cache_index].Eigenvect_imag = readmmap(fid_hdf["Eigenvect_imag"]);
   eigenstate_list[cache_index].Eigenvalues    = readmmap(fid_hdf["Eigenvalues"]);
@@ -609,22 +628,29 @@ function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
   if (DFTcommon.non_colinear_type == spin_type)
     TotalOrbitalNum2 = 2*TotalOrbitalNum;
   end
-  Eigenstate = zeros(Complex_my,TotalOrbitalNum2,TotalOrbitalNum2);
-  Eigenvalues = zeros(Float_my,TotalOrbitalNum2);
+
+  # energy_idx_num could be smaller then TotalOrbitalNum2 when overlap is small
+  energy_idx_num = TotalOrbitalNum2 #length(temp[ii][1].Eigenvalues)
+  if (1 <= q_index)
+    energy_idx_num = eigenstate_list[cache_index].Energy_idx_num[1,q_index];
+  end
+
+  Eigenstate = zeros(Complex_my, TotalOrbitalNum2, energy_idx_num);
+  Eigenvalues = zeros(Float_my, energy_idx_num);
 
   if (q_index>=1)
     if (DFTcommon.para_type == spin_type)
-        Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,:,1,q_index] +
-        im * eigenstate_list[cache_index].Eigenvect_imag[:,:,1,q_index];
-        Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[:,1,q_index];
+        Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,1:energy_idx_num,1,q_index] +
+        im * eigenstate_list[cache_index].Eigenvect_imag[:,1:energy_idx_num,1,q_index];
+        Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[1:energy_idx_num,1,q_index];
     elseif (DFTcommon.colinear_type == spin_type)
-        Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,:,spin,q_index] +
-        im * eigenstate_list[cache_index].Eigenvect_imag[:,:,spin,q_index];
-        Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[:,spin,q_index];
+        Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,1:energy_idx_num,spin,q_index] +
+        im * eigenstate_list[cache_index].Eigenvect_imag[:,1:energy_idx_num,spin,q_index];
+        Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[1:energy_idx_num,spin,q_index];
     elseif (DFTcommon.non_colinear_type == spin_type)
-      Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,:,1,q_index] +
-      im * eigenstate_list[cache_index].Eigenvect_imag[:,:,1,q_index];
-      Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[:,1,q_index];
+      Eigenstate[:,:] = eigenstate_list[cache_index].Eigenvect_real[:,1:energy_idx_num,1,q_index] +
+      im * eigenstate_list[cache_index].Eigenvect_imag[:,1:energy_idx_num,1,q_index];
+      Eigenvalues[:] = eigenstate_list[cache_index].Eigenvalues[1:energy_idx_num,1,q_index];
     end
   end
 

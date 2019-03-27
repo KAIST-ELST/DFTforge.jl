@@ -115,17 +115,38 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
           Hk = Heff(Hk,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
           #println( sum(abs(H2-H)) )
         end
+        #=
         Sq = sqrt(S)
         S2 = inv(Sq);
-        # =#
+        =#
+
+        ################################
+        #=
+        OLP_eigen_cut = 10*1.0E-8
+        S1 = copy(S);
+        S_eigvals = zeros(TotalOrbitalNum);
+        eigfact_hermitian(S1,S_eigvals);
+
+        M2 = zeros(TotalOrbitalNum,TotalOrbitalNum)
+
+        for j1 = 1:TotalOrbitalNum
+            if OLP_eigen_cut < S_eigvals[j1]
+                M2[j1,j1] = M1[j1]
+            end
+        end
+        S2 = S1 * M2 * S1'
 
         Hk_tilta = S2' *Hk * S2
+        ###############################
+
         Eigen_vect = copy(Hk_tilta)
         #Eigen_vect = copy( H )
         Eigen_value = zeros(TotalOrbitalNum);
         eigfact_hermitian(Eigen_vect,Eigen_value);
+        =#
+        #Coes = S2 * Eigen_vect;
 
-        Coes = S2 * Eigen_vect;
+        Eigen_vect::Array{Complex{Float64},2},Eigen_value::Array{Float64,1}, Hk_tilta::Array{Complex{Float64},2} = cal_eigenVectVal(Hk,S)
         #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes, Eigen_value, k_point_frac_input, Hk); # Onsite
         kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Eigen_vect, Eigen_value, k_point_frac_input, Hk_tilta); # Lowdin
         push!(kpoint_eigenstate_list,kpoint_common);
@@ -209,6 +230,7 @@ function read_EcalJ_scf_interal(scf_name::String)
     start_line = 10
     next_delimiter = search_next_delimiter(start_line)
     println("next_delimiter ", next_delimiter)
+    println(lines[next_delimiter])
     for current_line = start_line:next_delimiter-1
         println(current_line," : ", lines[current_line])
         tmp = map(x->parse(Int64,x),split(lines[current_line]))
@@ -229,14 +251,14 @@ function read_EcalJ_scf_interal(scf_name::String)
     ## l_table & k_table will be skiped
     ## Search l_table -> k_table -> npair
     for search_iter in 1:3
-    start_line = next_delimiter + 1
-    next_delimiter = search_next_delimiter(start_line)
-        #println(lines[next_delimiter])
         if occursin("npair",lines[next_delimiter])
             break;
         else
 
         end
+        start_line = next_delimiter + 1
+        next_delimiter = search_next_delimiter(start_line)
+        println(lines[next_delimiter])
     end
 
     ## npair
@@ -269,7 +291,12 @@ function read_EcalJ_scf_interal(scf_name::String)
         Gxyz_cartesian[cnt,:] = tmp * (alat/ang2bohr)
         cnt += 1
     end
-    Gxyz_cartesian
+
+    println("plat",plat)
+    println("tv",tv)
+    println("rv",rv)
+    println("qlat",qlat)
+    println(Gxyz_cartesian)
 
     for atom_i = 1:atomnum
         Gxyz_frac[atom_i,:] = qlat*Gxyz_cartesian[atom_i,:];
