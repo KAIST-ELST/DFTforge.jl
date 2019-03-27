@@ -13,3 +13,5 @@ end
 Pkg.add("Plots")
 Pkg.add("JLD2")
 Pkg.add("Glob")
+Pkg.add("HDF5")
+Pkg.add("ColorTypes")

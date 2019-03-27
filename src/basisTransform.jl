@@ -121,8 +121,8 @@ struct orbital_rot_type
   #orbital_list::Array{Array{Int}} #index of d-orbitals z^2, x2y2, xy, xz, yz
   orbital_num::Int # for d-orbital 5
   duplicated_orbital_num::Int # ex) In OpenMX LCAO with s2p2d2f1 : d-orbital 2
-  Z_vect::Vector{Float64} # for debug
-  X_vect::Vector{Float64} # for debug
+  #Z_vect::Vector{Float64} # for debug
+  #X_vect::Vector{Float64} # for debug
 
   function orbital_rot_type(atomnum,Z_vect,X_vect,d_orbital_list,orbital_num::Int)
     @assert(3==length(Z_vect))
@@ -134,8 +134,21 @@ struct orbital_rot_type
     end
     R = rot_matrixByZXaxisbase(Z_vect,X_vect);
     orbital_rot_d = rot_D_orbital(R);
-    new(atomnum,orbital_rot_d,d_orbital_list,orbital_num,duplicated_orbital_num,
-    Z_vect,X_vect)
+    new(atomnum,orbital_rot_d,d_orbital_list,orbital_num,duplicated_orbital_num)
+	#,Z_vect,X_vect)
+  end
+  function orbital_rot_type(atomnum,R::Array{Float64,2},d_orbital_list,orbital_num::Int)
+	#@assert(3==length(Z_vect))
+	#@assert(3==length(X_vect))
+	@assert(orbital_num==length(d_orbital_list))
+	duplicated_orbital_num = length(d_orbital_list[1])
+	for (k,v) in enumerate(d_orbital_list)
+	  @assert(length(v) == duplicated_orbital_num);
+	end
+	#R = rot_matrixByZXaxisbase(Z_vect,X_vect);
+	orbital_rot_d = rot_D_orbital(R);
+	new(atomnum,orbital_rot_d,d_orbital_list,orbital_num,duplicated_orbital_num)#,
+	#[0.0,0.0,1.0],[1.0,0.0,0.0])
   end
 end
 

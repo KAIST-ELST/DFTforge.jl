@@ -260,7 +260,7 @@ for cell_vect_x in cell_vect_x_list
   end
 end
 
-for xyz_i in 1:8
+for xyz_i in 1:1
    J_ij_R = get_J_idx_1(cell_vect_list, xyz_i)
    size(J_ij_R)[1]
    atom12_num = size(J_ij_R)[1];

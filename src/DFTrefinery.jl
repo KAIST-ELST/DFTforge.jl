@@ -308,7 +308,7 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
     q_points_intdic[q_points_int[index]] = index;
   end
 
-  batch_size = 2*nprocs();
+  batch_size = 5*nprocs();
   cnt = 1;
 
   p = Progress(ceil(Int, 1.0+length(q_point_list)/batch_size),
