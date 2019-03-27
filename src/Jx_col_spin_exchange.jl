@@ -384,11 +384,11 @@ num_return = 8; #local scope
         for energywindow_item in energywindow_list
             lower_E_cut = energywindow_item[1]
             upper_E_cut = energywindow_item[2]
-            En_whiteList_mask  = ( (lower_E_cut .< (En  - ChemP)) & (upper_E_cut .> (En  - ChemP)) );
+            En_whiteList_mask  = ( (lower_E_cut .< (En  .- ChemP)) .& (upper_E_cut .> (En  .- ChemP)) );
 
-            En_whiteList_mask_total |= En_whiteList_mask;
+            En_whiteList_mask_total .|= En_whiteList_mask;
         end
-        Es[:, !En_whiteList_mask_total] = 0.0;
+        Es[:, .!En_whiteList_mask_total] .= 0.0;
     end
     # Energy mask
     if (length(energywindow_all_list)>0)
