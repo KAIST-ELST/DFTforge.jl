@@ -359,7 +359,7 @@ function sqrtm_inv(S)
     return S3
 end
 
-function cal_eigenVectVal(Hk::Array{Complex{Float64},2},S::Array{Complex{Float64},2}; OLP_eigen_cut = 1.0E-7 )
+@inline function cal_eigenVectVal(Hk::Array{Complex{Float64},2},S::Array{Complex{Float64},2}; OLP_eigen_cut = 1.0E-7 )
     n = size(S)[1]
 
     U = copy(S);
@@ -369,6 +369,7 @@ function cal_eigenVectVal(Hk::Array{Complex{Float64},2},S::Array{Complex{Float64
     #ni_start =  findfirst(OLP_eigen_cut .< S_eigvals ); # find idx to cut ( if ni_start == 1, nothing should happen)
     M1 = zeros(size(S_eigvals))
     #M1[S_eigvals.>OLP_eigen_cut] = 1.0 ./sqrt.(S_eigvals[S_eigvals.>OLP_eigen_cut]);
+    S_eigvals[ S_eigvals .< OLP_eigen_cut ] .= OLP_eigen_cut/2; # negtiave eigen value filter
     selected_S_mask = OLP_eigen_cut .< S_eigvals
 
     M1= 1.0 ./sqrt.(S_eigvals);
@@ -380,7 +381,7 @@ function cal_eigenVectVal(Hk::Array{Complex{Float64},2},S::Array{Complex{Float64
         if OLP_eigen_cut < S_eigvals[j1]
             S2[:,j1] = M1[j1] * U[:,j1]
         else
-            println(S_eigvals[j1])
+            # println(S_eigvals[j1])
         end
     end
     S2 = S2[:,selected_S_mask]
@@ -393,7 +394,7 @@ function cal_eigenVectVal(Hk::Array{Complex{Float64},2},S::Array{Complex{Float64
     #Psi = U * Eigen_vect; #[orbital index , Enk]
     Psi = U[:,selected_S_mask] * Eigen_vect;
     Hk_tilta_orbitalbasis = U[:,selected_S_mask] * Hk_tilta_zz * adjoint(U[:,selected_S_mask])
-    return Psi, Eigen_value, Hk_tilta_orbitalbasis
+    return Psi, Eigen_value, Hk_tilta_orbitalbasis #, U[:,selected_S_mask]
     #return Eigen_vect,Eigen_value;
 end
 

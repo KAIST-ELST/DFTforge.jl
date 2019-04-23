@@ -1,4 +1,5 @@
 #using ProgressMeter
+__precompile__(true)
 using Distributed
 import DFTforge
 using DFTforge.DFTrefinery
@@ -309,10 +310,9 @@ num_return = 8; #local scope
   eigenstate_kq_down::Kpoint_eigenstate_only = cacheread_eigenstate(kq_point,2,cache_index)
 
   # Get Hamiltonian
-  Hks_G_up::Hamiltonian_type  = cacheread_Hamiltonian((0.0,0.0,0.0),1,cache_index)
   #Hks_G_up::Hamiltonian_type  = cacheread_Hamiltonian((0.0,0.0,0.0),1,cache_index)
-  Hks_G_down::Hamiltonian_type = cacheread_Hamiltonian((0.0,0.0,0.0),2,cache_index)
   #Hks_G_down::Hamiltonian_type = cacheread_Hamiltonian((0.0,0.0,0.0),2,cache_index)
+
 #=
   q_point = (kq_point[1]-k_point[1],kq_point[2]-k_point[2],kq_point[3]-k_point[3])
   qn_point = (-kq_point[1]+k_point[1],-kq_point[2]+k_point[2],-kq_point[3]+k_point[3])
@@ -337,10 +337,18 @@ num_return = 8; #local scope
   En_k_down::Array{Float_my,1} = eigenstate_k_down.Eigenvalues;
   Em_kq_down::Array{Float_my,1} = eigenstate_kq_down.Eigenvalues;
 
-  Es_n_k_up::Array{Complex_my,2} = eigenstate_k_up.Eigenstate;
-  Es_m_kq_up::Array{Complex_my,2} = eigenstate_kq_up.Eigenstate;
-  Es_n_k_down::Array{Complex_my,2} = eigenstate_k_down.Eigenstate;
-  Es_m_kq_down::Array{Complex_my,2} = eigenstate_kq_down.Eigenstate;
+  # enegy eigenvalue could be smaller than TotalOrbitalNum2 (orbital number)
+  energy_idx_num_k_up = length(En_k_up);
+  energy_idx_num_kq_up = length(Em_kq_up);
+  energy_idx_num_k_dn = length(En_k_down);
+  energy_idx_num_kq_dn = length(Em_kq_down);
+
+  #[Orbital index, Energy index]
+
+  Es_n_k_up::Array{Complex_my,2} = eigenstate_k_up.Eigenstate;       # [TotalOrbitalNum2, energy_idx_num_k_up]
+  Es_m_kq_up::Array{Complex_my,2} = eigenstate_kq_up.Eigenstate;     # [TotalOrbitalNum2, energy_idx_num_kq_up]
+  Es_n_k_down::Array{Complex_my,2} = eigenstate_k_down.Eigenstate;   # [TotalOrbitalNum2, energy_idx_num_k_dn]
+  Es_m_kq_down::Array{Complex_my,2} = eigenstate_kq_down.Eigenstate; # [TotalOrbitalNum2, energy_idx_num_kq_dn]
 
   if (band_selection_on)
     En_k_up = eigenstate_k_up.Eigenvalues[band_selection_lower:band_selection_upper];
@@ -379,7 +387,7 @@ num_return = 8; #local scope
     Es_m_kq_down_atom1 = copy(Es_m_kq_down);
     Es_m_kq_down_atom2 = copy(Es_m_kq_down);
 
-    function energy_cut(energywindow_list, En , Es)
+    @inline function energy_cut(energywindow_list, En , Es)
         En_whiteList_mask_total = zeros(Bool, length(En))
         for energywindow_item in energywindow_list
             lower_E_cut = energywindow_item[1]
@@ -467,22 +475,26 @@ num_return = 8; #local scope
     Fftm_kq_down = 1.0./(exp.( ((Em_kq_down) .- ChemP)/(kBeV*E_temp)) .+ 1.0 );
 
     # Index convention: dFnk[nk,mkq]
+    # target dim [energy_idx_num_k_dn,energy_idx_num_kq_up]
     dFnk_down_Fmkq_up =
-      Fftn_k_down*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq_up[:]' ;
+      Fftn_k_down*ones(1,energy_idx_num_kq_up)  - ones(energy_idx_num_k_dn,1)*Fftm_kq_up[:]' ;
+    # target dim [energy_idx_num_k_up,energy_idx_num_kq_dn]
     dFnk_up_Fmkq_down =
-      Fftn_k_up*ones(1,TotalOrbitalNum2)  - ones(TotalOrbitalNum2,1)*Fftm_kq_down[:]' ;
+      Fftn_k_up*ones(1,energy_idx_num_kq_dn)  - ones(energy_idx_num_k_up,1)*Fftm_kq_down[:]' ;
 
     # Index convention: Enk_Emkq[nk,mkq]
+    # target dim [energy_idx_num_k_dn,energy_idx_num_kq_up]
     Enk_down_Emkq_up =
-      En_k_down[:]*ones(1,TotalOrbitalNum2) - ones(TotalOrbitalNum2,1)*Em_kq_up[:]' ;
+      En_k_down[:]*ones(1,energy_idx_num_kq_up) - ones(energy_idx_num_k_dn,1)*Em_kq_up[:]' ;
     #Enk_down_Emkq_up .+= im*0.0001;
+    # target dim [energy_idx_num_k_up,energy_idx_num_kq_dn]
     Enk_up_Emkq_down =
-      En_k_up[:]*ones(1,TotalOrbitalNum2) - ones(TotalOrbitalNum2,1)*Em_kq_down[:]' ;
+      En_k_up[:]*ones(1,energy_idx_num_kq_dn) - ones(energy_idx_num_k_up,1)*Em_kq_down[:]' ;
     #Enk_up_Emkq_down .+= im*0.0001;
     #Enk_Emkq += im*0.001;
 
-    V1_G = 0.5*(Hks_G_up[atom1_orbitals,atom1_orbitals] - Hks_G_down[atom1_orbitals,atom1_orbitals]);
-    V2_G = 0.5*(Hks_G_up[atom2_orbitals,atom2_orbitals] - Hks_G_down[atom2_orbitals,atom2_orbitals]);
+    #V1_G = 0.5*(Hks_G_up[atom1_orbitals,atom1_orbitals] - Hks_G_down[atom1_orbitals,atom1_orbitals]);
+    #V2_G = 0.5*(Hks_G_up[atom2_orbitals,atom2_orbitals] - Hks_G_down[atom2_orbitals,atom2_orbitals]);
 #=
     V1_q = 0.5*(Hks_q_up[atom1_orbitals,atom1_orbitals]-Hks_q_down[atom1_orbitals,atom1_orbitals])
     V2_q = 0.5*(Hks_q_up[atom2_orbitals,atom2_orbitals]-Hks_q_down[atom2_orbitals,atom2_orbitals])
@@ -505,6 +517,7 @@ num_return = 8; #local scope
     #atom2_orbitals_rel = 1:orbitalNums[atom2];
     #atom2_orbitals_rel2 = orbitalNums[atom1]+atom2_orbitals_rel;
 
+#=
     VV1_down_up_G = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_G *
         Es_m_kq_up_atom1[atom1_orbitals,:];
     VV2_up_down_G = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_G *
@@ -514,6 +527,7 @@ num_return = 8; #local scope
         Es_m_kq_down_atom1[atom1_orbitals,:];
     VV2_down_up_G = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_G *
         Es_n_k_up_atom2[atom2_orbitals,:];
+=#
 
 #=
     VV1_down_up_q = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_q  *
@@ -555,8 +569,8 @@ num_return = 8; #local scope
 
     Vi_Vj_up_down_down_up_k_kq = VV1_up_down_k.*transpose(VV2_down_up_kq);
     Vi_Vj_up_down_down_up_kq_k = VV1_up_down_kq.*transpose(VV2_down_up_k);
-    Vi_Vj_down_up_up_down_G    = VV1_down_up_G.*transpose(VV2_up_down_G);
-    Vi_Vj_up_down_down_up_G    = VV1_up_down_G.*transpose(VV2_down_up_G);
+    #Vi_Vj_down_up_up_down_G    = VV1_down_up_G.*transpose(VV2_up_down_G);
+    #Vi_Vj_up_down_down_up_G    = VV1_up_down_G.*transpose(VV2_down_up_G);
 
     x_down_up_up_down_k_kq = x1_down_up_k.*transpose(x2_up_down_kq);
     # for testing
@@ -568,8 +582,8 @@ num_return = 8; #local scope
     J_ij_up_down_down_up_k_kq =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_k_kq ;
     J_ij_up_down_down_up_kq_k =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_kq_k ;
 
-    J_ij_down_up_up_down_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
-    J_ij_up_down_down_up_G =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_G ;
+    #J_ij_down_up_up_down_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
+    #J_ij_up_down_down_up_G =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_G ;
 
     x_ij_down_up_up_down_k_kq =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* x_down_up_up_down_k_kq ;
 
@@ -579,8 +593,8 @@ num_return = 8; #local scope
 
     result_mat[4,atom12_i] = sum(J_ij_up_down_down_up_k_kq[.!isnan.(J_ij_up_down_down_up_k_kq)] );
     result_mat[5,atom12_i] = sum(J_ij_up_down_down_up_kq_k[.!isnan.(J_ij_up_down_down_up_kq_k)] );
-    result_mat[6,atom12_i] = sum(J_ij_down_up_up_down_G[.!isnan.(J_ij_down_up_up_down_G)] );
-    result_mat[7,atom12_i] = sum(J_ij_up_down_down_up_G[.!isnan.(J_ij_up_down_down_up_G)] );
+    #result_mat[6,atom12_i] = sum(J_ij_down_up_up_down_G[.!isnan.(J_ij_down_up_up_down_G)] );
+    #result_mat[7,atom12_i] = sum(J_ij_up_down_down_up_G[.!isnan.(J_ij_up_down_down_up_G)] );
 
     result_mat[8,atom12_i] = sum(x_ij_down_up_up_down_k_kq[.!isnan.(x_ij_down_up_up_down_k_kq)] );
 

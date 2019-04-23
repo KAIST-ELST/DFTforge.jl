@@ -1,3 +1,4 @@
+__precompile__(true)
 using ..DFTcommon
 using LinearAlgebra
 export EcalJscf
