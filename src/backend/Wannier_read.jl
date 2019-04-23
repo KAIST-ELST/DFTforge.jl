@@ -537,17 +537,17 @@ function read_wannier_EcalJ(result_file_dict::Dict{AbstractString,AbstractString
     @assert(Wannier_info_up.rv == Wannier_info_down.rv);
     Gxyz = Wannier_info_up.Gxyz;
     @assert(Wannier_info_up.Gxyz == Wannier_info_down.Gxyz)
-    Hks_R_raw = Array{Array{Array{Complex_my,2}}}(2)
+    Hks_R_raw = Array{Array{Array{Complex_my,2}}}(undef,2)
     Hks_R_raw[1] = Wannier_info_up.Hks_R_raw[1];
     Hks_R_raw[2] = Wannier_info_down.Hks_R_raw[1];
 
-    Hks_R = Array{Array{Array{Complex_my,2}}}(2)
+    Hks_R = Array{Array{Array{Complex_my,2}}}(undef,2)
     Hks_R[1] = Wannier_info_up.Hks_R[1];
     Hks_R[2] = Wannier_info_down.Hks_R[1];
 
 
     #R_vector_mat = Wannier_info_up.R_vector_mat;
-    R_vector_mat = Array{Array{Int,2}}(2)
+    R_vector_mat = Array{Array{Int,2}}(undef,2)
     @assert(Wannier_info_up.R_vector_mat == Wannier_info_down.R_vector_mat);
     R_vector_mat[1]  = Wannier_info_up.R_vector_mat[1]
     R_vector_mat[2]  = Wannier_info_down.R_vector_mat[1]
@@ -608,14 +608,14 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   for (i,v) in enumerate(atoms_orbitals_list)
     position_1 = map(x->parse(Float64,x), split(lines[9+v[1]])[end-2:end]);
     #position_1 = map(x-> rem(x,1.0), position_1 + 2.0)
-    if (sum(abs(atompos[i,:] - position_1)) > 10.0^-4.0)
+    if (sum(abs.(atompos[i,:] - position_1)) > 10.0^-4.0)
       println(" read_wannier_EcalJ atom ",i," position not matched ",position_1,"  ",atompos[i,:])
       check_fail = true;
     end
     for (i2,v2) in enumerate(v)
       position_2 = map(x->parse(Float64,x), split(lines[9+v[i2] ])[end-2:end]);
       #position_2 = map(x-> rem(x,1.0), position_2 + 2.0)
-      if (sum(abs(atompos[i,:] - position_2)) > 10.0^-4.0)
+      if (sum(abs.(atompos[i,:] - position_2)) > 10.0^-4.0)
         println(" read_wannier_EcalJ atom ",i2," position not matched ",position_2,"  ",atompos[i,:])
         check_fail = true;
       end
@@ -627,9 +627,9 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
     @assert(true);
   end
   # Read wannier H
-  R_vector_mat = Array{Array{Int,2}}(SpinP_switch)
+  R_vector_mat = Array{Array{Int,2}}(undef,SpinP_switch)
 
-  Hks_R = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
+  Hks_R = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
   wannierOrbital2atomGrouped = zeros(Int,TotalOrbitalNum)
 
   ## Check R vectors
@@ -640,26 +640,26 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   R_vector_catesian = map(x->parse(Float64,x),split(lines[start_line])[4:6]) * fractional_scale;
   degen = parse(Int64, split(chomp(lines[start_line]))[7]);
   R_frac =  rv * R_vector_catesian[:];
-  R_int = round(Int64,R_frac)
+  R_int = round.(Int64,R_frac)
   # store current R_vect
   prev_R_vect = R_vector_catesian;
   push!(start_linenums, start_line);
   push!(num_degen_list, degen )
 
-  @assert(sum(abs(R_frac - R_int)) < 10.0^-4.0); # Check if cell vector is Int
+  @assert(sum(abs.(R_frac - R_int)) < 10.0^-4.0); # Check if cell vector is Int
   for current_line in start_line:length(lines)
     R_vector_catesian = map(x->parse(Float64,x),split(lines[current_line])[4:6]) * fractional_scale;
     degen = parse(Int64, split(chomp(lines[current_line]))[7]);
 
-    if sum(abs(prev_R_vect-R_vector_catesian)) < 10.0^-4.0
+    if sum(abs.(prev_R_vect-R_vector_catesian)) < 10.0^-4.0
     else
       # new R vector
       push!(start_linenums,current_line);
       push!(num_degen_list, degen )
 
       R_frac =  (rv) * R_vector_catesian[:]/(2*pi);
-      R_int = round(Int64,R_frac)
-      if (sum(abs(R_frac - R_int)) > 10.0^-4.0)
+      R_int = round.(Int64,R_frac)
+      if (sum(abs.(R_frac - R_int)) > 10.0^-4.0)
         println(" Cartesian R vector  ",R_vector_catesian," did not convert to fractional R", R_frac," @line# ",current_line)
         @assert(false); # Check if cell vector is Int
       end
@@ -688,8 +688,8 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
 
     R_vector_catesian =  map(x->parse(Float64,x),split(lines[start_linenum])[4:6]) * fractional_scale
     R_frac =  (rv) * R_vector_catesian[:]/(2*pi);
-    R_int = round(Int64,R_frac)
-    if (sum(abs(R_frac - R_int)) > 10.0^-4.0)
+    R_int = round.(Int64,R_frac)
+    if (sum(abs.(R_frac - R_int)) > 10.0^-4.0)
       println(" Cartesian R vector  ",R_vector_catesian," did not convert to fractional R", R_frac," @line# ",start_linenum)
       @assert(false); # Check if cell vector is Int
     end
@@ -721,7 +721,7 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   end
 
   # re arange wannier group same atoms orbitals
-  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
+  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
   for spin in 1:SpinP_switch
     Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
   end
