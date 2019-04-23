@@ -9,11 +9,11 @@ result_file = "nio.HWR"
 atom12 = [[1,1],[1,2]]
 
 
-k_point_num = [6,6,6]
-q_point_num = [6,6,6]
+k_point_num = [8,8,8]
+q_point_num = [8,8,8]
 
 [orbitals]
-orbitalselection = true # true , false
+orbitalselection = false # true , false
 orbital_mask1_list = [[1],[2],[3],[4],[5]]
 orbital_mask2_list = [[1],[2],[3],[4],[5]]
 
