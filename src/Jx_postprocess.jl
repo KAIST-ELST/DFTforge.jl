@@ -1,4 +1,4 @@
-__precompile__(true)
+#__precompile__(true)
 ###
 #using ProgressMeter
 import DFTforge
@@ -148,7 +148,7 @@ end
 
 
 
-function get_J(cell_vect_list, J_ij_Q_data, q_point_cart, atom1_global_xyz, atom2_global_xyz)
+function get_J(cell_vect_list, J_ij_Q_data, q_point_cart, q_point_frac_list, atom1_global_xyz, atom2_global_xyz)
   J_ij_cell_vect = zeros(ComplexF64,length(cell_vect_list));
   J_ij_pos_vects = zeros(length(cell_vect_list),3);
 
@@ -164,6 +164,11 @@ function get_J(cell_vect_list, J_ij_Q_data, q_point_cart, atom1_global_xyz, atom
     Rq = q_point_cart[:,1] * cell_global_xyz[1] +
     q_point_cart[:,2] * cell_global_xyz[2] + q_point_cart[:,3] * cell_global_xyz[3]
 
+    #println(size(v),"\t",size(q_point_frac_list[:,k]))
+    #Rq2 = sum([v[1],v[2],v[3]] .* q_point_frac_list[k])
+    Rq2 = v[1]*q_point_frac_list[:,1] + v[2]*q_point_frac_list[:,2] + v[3]*q_point_frac_list[:,3]
+    #println(Rq2)
+    #println(sum(abs.(Rq - Rq2*2*pi)))
     size(exp.(-1*im*Rq))
 
     J_12_R = mean(J_ij_Q_data.*exp.(-1*im*Rq));
@@ -180,9 +185,9 @@ function get_J_idx_1(cell_vect_list, item_idx)
   for (k,s) in cached_mat_dict
     #k = 1
     #s = MAT.matread(joinpath(root_dir,file_list_same_baseatom[k]));
-    q_point_fact_list = s["q_point_list"]/s["k_point_precision"];
+    q_point_frac_list = s["q_point_list"]/s["k_point_precision"];
 
-    q_point_cart =   q_point_fact_list[:,1] * transpose(rv[1,:]) + q_point_fact_list[:,2] * transpose(rv[2,:]) + q_point_fact_list[:,3] * transpose(rv[3,:]);
+    q_point_cart =   q_point_frac_list[:,1] * transpose(rv[1,:]) + q_point_frac_list[:,2] * transpose(rv[2,:]) + q_point_frac_list[:,3] * transpose(rv[3,:]);
 
 
     atom1 = s["atom1"];
@@ -193,7 +198,7 @@ function get_J_idx_1(cell_vect_list, item_idx)
       atom1_global_xyz," ",atom2_global_xyz,")")
     #atom1_frac_xyz[:]
 
-    (J,dist_vect) = get_J(cell_vect_list, s["Jij_Q_matlab"][item_idx, 1], q_point_cart, atom1_global_xyz[:], atom2_global_xyz[:] );
+    (J,dist_vect) = get_J(cell_vect_list, s["Jij_Q_matlab"][item_idx, 1], q_point_cart,q_point_frac_list, atom1_global_xyz[:], atom2_global_xyz[:] );
     distance_scalar = sqrt.(real( sum(dist_vect.^2,dims=2)[:] ));
     v = sortperm(distance_scalar);
     distance_scalar = distance_scalar[v];
@@ -221,11 +226,11 @@ function get_J_idx_2(cell_vect_list, atom1, atom2, item_idx, angle_idx)
   J_ij_R = [];
   #k = 1
   s = cached_mat_dict[atom1,atom2]
-  q_point_fact_list = s["q_point_list"]/s["k_point_precision"];
+  q_point_frac_list = s["q_point_list"]/s["k_point_precision"];
 
-  q_point_cart =   q_point_fact_list[:,1] * transpose(rv[1,:]) +
-   q_point_fact_list[:,2] * transpose(rv[2,:])+
-   q_point_fact_list[:,3] * tranpose(rv[3,:])
+  q_point_cart =   q_point_frac_list[:,1] * transpose(rv[1,:]) +
+   q_point_frac_list[:,2] * transpose(rv[2,:])+
+   q_point_frac_list[:,3] * tranpose(rv[3,:])
 
   atom1_global_xyz = s["Gxyz"][atom1,:];
   atom2_global_xyz = s["Gxyz"][atom2,:]
@@ -294,6 +299,9 @@ for xyz_i in 1:1
                             Dy = dist_vect[:,2],
                             Dz = dist_vect[:,3]
                            ); delim=',' )
+
+       DF = CSV.read(csv_filename)
+       println(DF[1:12,:])
    end
 
    ################################################################################
@@ -305,6 +313,7 @@ for xyz_i in 1:1
    label= string(J_ij_R[1][1])*"_"*string(J_ij_R[1][2])*" : "*string(xyz_i)
 
    Plots.plot(distance_scalar,J_ij_R[1][5] *1000.0, label = label)
+   Plots.title!(orbital_name)
    ################################################################################
    # Plot second to end of itmes
    ################################################################################
