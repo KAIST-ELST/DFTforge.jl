@@ -577,7 +577,7 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   @assert(atomnum == length(atoms_orbitals_list))
   @assert(atomnum == size(atompos)[1]);
 
-  fractional_scale = 1.0 #1.224860;
+
   Total_NumOrbs = Array{Int,1}(undef,0);
   for i in 1:length(atoms_orbitals_list)
     push!(Total_NumOrbs,length(atoms_orbitals_list[i]));
@@ -587,7 +587,11 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   lines = readlines(f)
   close(f)
 
+  fractional_scale = 1.0 #1.224860;
+  fractional_scale = parse(Float64, lines[2])
+
   TotalOrbitalNum = parse(Int64,split(lines[6])[1]);
+  println("sum(Total_NumOrbs):",sum(Total_NumOrbs)," TotalOrbitalNum:", TotalOrbitalNum)
   @assert(sum(Total_NumOrbs)==TotalOrbitalNum);
   num_Rvector = parse(Int64,split(lines[6])[2]);
   total_lines = parse(Int64,split(lines[6])[3]);
@@ -597,6 +601,8 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
   tv[1,:] = map(x->parse(Float64,x),split(lines[3]))
   tv[2,:] = map(x->parse(Float64,x),split(lines[4]))
   tv[3,:] = map(x->parse(Float64,x),split(lines[5]))
+
+  tv *= fractional_scale;
 
   rv = 2*pi*inv(tv'); # Check required
 
@@ -609,14 +615,14 @@ function read_wannier_EcalJInternal(wannier_fname::AbstractString,
     position_1 = map(x->parse(Float64,x), split(lines[9+v[1]])[end-2:end]);
     #position_1 = map(x-> rem(x,1.0), position_1 + 2.0)
     if (sum(abs.(atompos[i,:] - position_1)) > 10.0^-4.0)
-      println(" read_wannier_EcalJ atom ",i," position not matched ",position_1,"  ",atompos[i,:])
+      println(" read_wannier_EcalJ orbital index ",i," position not matched Wannier file:",position_1," input Toml file:",atompos[i,:])
       check_fail = true;
     end
     for (i2,v2) in enumerate(v)
       position_2 = map(x->parse(Float64,x), split(lines[9+v[i2] ])[end-2:end]);
       #position_2 = map(x-> rem(x,1.0), position_2 + 2.0)
       if (sum(abs.(atompos[i,:] - position_2)) > 10.0^-4.0)
-        println(" read_wannier_EcalJ atom ",i2," position not matched ",position_2,"  ",atompos[i,:])
+        println(" read_wannier_EcalJ atom ",i2," position not matched Wannier file:",position_2," input Toml file:",atompos[i,:])
         check_fail = true;
       end
     end
