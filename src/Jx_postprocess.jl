@@ -76,9 +76,10 @@ end
 file_list = Array{String}(undef,0);
 for atom2_name in atom2_name_list
    atom_12name = string(base_atom) * "_" * string(atom2_name)
-   file_list_tmp = Glob.glob(joinpath(root_dir,"*" * atom_12name * "*" * orbital_name * "*.jld2") )
+   file_list_tmp = Glob.glob(joinpath(root_dir,"*_" * atom_12name * "_*" * orbital_name * "*.jld2") )
    append!(file_list,file_list_tmp)
 end
+sort!(file_list)
 #get q points
 cellvect_num = [2,2,2];
 if !(Nothing == typeof(parsed_args["cellvectors"]))
@@ -143,7 +144,7 @@ for (k,v) in cached_mat_dict
 end
 
 
-
+println(global_xyz)
 
 
 
@@ -273,6 +274,7 @@ for xyz_i in 1:1
    ##=
    println("================ Writing CSV & Plotfile  =============")
    num_results = size(J_ij_R)[1]
+   println(num_results," ", length(file_list))
    @assert(num_results == length(file_list))
    for result_i in 1:num_results
        s_tmp = J_ij_R[result_i][6]
