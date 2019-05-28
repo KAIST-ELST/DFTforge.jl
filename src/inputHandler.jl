@@ -197,6 +197,27 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       end
     end
 
+    if (haskey(toml_inputs,"HamiltonianType"))
+      if haskey(toml_inputs,"DFTtype")
+        println("If `HamiltonianType` keyword is used, remove `DFTtype` and `Wanniertype` keyword.")
+        exit(0);
+      end
+      Hamiltonian_type::AbstractString = toml_inputs["HamiltonianType"]
+      if ( lowercase("OpenMX") == lowercase(Hamiltonian_type) )
+        input.DFT_type = OpenMX
+      elseif ( lowercase("OpenMXWannier") == lowercase(Hamiltonian_type))
+        input.DFT_type = Wannier90
+        input.Wannier90_type = OpenMXWF;
+      elseif ( lowercase("Wannier90") == lowercase(Hamiltonian_type))
+        input.DFT_type = Wannier90
+        input.Wannier90_type = Wannier90WF;
+      elseif ( lowercase("ecalj") == lowercase(Hamiltonian_type))
+        input.DFT_type = Wannier90
+        input.Wannier90_type = EcalJWF;
+      #elseif ( lowercase("wien2k") == lowercase(result_type))
+      end
+    end
+
     # Input files for OpenMX outputs
 
     if (OpenMX == input.DFT_type ||

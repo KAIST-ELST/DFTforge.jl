@@ -10,7 +10,7 @@ using DFTforge.DFTcommon;
 using Statistics
 #
 
-X_VERSION = VersionNumber("0.6.1-dev+20180718");
+X_VERSION = VersionNumber("0.6.1-dev+20190502");
 println(" X_VERSION: ",X_VERSION)
 
 @everywhere using Distributed
