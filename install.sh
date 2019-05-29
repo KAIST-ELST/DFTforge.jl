@@ -23,7 +23,7 @@ case "$OSTYPE" in
   mkdir -p ~/bin
   echo 'export PATH=~/bin:$PATH' >>~/.profile
   echo 'export PATH=~/bin:$PATH' >>~/.bashrc
-  JULIA_INSTALL=~/opt/bin  bash -ci "$(curl -fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
+  JULIA_INSTALL=~/bin  bash -ci "$(curl -fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
   ;;
   bsd*)     echo "BSD"
   echo 'Visit https://julialang.org/downloads/'
