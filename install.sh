@@ -8,6 +8,7 @@
 
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+GREEN='\033[0;32m'
 NC='\033[0m'
 
 echo 'This is JX installer. If Julia is already installed simply type julia install.jl'
@@ -43,8 +44,8 @@ esac
 echo ' The Julia install would be finished.'
 
 echo ' Now the below commands will be excuted'
-echo '${BLUE}source ~/.profile # to detect installed Julia'
-echo '${BLUE}julia install.jl'
+printf "${GREEN}source ~/.profile # to detect installed Julia ${NC}\n"
+printf "${GREEN}julia install.jl ${NC}\n"
 
 source ~/.profile
 printf "${BLUE} 2. Installing required Julia packages & DFTforge.jl ${NC}\n"

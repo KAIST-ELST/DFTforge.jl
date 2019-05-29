@@ -5,6 +5,7 @@ NC='\033[0m'
 
 
 source ~/.profile # to add Julia to path
+printf "${BLUE} 0. Unzip the example ${NC} \n"
 cd "examples/NiO_G-AFM.OpenMx"
 
 # Unzip dft result
