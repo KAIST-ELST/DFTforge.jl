@@ -9,8 +9,11 @@ atom12 = [[1,1],[1,2]]
 
 
 # k,q for calculation. Using the same k,q points number is recomended
-k_point_num = [6,6,6]
-q_point_num = [6,6,6]
+k_point_num = [8,8,8]
+q_point_num = [8,8,8]
+# Smaller K,Q points are used for example to run fast. Use more K,Q points :)
+#k_point_num = [10,10,10]
+#q_point_num = [10,10,10]
 
 [orbitals]
 
