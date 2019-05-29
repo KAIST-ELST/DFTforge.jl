@@ -57,7 +57,7 @@ julia install.jl
 
 echo '========================================================================='
 echo 'If `DFTforge Version XXX` is shown above, the install would completed without error. '
-printf "${RED} If not shown, please check if hdf5 lib is installed (For Linux: run `ldconfig -p | grep libhdf5`). ${NC}"
+printf "${RED} If not shown, please check if hdf5 lib is installed (For Linux: run ldconfig -p | grep libhdf5). ${NC}\n"
 echo 'Try to run NiO example by typing the'
 printf "${BLUE}./example_NiO_OpenMX.sh ${NC}\n"
 echo '========================================================================='

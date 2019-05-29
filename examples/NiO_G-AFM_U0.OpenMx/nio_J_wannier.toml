@@ -1,0 +1,46 @@
+# This is DFT-forge TOML file
+# https://kaist-elst.github.io/DFTforge.jl/
+HamiltonianType = "OpenMXWannier" # OpenMX OpenMXWannier Wannier90
+
+spintype = "co_spin" #Set Spin type, para, co_spin, nc_spin
+result_file = "nio.HWR"
+atom12 = [[1,1],[1,2]]
+
+
+k_point_num = [8,8,8]
+q_point_num = [8,8,8]
+
+[orbitals]
+orbitalselection = false # true , false
+orbital_mask1_list = [[1,2],[3,4,5]]
+orbital_mask2_list = [[1,2],[3,4,5]]
+
+orbital_mask1_names = "[eg,t2g]"
+orbital_mask2_names = "[eg,t2g]"
+
+[wannier_optional]
+# atom position info dose not exists at OpenMX wannier
+atomnum = 4
+atompos = [[0.0, 0.0, 0.0],      # atom1
+        [0.5, 0.5, 0.5],         # atom2
+        [0.250, 0.250, 0.250],   # atom3
+        [0.750, 0.750, 0.750]]   # atom4
+atoms_orbitals_list = [
+[1,3,5,7,9], # d orbtials for atom1
+[2,4,6,8,10],# d orbtials for atom2
+[11,13,15],  # p orbtials for atom3
+[12,14,16]   # p orbtials for atom4
+]
+
+[bandplot]
+bandplot = true
+
+kPoint_step = 10
+kPath_list = [
+[[0.0   ,0.0    ,0.5    ],[ 0.0    , 0.5     ,  0.0    ],["Z2","Y"]],
+[[0.0   ,0.5    ,0.0    ],[ 0.5    , 0.0     ,  0.0    ],["Y","X"]],
+[[0.5   ,0.0    ,0.0    ],[ 0.0    , 0.0     ,  0.0    ],["X","G"]],
+[[0.0   ,0.0    ,0.0    ],[ 0.5    , 0.5     ,  0.5    ],["G","Z"]],
+[[0.5   ,0.5    ,0.5    ],[ 0.8125 , 0.34375 ,  0.34375],["Z","K"]],
+[[0.8125,0.34375,0.34375],[ 0.1875 , -0.34375, -0.34375],["K","U"]]
+]
