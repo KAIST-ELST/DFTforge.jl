@@ -1,4 +1,10 @@
-#include("../DFTcommon.jl")
+###############################################################################
+# Hongkee Yoon Hongkeeyoon@kaist.ac.kr
+# 2019.05
+# https://kaist-elst.github.io/DFTforge.jl/
+###############################################################################
+
+
 using ..DFTcommon
 #using MAT
 #using HDF5

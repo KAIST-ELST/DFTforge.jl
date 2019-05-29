@@ -1,4 +1,9 @@
-#include("../DFTcommon.jl")
+###############################################################################
+# Hongkee Yoon Hongkeeyoon@kaist.ac.kr
+# 2019.05
+# https://kaist-elst.github.io/DFTforge.jl/
+###############################################################################
+
 using ..DFTcommon
 
 #export Wannierdata
@@ -352,7 +357,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
 
   # Read Cell Vector
   f = open((wannier_fname * ".win"))
-  #println(wannier_fname * ".win")
+  println(wannier_fname * ".win")
   wannier90_win_file = readlines(f)
   close(f)
   wannier90_win_file_lowercase = map(x->strip(lowercase(x)), wannier90_win_file);
@@ -383,6 +388,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
     println(" No fermi_energy found in " * wannier_fname * ".win ex) fermi_energy = 1.234 !eV ")
   end
   ChemP = parse(Float64, split(wannier90_win_file_lowercase[chemp_line],['=',' '],keepempty=false)[2])
+  println(wannier90_win_file_lowercase[chemp_line])
 
   num_wann_line  = findfirst( 0 .< map(x-> sum("num_wann".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
   num_wann = parse(Int64, split(wannier90_win_file_lowercase[num_wann_line],['=',' '],keepempty=false)[2]);

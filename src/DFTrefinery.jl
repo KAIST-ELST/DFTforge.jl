@@ -1,3 +1,10 @@
+###############################################################################
+# Hongkee Yoon Hongkeeyoon@kaist.ac.kr
+# 2019.05
+# https://kaist-elst.github.io/DFTforge.jl/
+###############################################################################
+
+
 __precompile__(true)
 using DFTforge
 using ..DFTcommon

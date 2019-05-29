@@ -1,3 +1,9 @@
+###############################################################################
+# Hongkee Yoon Hongkeeyoon@kaist.ac.kr
+# 2019.05
+# https://kaist-elst.github.io/DFTforge.jl/
+###############################################################################
+
 __precompile__(true)
 module DFTcommon
 using Distributed

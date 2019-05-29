@@ -1,17 +1,24 @@
+###############################################################################
+# Hongkee Yoon Hongkeeyoon@kaist.ac.kr
+# 2019.05
+# https://kaist-elst.github.io/DFTforge.jl/
+###############################################################################
+# [PhysRevB.97.125132](https://doi.org/10.1103/PhysRevB.97.125132)
+
 #using ProgressMeter
 __precompile__(true)
+#X_VERSION = VersionNumber("0.6.1-dev+20190502");
+X_VERSION = VersionNumber("0.9.3-pub+20190529");
+println(" JX_VERSION: ",X_VERSION)
+
 using Distributed
 import DFTforge
 using DFTforge.DFTrefinery
-#using DFTcommon
 using DFTforge.DFTcommon;
-##import MAT
 # Julia 1.0
 using Statistics
 #
 
-X_VERSION = VersionNumber("0.6.1-dev+20190502");
-println(" X_VERSION: ",X_VERSION)
 
 @everywhere using Distributed
 @everywhere import DFTforge
@@ -310,20 +317,6 @@ num_return = 8; #local scope
   eigenstate_kq_down::Kpoint_eigenstate_only = cacheread_eigenstate(kq_point,2,cache_index)
 
   # Get Hamiltonian
-  #Hks_G_up::Hamiltonian_type  = cacheread_Hamiltonian((0.0,0.0,0.0),1,cache_index)
-  #Hks_G_down::Hamiltonian_type = cacheread_Hamiltonian((0.0,0.0,0.0),2,cache_index)
-
-#=
-  q_point = (kq_point[1]-k_point[1],kq_point[2]-k_point[2],kq_point[3]-k_point[3])
-  qn_point = (-kq_point[1]+k_point[1],-kq_point[2]+k_point[2],-kq_point[3]+k_point[3])
-
-  Hks_q_up::Hamiltonian_type  = cacheread_Hamiltonian(q_point,1,cache_index)
-  Hks_q_down::Hamiltonian_type = cacheread_Hamiltonian(q_point,2,cache_index)
-
-  Hks_qn_up::Hamiltonian_type  = cacheread_Hamiltonian(qn_point,1,cache_index)
-  Hks_qn_down::Hamiltonian_type = cacheread_Hamiltonian(qn_point,2,cache_index)
-=#
-
 # #=
   Hks_k_up::Hamiltonian_type  = cacheread_Hamiltonian(k_point,1,cache_index)
   Hks_kq_up::Hamiltonian_type  = cacheread_Hamiltonian(kq_point,1,cache_index)
@@ -493,50 +486,14 @@ num_return = 8; #local scope
     #Enk_up_Emkq_down .+= im*0.0001;
     #Enk_Emkq += im*0.001;
 
-    #V1_G = 0.5*(Hks_G_up[atom1_orbitals,atom1_orbitals] - Hks_G_down[atom1_orbitals,atom1_orbitals]);
-    #V2_G = 0.5*(Hks_G_up[atom2_orbitals,atom2_orbitals] - Hks_G_down[atom2_orbitals,atom2_orbitals]);
-#=
-    V1_q = 0.5*(Hks_q_up[atom1_orbitals,atom1_orbitals]-Hks_q_down[atom1_orbitals,atom1_orbitals])
-    V2_q = 0.5*(Hks_q_up[atom2_orbitals,atom2_orbitals]-Hks_q_down[atom2_orbitals,atom2_orbitals])
-
-
-    V1_qn = 0.5*(Hks_qn_up[atom1_orbitals,atom1_orbitals]-Hks_qn_down[atom1_orbitals,atom1_orbitals])
-    V2_qn = 0.5*(Hks_qn_up[atom2_orbitals,atom2_orbitals]-Hks_qn_down[atom2_orbitals,atom2_orbitals])
-=#
 
     V1_k  = 0.5*(Hks_k_up[atom1_orbitals,atom1_orbitals] - Hks_k_down[atom1_orbitals,atom1_orbitals]);
     V2_kq = 0.5*(Hks_kq_up[atom2_orbitals,atom2_orbitals] - Hks_kq_down[atom2_orbitals,atom2_orbitals]);
 
     V1_kq = 0.5*(Hks_kq_up[atom1_orbitals,atom1_orbitals] - Hks_kq_down[atom1_orbitals,atom1_orbitals]);
     V2_k  = 0.5*(Hks_k_up[atom2_orbitals,atom2_orbitals] - Hks_k_down[atom2_orbitals,atom2_orbitals]);
-#=
-    V1_kq_k = 0.5*(Hks_kq_up[atom1_orbitals,atom1_orbitals] - Hks_k_down[atom1_orbitals,atom1_orbitals]);
-    V2_kq_k = 0.5*(Hks_kq_up[atom2_orbitals,atom2_orbitals] - Hks_k_down[atom2_orbitals,atom2_orbitals]);
-=#
-    #atom1_orbitals_rel = 1:orbitalNums[atom1];
-    #atom2_orbitals_rel = 1:orbitalNums[atom2];
-    #atom2_orbitals_rel2 = orbitalNums[atom1]+atom2_orbitals_rel;
 
-#=
-    VV1_down_up_G = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_G *
-        Es_m_kq_up_atom1[atom1_orbitals,:];
-    VV2_up_down_G = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_G *
-        Es_n_k_down_atom2[atom2_orbitals,:];
-
-    VV1_up_down_G = Es_n_k_up_atom1[atom1_orbitals,:]' * V1_G *
-        Es_m_kq_down_atom1[atom1_orbitals,:];
-    VV2_down_up_G = Es_m_kq_down_atom2[atom2_orbitals,:]' * V2_G *
-        Es_n_k_up_atom2[atom2_orbitals,:];
-=#
-
-#=
-    VV1_down_up_q = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_q  *
-        Es_m_kq_up_atom1[atom1_orbitals,:];
-    VV2_up_down_q = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_q *
-        Es_n_k_down_atom2[atom2_orbitals,:];
-    VV2_up_down_qn = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_qn *
-        Es_n_k_down_atom2[atom2_orbitals,:];
-=#
+    # Cal. psi><w|V_k|w><w|psi> , psi><w|V_k+q|<w|psi>
     VV1_down_up_k = Es_n_k_down_atom1[atom1_orbitals,:]' * V1_k *
         Es_m_kq_up_atom1[atom1_orbitals,:];
     VV2_up_down_kq = Es_m_kq_up_atom2[atom2_orbitals,:]' * V2_kq *
@@ -573,7 +530,7 @@ num_return = 8; #local scope
     #Vi_Vj_up_down_down_up_G    = VV1_up_down_G.*transpose(VV2_down_up_G);
 
     x_down_up_up_down_k_kq = x1_down_up_k.*transpose(x2_up_down_kq);
-    # for testing
+
 
     # Index convetion: J_ij[nk,mkq]
     J_ij_down_up_up_down_k_kq =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_k_kq ;
@@ -582,23 +539,16 @@ num_return = 8; #local scope
     J_ij_up_down_down_up_k_kq =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_k_kq ;
     J_ij_up_down_down_up_kq_k =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_kq_k ;
 
-    #J_ij_down_up_up_down_G =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* Vi_Vj_down_up_up_down_G ;
-    #J_ij_up_down_down_up_G =  0.5./(-Enk_up_Emkq_down).*dFnk_up_Fmkq_down .* Vi_Vj_up_down_down_up_G ;
 
     x_ij_down_up_up_down_k_kq =  0.5./(-Enk_down_Emkq_up).*dFnk_down_Fmkq_up .* x_down_up_up_down_k_kq ;
 
     result_mat[2,atom12_i] = sum(J_ij_down_up_up_down_k_kq[.!isnan.(J_ij_down_up_up_down_k_kq)] );
-    #result_mat[2,atom12_i] = sum(J_ij_1[!isnan(J_ij_1)] ) + sum(J_ij_2[!isnan(J_ij_2)] );
-    result_mat[3,atom12_i] = sum(J_ij_down_up_up_down_kq_k[.!isnan.(J_ij_down_up_up_down_kq_k)] );
-
-    result_mat[4,atom12_i] = sum(J_ij_up_down_down_up_k_kq[.!isnan.(J_ij_up_down_down_up_k_kq)] );
+    #result_mat[3,atom12_i] = sum(J_ij_down_up_up_down_kq_k[.!isnan.(J_ij_down_up_up_down_kq_k)] );
+    #result_mat[4,atom12_i] = sum(J_ij_up_down_down_up_k_kq[.!isnan.(J_ij_up_down_down_up_k_kq)] );
     result_mat[5,atom12_i] = sum(J_ij_up_down_down_up_kq_k[.!isnan.(J_ij_up_down_down_up_kq_k)] );
-    #result_mat[6,atom12_i] = sum(J_ij_down_up_up_down_G[.!isnan.(J_ij_down_up_up_down_G)] );
-    #result_mat[7,atom12_i] = sum(J_ij_up_down_down_up_G[.!isnan.(J_ij_up_down_down_up_G)] );
 
-    result_mat[8,atom12_i] = sum(x_ij_down_up_up_down_k_kq[.!isnan.(x_ij_down_up_up_down_k_kq)] );
 
-    result_mat[1,atom12_i] = 0.5*(result_mat[2,atom12_i] +result_mat[5,atom12_i] );
+    result_mat[1,atom12_i] = 0.5*(result_mat[2,atom12_i] + result_mat[5,atom12_i] );
   end
   return result_mat
 

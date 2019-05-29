@@ -1,9 +1,11 @@
 ---
 layout: default
 ---
+Visit https://kaist-elst.github.io/DFTforge.jl/ for update.
+
 # MFT (Magentic force theory)
 ![Jx](docs/Logo_text.svg){: height="100px" }
-![OpenMX](http://www.openmx-square.org/OpenMX_LOGO_S.PNG){: height="100px" } 
+![OpenMX](http://www.openmx-square.org/OpenMX_LOGO_S.PNG){: height="100px" }
 
 
 **JX** Calculate spin exchange coupling parameters *J* from [OpenMX](http://www.openmx-square.org/) DFT/Wannier, [Wannier90](http://www.wannier.org/) hamiltonians via linear-response theory.
@@ -23,7 +25,7 @@ We support the following features:
 Julia was designed from the beginning for high performance. Julia programs compile to efficient native code for multiple platforms via LLVM.
 [See Julia benchmark compared to C, Fortran, Pythons, Matlab & more...](https://julialang.org/benchmarks/).
 
- * For Linux system: 
+ * For Linux system:
 
 [Using Julia auto-installer for Linux](https://github.com/abelsiqueira/jill)
  ```bash
@@ -34,7 +36,7 @@ Julia was designed from the beginning for high performance. Julia programs compi
 
 ### Install DFTforge
 ```bash
-git clone https://github.com/ElectronicStructureTheory-KAIST/DFTforge.jl/
+git clone https://github.com/KAIST-ELST/DFTforge.jl
 julia install.jl
 ```
 
@@ -54,10 +56,6 @@ julia install.jl
 [PhysRevB.97.125132](https://doi.org/10.1103/PhysRevB.97.125132)
 # Developer
 [Hongkee Yoon](https://github.com/bluehope)
-# Funding source
 
-![NRF](http://www.nrf.re.kr/resources/img/icon/icon_eng_logo.png) 
 
 ---
-
-

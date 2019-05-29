@@ -1,5 +1,9 @@
+- Hongkee Yoon Hongkeeyoon@kaist.ac.kr
+- 2019.05
+- https://kaist-elst.github.io/DFTforge.jl/
+ 
 
-![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true) 
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true)
 
 [Homepage & How to use](https://kaist-elst.github.io/DFTforge.jl/)
 
@@ -22,4 +26,3 @@ We support the following features:
 
 ![Logo](docs/Logo.svg)
 ---
-

@@ -1,3 +1,10 @@
+###############################################################################
+# Hongkee Yoon Hongkeeyoon@kaist.ac.kr
+# 2019.05
+# https://kaist-elst.github.io/DFTforge.jl/
+###############################################################################
+
+
 __precompile__(true)
 #
 
@@ -31,20 +38,7 @@ using Glob
 #using Plots
 export ArgParse,ProgressMeter,Distributed,Statistics,CSV,FileIO,DataFrames,Glob#,Plots
 ##
-#=
-function __init__()
-    if 1 == myid()
-      println(" DFTforge Version :",string(DFTforge_VERSION))
-    end
-end
 
-
-export get_DFTforge_VERSION
-function get_DFTforge_VERSION()
-  return DFTforge_VERSION;
-end
-
-=#
 #@enum DFTtype OpenMX = 1 Wannier90 = 2
 #@enum SPINtype para_type = 1 colinear_type = 2 non_colinear_type = 4
 include("DFTcommon.jl")
@@ -54,9 +48,9 @@ using .DFTcommon
 module OpenMXdata
 include("backend/OpenMX_PostCommon.jl")
 end
-module EcalJdata
-include("backend/EcalJ_PostCommon.jl")
-end
+#module EcalJdata
+#include("backend/EcalJ_PostCommon.jl")
+#end
 module Wannierdata
 include("backend/Wannier_PostCommon.jl")
 end

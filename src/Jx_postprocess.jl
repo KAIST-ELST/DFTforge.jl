@@ -1,4 +1,9 @@
-#__precompile__(true)
+###############################################################################
+# Hongkee Yoon Hongkeeyoon@kaist.ac.kr
+# 2019.05
+# https://kaist-elst.github.io/DFTforge.jl/
+###############################################################################
+
 ###
 #using ProgressMeter
 import DFTforge
@@ -32,21 +37,8 @@ end
 
 #Pkg.add("Plots")
 #Pkg.add("Glob")
-
 #parsed_args = parse_args(ARGS, s)
-#=
-ARGS = "-q 3_3_3 ../examples/CrO2.U0.0/jq.spin.test.wannier_0.0/"
-ARGS = Array{String}(undef,0);
-push!(ARGS,"--cellvectors")
-push!(ARGS,"3_3_3")
-push!(ARGS,"--baseatom")
-push!(ARGS,"1")
-push!(ARGS,"--atom12")
-push!(ARGS,"1_1,1_2")
-push!(ARGS,"--orbital_name")
-push!(ARGS,"all_all")
-push!(ARGS,"../examples/CrO2.U0.0/jq.spin.test.wannier_0.0/")
-=#
+
 parsed_args = parse_args(ARGS, s)
 import DFTforge.DataFrames
 import DFTforge.FileIO
