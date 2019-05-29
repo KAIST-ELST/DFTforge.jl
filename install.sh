@@ -33,7 +33,14 @@ case "$OSTYPE" in
   ;;
 esac
 
-echo 're-open the shell'
-echo 'julia install.jl'
+echo ' The Julia install would be finished.'
+
+echo ' Now re-open the shell or type:'
+echo '> source ~/.profile # to detect installed Julia'
+echo '> julia install.jl'
+
+source ~/.profile
+julia install.jl
+
 # install DFTforge
 # julia install.jl

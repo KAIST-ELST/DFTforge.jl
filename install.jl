@@ -16,3 +16,7 @@ Pkg.add("Glob")
 Pkg.add("HDF5")
 Pkg.add("ColorTypes")
 Pkg.add("ProgressMeter")
+
+
+Pkg.develop(PackageSpec(path=pwd()))
+import DFTforge
