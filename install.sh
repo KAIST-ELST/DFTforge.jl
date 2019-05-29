@@ -11,8 +11,10 @@ echo 'This is JX installer. If Julia is already installed simply type julia inst
 
 echo ' To install julia see: https://julialang.org/downloads/'
 echo ' Platform specfic detail see: https://julialang.org/downloads/platform.html'
-
+echo '========================================================================='
 echo ' Please install hdf5 lib before the install (e.g. in Ubuntu `apt-get install hdf5-tools`)'
+echo '========================================================================='
+
 case "$OSTYPE" in
   #solaris*) echo "SOLARIS" ;;
   darwin*)  echo "OSX"

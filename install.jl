@@ -18,5 +18,5 @@ Pkg.add("ColorTypes")
 Pkg.add("ProgressMeter")
 
 
-Pkg.develop(PackageSpec(path=pwd()))
+Pkg.develop(Pkg.PackageSpec(path=pwd()))
 import DFTforge
