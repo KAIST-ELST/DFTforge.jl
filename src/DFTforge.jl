@@ -48,9 +48,9 @@ using .DFTcommon
 module OpenMXdata
 include("backend/OpenMX_PostCommon.jl")
 end
-#module EcalJdata
-#include("backend/EcalJ_PostCommon.jl")
-#end
+module EcalJdata
+include("backend/EcalJ_PostCommon.jl")
+end
 module Wannierdata
 include("backend/Wannier_PostCommon.jl")
 end

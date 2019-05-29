@@ -364,9 +364,6 @@ function read_EcalJ_scf_interal(scf_name::String)
     return EcalJ_info;
 end
 
-function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamiltonian_info_type)
-
-end
 
 #=
 ===== PDOS file structure (dos.isp*) =========================

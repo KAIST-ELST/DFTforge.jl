@@ -242,7 +242,7 @@ function cal_eigenstate_as_nc(input::Job_input_Type,result_index=1)
   # specfify spin type is required
 
   if (DFTcommon.para_type == input.spin_type)
-      #=
+    #=
     kpoint_eigenstate_list = Array{Kpoint_eigenstate}();
     push!(kpoint_eigenstate_list,
     cal_colinear_eigenstate(input.k_point,1,input.result_index) );
