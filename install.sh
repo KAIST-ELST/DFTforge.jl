@@ -11,7 +11,9 @@ BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-echo 'This is JX installer. If Julia is already installed simply type julia install.jl'
+echo 'This is Jx installer. If Julia is already installed simply type julia install.jl'
+printf "${BLUE} Jx is tested for julia 1.0 & 1.1 (the most recent verion of julia in 201905) ${NC} \n"
+printf "${BLUE} Visit https://kaist-elst.github.io/DFTforge.jl/ for details and updates ${NC} \n"
 
 echo ' To install julia see: https://julialang.org/downloads/'
 echo ' Platform specfic detail see: https://julialang.org/downloads/platform.html'
@@ -25,6 +27,7 @@ case "$OSTYPE" in
   #solaris*) echo "SOLARIS" ;;
   darwin*)  echo "OSX"
   brew cask install julia
+  brew cask upgrade julia
   ;;
   linux*)
   echo "Linux"
@@ -54,6 +57,7 @@ julia install.jl
 
 echo '========================================================================='
 echo 'If `DFTforge Version XXX` is shown above, the install would completed without error. '
+printf "${RED} If not shown, please check if hdf5 lib is installed (For Linux: run `ldconfig -p | grep libhdf5`). ${NC}"
 echo 'Try to run NiO example by typing the'
 printf "${BLUE}./example_NiO_OpenMX.sh ${NC}\n"
 echo '========================================================================='

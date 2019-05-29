@@ -17,6 +17,6 @@ Pkg.add("HDF5")
 Pkg.add("ColorTypes")
 Pkg.add("ProgressMeter")
 
-
+Pkg.build("HDF5")
 Pkg.develop(Pkg.PackageSpec(path=pwd()))
 import DFTforge
