@@ -10,6 +10,7 @@ __precompile__(true)
 #X_VERSION = VersionNumber("0.6.1-dev+20190502");
 X_VERSION = VersionNumber("0.9.3-pub+20190529");
 println(" JX_VERSION: ",X_VERSION)
+println(" Visit https://kaist-elst.github.io/DFTforge.jl/ for details")
 println(" Tested with Julia v1.0 and v1.1 which the most recent version of Julia in 201906 https://julialang.org/")
 
 using Distributed
