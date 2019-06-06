@@ -98,5 +98,5 @@ Here, we follow the NiO:`./example_NiO_OpenMX.sh` example.
 - Hongkee Yoon Hongkeeyoon@kaist.ac.kr
 
 ## Version
-- Current version works with Julia 1.0 & 1.1
-For updated version, please visit [https://kaist-elst.github.io/DFTforge.jl/](https://kaist-elst.github.io/DFTforge.jl/) for details.
+- Current version works with Julia 1.0 & 1.1.
+For future updated versions, please visit [https://kaist-elst.github.io/DFTforge.jl/](https://kaist-elst.github.io/DFTforge.jl/) for details.
