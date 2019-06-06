@@ -27,8 +27,10 @@ We support the following features:
 
 ## Install and Usage
 ### Prerequisites
+1. Linux or OSX (Windows is not supported due to some Julia packages).
 1. Install `hdf5` lib before the following install steps
-  (e.g. in Ubuntu `apt-get install hdf5-tools`, OSX `brew install hdf5`)
+  (e.g. in Ubuntu `apt-get install hdf5-tools`, OSX `brew install hdf5`).
+
 
 ### Installing
 
