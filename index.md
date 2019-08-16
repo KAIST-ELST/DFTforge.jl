@@ -59,7 +59,7 @@ julia install.jl
 
 
 ---
-# References (
+# References
 
 * [Reliability and applicability of magnetic-force linear response theory: Numerical parameters, predictability, and orbital resolution (2018) PhysRevB.97.125132](https://doi.org/10.1103/PhysRevB.97.125132)
 * [Calculating magnetic interactions in organic electrides (2018) PhysRevB.97.214431 ](https://doi.org/10.1103/PhysRevB.97.214431)
