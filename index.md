@@ -70,7 +70,7 @@ julia install.jl
 * [Magnetic force theory combined with quasi-particle self-consistent GW method (2019) JPCM](https://doi.org/10.1088/1361-648X/ab2b7e)
 * [On the origin and the manipulation of ferromagnetism in Fe3GeTe2: defects and dopings (2019) submitted](http://arxiv.org/abs/1904.04510)
 
-* Jx code paper submitted to journal of computational physics (under review)
+* Jx: An open-source software for calculating magnetic interactions based on magnetic force theory (submitted to journal of computational physics, under review)
 # Developer
 [Hongkee Yoon](https://github.com/bluehope)
 # Funding source
