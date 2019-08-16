@@ -29,7 +29,7 @@ We support the following features:
 Julia was designed from the beginning for high performance. Julia programs compile to efficient native code for multiple platforms via LLVM.
 [See Julia benchmark compared to C, Fortran, Pythons, Matlab & more...](https://julialang.org/benchmarks/).
 
-**Currently we support latest Julia 1.0/0.7.**
+**Currently we support latest Julia 1.0/1.1.**
 
  * For Linux system:
 
@@ -59,9 +59,19 @@ julia install.jl
 
 
 ---
-# References
+# References (
 
-[PhysRevB.97.125132](https://doi.org/10.1103/PhysRevB.97.125132)
+* [Reliability and applicability of magnetic-force linear response theory: Numerical parameters, predictability, and orbital resolution (2018) PhysRevB.97.125132](https://doi.org/10.1103/PhysRevB.97.125132)
+
+* [Calculating magnetic interactions in organic electrides (2018) PhysRevB.97.214431 ](https://doi.org/10.1103/PhysRevB.97.214431)
+
+* [Charge density functional plus U theory of LaMnO3: Phase diagram, electronic structure, and magnetic interaction (2018) PhysRevB.98.125126 ](https://doi.org/10.1103/PhysRevB.98.125126)
+
+* [Microscopic understanding of magnetic interactions in bilayer CrI3 (2019) PhysRevM.3.031001 ](https://doi.org/10.1103/PhysRevMaterials.3.031001)
+
+* [On the origin and the manipulation of ferromagnetism in Fe3GeTe2: defects and dopings (2019) submitted](http://arxiv.org/abs/1904.04510)
+
+* [Jx code paper submitted to journal of computational physics (under review)]
 # Developer
 [Hongkee Yoon](https://github.com/bluehope)
 # Funding source
