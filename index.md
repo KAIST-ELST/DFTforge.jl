@@ -22,6 +22,7 @@ We support the following features:
 
 ![Logo](docs/Logo.svg){: height="200px" }
 ![CrI3](docs/J_orbital_cri3.png){: height="200px" }
+
 ---
 # Quick-Start
 
@@ -60,7 +61,7 @@ julia install.jl
 
 
 ---
-# References
+# Publications
 
 * [Reliability and applicability of magnetic-force linear response theory: Numerical parameters, predictability, and orbital resolution (2018) PhysRevB](https://doi.org/10.1103/PhysRevB.97.125132)
 * [Calculating magnetic interactions in organic electrides (2018) PhysRevB](https://doi.org/10.1103/PhysRevB.97.214431)
