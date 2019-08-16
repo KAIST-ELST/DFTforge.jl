@@ -1,7 +1,7 @@
 ---
 layout: default
 ---
-![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true) 
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true) 
 
 ##### Please stay tuned. To be officially  released soon via GitHub will be ready soon!
 We are waiting few more Julia packages to be stabilized.
@@ -20,7 +20,8 @@ We support the following features:
 - Local axis redefinition for orbital resolved *J*
 - Calculation form full [OpenMX](http://www.openmx-square.org/) DFT Hamiltonian and Wannier Hamiltonian ([OpenMX](http://www.openmx-square.org/)/[Wannier90](http://www.wannier.org/)). Custom Hamilton interfaces are easy to add.
 
-![Logo](docs/Logo.svg)
+![Logo](docs/Logo.svg){: height="200px" }
+![CrI3](docs/J_orbital_cri3.png){: height="200px" }
 ---
 # Quick-Start
 
