@@ -15,8 +15,8 @@ We are waiting few more Julia packages to be stabilized.
 **JX** Calculate spin exchange coupling parameters *J* from [OpenMX](http://www.openmx-square.org/) DFT/Wannier, [Wannier90](http://www.wannier.org/) hamiltonians via linear-response theory.
 
 We support the following features:
-- J in momentum space.
-- Orbital resolved *J*
+- *J* in momentum space.
+- *J* coupling matrix (Orbital resolved interactions)
 - Local axis redefinition for orbital resolved *J*
 - Full [OpenMX](http://www.openmx-square.org/) DFT Hamiltonian and Wannier Hamiltonian ([OpenMX](http://www.openmx-square.org/)/[Wannier90](http://www.wannier.org/))
 
