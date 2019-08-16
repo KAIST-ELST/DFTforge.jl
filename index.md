@@ -73,9 +73,6 @@ julia install.jl
 * Jx: An open-source software for calculating magnetic interactions based on magnetic force theory (submitted to journal of computational physics, under review)
 # Developer
 [Hongkee Yoon](https://github.com/bluehope)
-# Funding source
-
-![NRF](http://www.nrf.re.kr/resources/img/icon/icon_eng_logo.png) 
 
 ---
 
