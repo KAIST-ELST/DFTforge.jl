@@ -4,7 +4,7 @@ layout: default
 ![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true) 
 
 ##### Please stay tuned. To be officially released soon via GitHub!
-We are waiting few more Julia packages to be stabilized.
+We are waiting few more Julia packages to be stabilized. Test
 
 # MFT (Magentic force theory)
 
