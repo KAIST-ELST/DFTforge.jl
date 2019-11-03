@@ -16,7 +16,7 @@ It also supports caching the Eigenvalue, Eigenvector results for well-paralleliz
 ### DFTforge
 The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT results.
 
- * read DFT results from [OpenMX](http://www.openmx-square.org/), Wannier90(http://www.wannier.org/), EcalJ
+ * read DFT results from [OpenMX](http://www.openmx-square.org/), [Wannier90](http://www.wannier.org/), EcalJ
  * Calculate Phi, Enk, Hks,
  * Generalised arguments parser (support TOML sytle input).
 
