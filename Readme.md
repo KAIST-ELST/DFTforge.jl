@@ -2,10 +2,9 @@
 - 2019.11 works with Julia 1.0 & 1.1 & 1.2
 - https://kaist-elst.github.io/DFTforge.jl/
 
-# Quick start
-
-
 ![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true)  ![Julia1.2](https://img.shields.io/badge/Julia-1.2-blue.svg?longCache=true)
+
+The backend package for MFT code [Jx](https://kaist-elst.github.io/Jx.jl/).
 
 # DFTforge: the DFT postprocessing environment
 Simplify obtaining Hamiltonian, Eigenvalue, Eigenvector from DFT results, and Pre-caching them for parallelized calculations.
@@ -22,6 +21,7 @@ The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT result
  * K-point representation in INT (for unique K,Q).
  * Gennerate K-points.
  * Generalised argument parser (support TOML sytle input).
+
 
 
 [Homepage & How to use](https://kaist-elst.github.io/DFTforge.jl/)
