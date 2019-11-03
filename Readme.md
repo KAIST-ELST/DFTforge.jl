@@ -1,32 +1,28 @@
 - Hongkee Yoon Hongkeeyoon@kaist.ac.kr
-- 2019.05 works with Julia 1.0 & 1.1
+- 2019.11 works with Julia 1.0 & 1.1 & 1.2
 - https://kaist-elst.github.io/DFTforge.jl/
 
 # Quick start
-## How to install
-- ./install.sh
-## How to run example
-- ./example_NiO_OpenMX.sh
 
 
-![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.0](https://img.shields.io/badge/Julia-0.7-blue.svg?longCache=true)
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true)  ![Julia1.2](https://img.shields.io/badge/Julia-1.2-blue.svg?longCache=true)
+
+# DFTforge: the DFT postprocessing environment
+Simplify obtaining Hamiltonian, Eigenvalue, Eigenvector from DFT results, and Pre-caching them for parallelized calculations.
+Pre-cached results are easy to use when calculating in k and q space.
+
+
+## DFTforge
+The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT results.
+
+ * read DFT results from OpenMX, Wannier90
+ * Calculate Phi, Enk, Hks,
+
+### Etc. functionalities
+ * K-point representation in INT (for unique K,Q).
+ * Gennerate K-points.
+ * Generalised argument parser (support TOML sytle input).
+
 
 [Homepage & How to use](https://kaist-elst.github.io/DFTforge.jl/)
 
-
-# MFT (Magentic force theory)
-
-![Jx](docs/Logo_text.svg){: height="100px" }
-
-
-
-**JX** Calculate spin exchange coupling parameters *J* from [OpenMX](http://www.openmx-square.org/) DFT/Wannier, [Wannier90](http://www.wannier.org/) hamiltonians via linear-response theory.
-
-We support the following features:
-- J in momentum space.
-- Orbital resolved *J*
-- Local axis redefinition for orbital resolved *J*
-- Full [OpenMX](http://www.openmx-square.org/) DFT Hamiltonian and Wannier Hamiltonian ([OpenMX](http://www.openmx-square.org/)/[Wannier90](http://www.wannier.org/))
-
-![Logo](docs/Logo.svg)
----
