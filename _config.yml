@@ -1,5 +1,5 @@
 title: JX
-description: J-eXchange, MFT (Magnetic force theory) based spin exchange calculation from Full OpenMX DFT/Wannier Hamiltonian.
+description: DFTforge. DFT postprocessing environment which handles full OpenMX DFT/Wannier Hamiltonian.
 show_downloads: false
 google_analytics: UA-124422384-1 
 theme: jekyll-theme-slate
