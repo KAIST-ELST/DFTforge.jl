@@ -1,79 +1,47 @@
 ---
 layout: default
 ---
-![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true) 
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true) ![Julia1.2](https://img.shields.io/badge/Julia-1.2-blue.svg?longCache=true) 
 
-##### Please stay tuned. To be officially released soon via GitHub!
-We are waiting few more Julia packages to be stabilized.
+# This is the backend project for https://github.com/KAIST-ELST/Jx.jl
 
-# MFT (Magentic force theory)
+## How to install?
+1. Install Julia (1.0 or above)
 
-![Jx](docs/Logo_text.svg){: height="100px" }
+Visit [https://julialang.org/](https://julialang.org/) for details.
 
-
-
-**JX** Calculate spin exchange coupling parameters *J* from [OpenMX](http://www.openmx-square.org/) DFT/Wannier, [Wannier90](http://www.wannier.org/) hamiltonians via linear-response theory.
-
-We support the following features:
-- *J* in momentum space.
-- *J* coupling matrix (Orbital resolved interactions)
-- Local axis redefinition for orbital resolved *J*
-- Calculation form full [OpenMX](http://www.openmx-square.org/) DFT Hamiltonian and Wannier Hamiltonian ([OpenMX](http://www.openmx-square.org/)/[Wannier90](http://www.wannier.org/)). Custom Hamilton interfaces are easy to add.
-
-![Logo](docs/Logo.svg){: height="200px" }
-![CrI3](docs/J_orbital_cri3.png){: height="200px" }
-
----
-# Quick-Start
-
-### Install Julia ([https://julialang.org/](https://julialang.org/))
-
-Julia was designed from the beginning for high performance. Julia programs compile to efficient native code for multiple platforms via LLVM.
-[See Julia benchmark compared to C, Fortran, Pythons, Matlab & more...](https://julialang.org/benchmarks/).
-
-**Currently we support latest Julia 1.0/1.1.**
-
- * For Linux system:
-
-[Using Julia auto-installer for Linux](https://github.com/abelsiqueira/jill)
-
- ```bash
-echo 'export PATH=~/opt/bin:$PATH' >>~/.profile
-echo 'export PATH=~/opt/bin:$PATH' >>~/.bashrc
-JULIA_INSTALL=~/opt/bin bash -ci "$(curl –fsSL https://raw.githubusercontent.com/abelsiqueira/jill/master/jill.sh)"
- ```
-
- * For OSX or Windows see: [Julia Download](https://julialang.org/downloads/)
-
-### Install DFTforge
-```bash
-git clone github.com/KAIST-ELST/DFTforge.jl
-julia install.jl
+2. Excute the [Julia](https://julialang.org/) and type:
+```julia
+import Pkg
+Pkg.add("DFTforge")
 ```
+All done!
 
-### Run example
-
-#### G-type AFM (anti ferromagnetic) NiO example
-```bash
-./example_NiO_OpenMX.sh
-```
-
-
-
----
-# Publications
-
-* [Reliability and applicability of magnetic-force linear response theory: Numerical parameters, predictability, and orbital resolution (2018) PhysRevB](https://doi.org/10.1103/PhysRevB.97.125132)
-* [Calculating magnetic interactions in organic electrides (2018) PhysRevB](https://doi.org/10.1103/PhysRevB.97.214431)
-* [Charge density functional plus U theory of LaMnO3: Phase diagram, electronic structure, and magnetic interaction (2018) PhysRevB.98.125126 ](https://doi.org/10.1103/PhysRevB.98.125126)
-* [Microscopic understanding of magnetic interactions in bilayer CrI3 (2019) PhysRevM ](https://doi.org/10.1103/PhysRevMaterials.3.031001)
-* [Magnetic force theory combined with quasi-particle self-consistent GW method (2019) JPCM](https://doi.org/10.1088/1361-648X/ab2b7e)
-* [On the origin and the manipulation of ferromagnetism in Fe3GeTe2: defects and dopings (2019) submitted](http://arxiv.org/abs/1904.04510)
-
-* Jx: An open-source software for calculating magnetic interactions based on magnetic force theory (submitted to journal of computational physics, under review)
-# Developer
-[Hongkee Yoon](https://github.com/bluehope)
-
----
+## DFT postprocessing environment
+Simplify obtaining Hamiltonian, Eigenvalue, Eigenvector from DFT results and Pre-caching them for parallelized calculations.
+Pre-caching results are easy to use when calculating in k and q space.
+ * It consists of two parts DFTforge & DFTrefinery.
+ 
 
 
+### DFTforge
+The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT results.
+
+ * read DFT results from OpenMX, Wannier90(?), EcalJ(?)
+ * Calculate Phi, Enk, Hks,
+
+#### Etc. functionalities
+ * K-point representation in INT (for unique K,Q).
+ * Gennerate K-points.
+ * Generalised argument parser (support TOML sytle input).
+
+
+
+### DFTrefinery
+use DFTforge for calcuating various properties
+Wrapper module for easy access of DFT-forge, especially easy use of HDF5 cached eigenstate information.
+
+ * Store Eigenvalues & Eigenvectors in HDF5 format (K,Q)
+ * Read Stored Eigenvalues & Eigenvectors
+ * Simple interface for K space, K,Q space calucations
+ ** Generalised parallelized K,Q space calculation function wrapper.
