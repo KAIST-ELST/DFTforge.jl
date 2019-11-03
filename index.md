@@ -7,33 +7,34 @@ layout: default
 
 # What is the DFTforge?
 The [DFTforge](https://github.com/KAIST-ELST/DFTforge.jl/) is the backend project for MFT code https://github.com/KAIST-ELST/Jx.jl
+All codes are based on [Julia](https://julialang.org/).
 
 ## DFT postprocessing environment
-Simplify obtaining Hamiltonian, Eigenvalue, Eigenvector from DFT results and Pre-caching them for parallelized calculations.
-Pre-caching results are easy to use when calculating in k and q space.
- * It consists of two parts DFTforge & DFTrefinery.
+DFTforge simplifies obtaining Hamiltonian, Eigenvalue, Eigenvector from DFT results.
+It also supports caching the Eigenvalue, Eigenvector results for well-parallelized calculations.
 
 ### DFTforge
 The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT results.
 
- * read DFT results from OpenMX, Wannier90(?), EcalJ(?)
+ * read DFT results from [OpenMX](http://www.openmx-square.org/), Wannier90(http://www.wannier.org/), EcalJ
  * Calculate Phi, Enk, Hks,
-
-#### Etc. functionalities
- * K-point representation in INT (for unique K,Q).
- * Gennerate K-points.
- * Generalised argument parser (support TOML sytle input).
-
+ * Generalised arguments parser (support TOML sytle input).
 
 
 ### DFTrefinery
 use DFTforge for calcuating various properties
-Wrapper module for easy access of DFT-forge, especially easy use of HDF5 cached eigenstate information.
+Wrapper module for easy access of DFTforge, especially easy use of HDF5 cached eigenstate information.
 
  * Store Eigenvalues & Eigenvectors in HDF5 format (K,Q)
  * Read Stored Eigenvalues & Eigenvectors
  * Simple interface for K space, K,Q space calucations
  ** Generalised parallelized K,Q space calculation function wrapper.
+
+## Why Julia?
+
+Julia was designed from the beginning for high performance. Julia programs compile to efficient native code for multiple platforms via LLVM.
+[See Julia benchmark compared to C, Fortran, Pythons, Matlab & more...](https://julialang.org/benchmarks/).
+
 
 # How to install?
 1. Install Julia (1.0 or above)
