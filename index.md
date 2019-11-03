@@ -37,11 +37,11 @@ Julia was designed from the beginning for high performance. Julia programs compi
 
 
 # How to install?
-1. Install Julia (1.0 or above)
 
+## Install Julia (1.0 or above)
 Visit [https://julialang.org/](https://julialang.org/) for details.
 
-2. Excute the [Julia](https://julialang.org/) and type:
+## Excute the [Julia](https://julialang.org/) and type:
 ```julia
 import Pkg
 Pkg.add("DFTforge")
