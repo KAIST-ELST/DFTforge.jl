@@ -6,7 +6,7 @@ layout: default
 
 
 # What is the DFTforge?
-The [DFTforge](https://github.com/KAIST-ELST/DFTforge.jl/) is the backend project for MFT code [https://github.com/KAIST-ELST/Jx.jl](https://github.com/KAIST-ELST/Jx.jl)
+The [DFTforge](https://github.com/KAIST-ELST/DFTforge.jl/) is the backend project for MFT code [https://github.com/KAIST-ELST/Jx.jl](https://kaist-elst.github.io/Jx.jl/)
 All codes are based on [Julia](https://julialang.org/).
 
 ## DFT postprocessing environment
