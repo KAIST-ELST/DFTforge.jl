@@ -619,7 +619,7 @@ function cacheread_kpoint2q_index(k_point::k_point_Tuple,cache_index=1)
 end
 function cacheread_eigenstate(k_point::k_point_Tuple,spin,cache_index=1)
   global eigenstate_list;
-  global orbital_mask1,orbital_mask2,orbital_mask_on
+  global orbital_selection1,orbital_selection2,orbital_selection_on
 
   #k_point_int = k_point_float2int(kPoint2BrillouinZone_Tuple(k_point));
 
@@ -666,7 +666,7 @@ end
 
 function cacheread_eigenstate_as_nc(k_point::k_point_Tuple,spin,cache_index=1)
   global eigenstate_list;
-  global orbital_mask1,orbital_mask2,orbital_mask_on
+  global orbital_selection1,orbital_selection2,orbital_selection_on
 
   #k_point_int = k_point_float2int(kPoint2BrillouinZone_Tuple(k_point));
 
