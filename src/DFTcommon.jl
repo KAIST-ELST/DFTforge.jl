@@ -30,7 +30,7 @@ export kPoint_gen_EquallySpaced,kPoint_gen_GammaCenter
 export pwork
 export k_point_precision
 
-export orbital_mask_input_Type,orbital_mask_enum
+export orbital_selection_input_Type,orbital_selection_enum
 export parse_input,Arg_Inputs,parse_TOML,read_toml
 export kPath_band,Arg_Inputs_Band
 
@@ -80,7 +80,7 @@ Complex_my = ComplexF64  #ComplexF64
 k_point_Tuple = Tuple{Float64,Float64,Float64};
 k_point_int_Tuple = Tuple{Int64,Int64,Int64};
 k_point_rational_Tuple = Tuple{Rational{Int64},Rational{Int64},Rational{Int64}};
-@enum orbital_mask_enum nomask=0 unmask=1 mask=2
+@enum orbital_selection_enum nomask=0 unmask=1 mask=2
 
 export mpirun_type, excute_cmd, excute_mpi_cmd
 @enum mpirun_type mvapich = 1 openmpi = 2
@@ -228,60 +228,60 @@ end
 
 
 atom12_Tuple = Tuple{Int64,Int64};
-struct orbital_mask_input_Type
-    orbital_mask1::Array{Int64,1}
-    orbital_mask2::Array{Int64,1}
+struct orbital_selection_input_Type
+    orbital_selection1::Array{Int64,1}
+    orbital_selection2::Array{Int64,1}
 
-    orbital_mask3::Array{Int64,1}
-    orbital_mask4::Array{Int64,1}
+    orbital_selection3::Array{Int64,1}
+    orbital_selection4::Array{Int64,1}
     atom12::atom12_Tuple
-    orbital_mask_on::Bool
+    orbital_selection_on::Bool
 
-    function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},
-      atom12::atom12_Tuple,orbital_mask_on::Bool)
+    function orbital_selection_input_Type(orbital_selection1::Array{Int64,1}, orbital_selection2::Array{Int64,1},
+      atom12::atom12_Tuple,orbital_selection_on::Bool)
 
-      new(orbital_mask1,orbital_mask2,Array{Int64}(undef,0),Array{Int64}(undef,0),
-        atom12,orbital_mask_on)
+      new(orbital_selection1,orbital_selection2,Array{Int64}(undef,0),Array{Int64}(undef,0),
+        atom12,orbital_selection_on)
     end
-    function orbital_mask_input_Type(orbital_mask1::Array{Int64,1}, orbital_mask2::Array{Int64,1},
-      orbital_mask3::Array{Int64,1}, orbital_mask4::Array{Int64,1},
-      atom12::atom12_Tuple,orbital_mask_on::Bool)
+    function orbital_selection_input_Type(orbital_selection1::Array{Int64,1}, orbital_selection2::Array{Int64,1},
+      orbital_selection3::Array{Int64,1}, orbital_selection4::Array{Int64,1},
+      atom12::atom12_Tuple,orbital_selection_on::Bool)
 
-      new(orbital_mask1,orbital_mask2,orbital_mask3,orbital_mask4,
-        atom12,orbital_mask_on)
+      new(orbital_selection1,orbital_selection2,orbital_selection3,orbital_selection4,
+        atom12,orbital_selection_on)
     end
 end
 
-function orbital_mask_inv(orbital_mask1,atom1_orbitalNum,)
-  orbital_mask1_inv = Array{Int64,1}();
-  if (nomask == orbital_mask_option)
-      if ( 0 < length(orbital_mask1))
+function orbital_selection_inv(orbital_selection1,atom1_orbitalNum,)
+  orbital_selection1_inv = Array{Int64,1}();
+  if (nomask == orbital_selection_option)
+      if ( 0 < length(orbital_selection1))
           println("INFO: Orbital masking options only works with --ommode 1 or 2")
       end
-      orbital_mask1 = Array{Int64,1}();
-      orbital_mask_name = "";
+      orbital_selection1 = Array{Int64,1}();
+      orbital_selection_name = "";
   else
-      orbital_mask_on = true;
-      if (unmask ==  orbital_mask_option) # inverse selection
+      orbital_selection_on = true;
+      if (unmask ==  orbital_selection_option) # inverse selection
 
-          orbital_mask1_tmp = collect(1:atom1_orbitalNum);
+          orbital_selection1_tmp = collect(1:atom1_orbitalNum);
 
-          for orbit1 in orbital_mask1
-              deleteat!(orbital_mask1_tmp, find(orbital_mask1_tmp.==orbit1))
+          for orbit1 in orbital_selection1
+              deleteat!(orbital_selection1_tmp, find(orbital_selection1_tmp.==orbit1))
           end
 
-          orbital_mask1 = orbital_mask1_tmp;
+          orbital_selection1 = orbital_selection1_tmp;
 
       end
-      ## orbital_mask1_inv are only used for file saving
+      ## orbital_selection1_inv are only used for file saving
       for orbit1 = 1:atom1_orbitalNum
-          if (0==length(find( orbital_mask1.== orbit1)))
-              push!(orbital_mask1_inv,orbit1);
+          if (0==length(find( orbital_selection1.== orbit1)))
+              push!(orbital_selection1_inv,orbit1);
           end
       end
 
   end
-  return orbital_mask1_inv;
+  return orbital_selection1_inv;
 end
 
 

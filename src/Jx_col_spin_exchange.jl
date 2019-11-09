@@ -36,20 +36,20 @@ using Statistics
 
 hdftmpdir = ""
 ## 1.1 Set Default values
-#orbital_mask1 = Array{Int64,1}();
-#orbital_mask2 = Array{Int64,1}();
-orbital_mask1_list = Array{Array{Int}}(undef,0);
-orbital_mask1_names = Array{AbstractString}(undef,0);
-orbital_mask2_list = Array{Array{Int}}(undef,0);
-orbital_mask2_names = Array{AbstractString}(undef,0);
+#orbital_selection1 = Array{Int64,1}();
+#orbital_selection2 = Array{Int64,1}();
+orbital_selection1_list = Array{Array{Int}}(undef,0);
+orbital_selection1_names = Array{AbstractString}(undef,0);
+orbital_selection2_list = Array{Array{Int}}(undef,0);
+orbital_selection2_names = Array{AbstractString}(undef,0);
 
-orbital_mask3_list = Array{Array{Int}}(undef,0);
-orbital_mask3_names = Array{AbstractString}(undef,0);
-orbital_mask4_list = Array{Array{Int}}(undef,0);
-orbital_mask4_names = Array{AbstractString}(undef,0);
+orbital_selection3_list = Array{Array{Int}}(undef,0);
+orbital_selection3_names = Array{AbstractString}(undef,0);
+orbital_selection4_list = Array{Array{Int}}(undef,0);
+orbital_selection4_names = Array{AbstractString}(undef,0);
 
-orbital_mask_option = DFTcommon.nomask;
-orbital_mask_on = false;
+orbital_selection_option = DFTcommon.nomask;
+orbital_selection_on = false;
 
 band_selection_on = false;
 band_selection_upper = 0;
@@ -88,26 +88,26 @@ atom12_list = arg_input.atom12_list;
 hdftmpdir = arg_input.hdftmpdir;
 
 # orbital mask
-orbital_mask_option = arg_input.orbital_mask_option;
+orbital_selection_option = arg_input.orbital_selection_option;
 
-orbital_mask1_list = arg_input.orbital_mask1_list;
-orbital_mask1_names = arg_input.orbital_mask1_names;
-orbital_mask2_list = arg_input.orbital_mask2_list;
-orbital_mask2_names = arg_input.orbital_mask2_names;
+orbital_selection1_list = arg_input.orbital_selection1_list;
+orbital_selection1_names = arg_input.orbital_selection1_names;
+orbital_selection2_list = arg_input.orbital_selection2_list;
+orbital_selection2_names = arg_input.orbital_selection2_names;
 
-orbital_mask3_list = arg_input.orbital_mask3_list;
-orbital_mask3_names = arg_input.orbital_mask3_names;
-orbital_mask4_list = arg_input.orbital_mask4_list;
-orbital_mask4_names = arg_input.orbital_mask4_names;
+orbital_selection3_list = arg_input.orbital_selection3_list;
+orbital_selection3_names = arg_input.orbital_selection3_names;
+orbital_selection4_list = arg_input.orbital_selection4_list;
+orbital_selection4_names = arg_input.orbital_selection4_names;
 
-println(orbital_mask1_list," ",orbital_mask1_names)
-println(orbital_mask2_list," ",orbital_mask2_names)
-println(orbital_mask3_list," ",orbital_mask3_names)
-println(orbital_mask4_list," ",orbital_mask4_names)
-@assert(length(orbital_mask1_list) == length(orbital_mask1_names));
-@assert(length(orbital_mask2_list) == length(orbital_mask2_names));
-@assert(length(orbital_mask3_list) == length(orbital_mask3_names));
-@assert(length(orbital_mask4_list) == length(orbital_mask4_names));
+println(orbital_selection1_list," ",orbital_selection1_names)
+println(orbital_selection2_list," ",orbital_selection2_names)
+println(orbital_selection3_list," ",orbital_selection3_names)
+println(orbital_selection4_list," ",orbital_selection4_names)
+@assert(length(orbital_selection1_list) == length(orbital_selection1_names));
+@assert(length(orbital_selection2_list) == length(orbital_selection2_names));
+@assert(length(orbital_selection3_list) == length(orbital_selection3_names));
+@assert(length(orbital_selection4_list) == length(orbital_selection4_names));
 # Band selection
 if haskey(arg_input.Optional,"band_selection")
   band_selection_on =  arg_input.Optional["band_selection"]
@@ -115,9 +115,9 @@ if haskey(arg_input.Optional,"band_selection")
   band_selection_upper =  arg_input.Optional["band_selection_boundary"][2]
 end
 
-if ((DFTcommon.unmask == orbital_mask_option) || (DFTcommon.mask == orbital_mask_option) )
- #orbital_mask_name = arg_input.orbital_mask_name
- orbital_mask_on = true
+if ((DFTcommon.unmask == orbital_selection_option) || (DFTcommon.mask == orbital_selection_option) )
+ #orbital_selection_name = arg_input.orbital_selection_name
+ orbital_selection_on = true
 end
 
 # Energy windows selection
@@ -154,8 +154,8 @@ println(DFTcommon.bar_string) # print ====...====
 println("atom12_list: ",atom12_list)
 println("q_point_num ",q_point_num, "\tk_point_num ",k_point_num)
 println(string("DFT_type ",DFT_type))
-println(string("orbital_mask_option ",orbital_mask_option))
-println("mask1list ",orbital_mask1_list,"\tmask2list ",orbital_mask2_list)
+println(string("orbital_selection_option ",orbital_selection_option))
+println("mask1list ",orbital_selection1_list,"\tmask2list ",orbital_selection2_list)
 println("basisTransform", basisTransform_rule)
 
 
@@ -232,25 +232,25 @@ DFTforge.pwork(cacheset,eigenstate_cache)
 ##############################################################################
 ## 3. Setup extra infos (orbital, chemp shift)
 ##############################################################################
-@everywhere function init_orbital_mask(orbital_mask_input::orbital_mask_input_Type)
-    global orbital_mask1,orbital_mask2,orbital_mask_on
-    global orbital_mask3,orbital_mask4
-    global orbital_mask1 = Array{Int64,1}();
-    global orbital_mask2 = Array{Int64,1}();
+@everywhere function init_orbital_selection(orbital_selection_input::orbital_selection_input_Type)
+    global orbital_selection1,orbital_selection2,orbital_selection_on
+    global orbital_selection3,orbital_selection4
+    global orbital_selection1 = Array{Int64,1}();
+    global orbital_selection2 = Array{Int64,1}();
 
-    global orbital_mask3 = Array{Int64,1}();
-    global orbital_mask4 = Array{Int64,1}();
-    if (orbital_mask_input.orbital_mask_on)
-        global orbital_mask1 = orbital_mask_input.orbital_mask1;
-        global orbital_mask2 = orbital_mask_input.orbital_mask2;
+    global orbital_selection3 = Array{Int64,1}();
+    global orbital_selection4 = Array{Int64,1}();
+    if (orbital_selection_input.orbital_selection_on)
+        global orbital_selection1 = orbital_selection_input.orbital_selection1;
+        global orbital_selection2 = orbital_selection_input.orbital_selection2;
 
-        global orbital_mask3 = orbital_mask_input.orbital_mask3;
-        global orbital_mask4 = orbital_mask_input.orbital_mask4;
-        global orbital_mask_on = true;
+        global orbital_selection3 = orbital_selection_input.orbital_selection3;
+        global orbital_selection4 = orbital_selection_input.orbital_selection4;
+        global orbital_selection_on = true;
     else
-        global orbital_mask_on = false;
+        global orbital_selection_on = false;
     end
-    #println(orbital_mask1)
+    #println(orbital_selection1)
 end
 @everywhere function init_variables(Input_ChemP_delta_ev ,Input_band_selection_on, Input_band_selection_lower, Input_band_selection_upper,
     energywindow_all1234_list)
@@ -280,8 +280,8 @@ end
 num_return = 8; #local scope
 
 @everywhere function Magnetic_Exchange_J_colinear(input::Job_input_kq_atom_list_Type)
-  global orbital_mask1,orbital_mask2,orbital_mask_on
-  global orbital_mask3,orbital_mask4
+  global orbital_selection1,orbital_selection2,orbital_selection_on
+  global orbital_selection3,orbital_selection4
   global ChemP_delta_ev, band_selection_on, band_selection_lower, band_selection_upper;
   global energywindow_all_list, energywindow_1_list, energywindow_2_list, energywindow_3_list, energywindow_4_list;
   #global SmallHks;
@@ -428,38 +428,38 @@ num_return = 8; #local scope
 
     # Orbital mask
 
-    if (length(orbital_mask1)>0)
-      orbital_mask1_tmp = collect(1:orbitalNums[atom1]);
-      for orbit1 in orbital_mask1
-          deleteat!(orbital_mask1_tmp, findall(orbital_mask1_tmp .== orbit1))
+    if (length(orbital_selection1)>0)
+      orbital_selection1_tmp = collect(1:orbitalNums[atom1]);
+      for orbit1 in orbital_selection1
+          deleteat!(orbital_selection1_tmp, findall(orbital_selection1_tmp .== orbit1))
       end
-      Es_n_k_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask1_tmp,:]   .= 0.0;
-      Es_n_k_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask1_tmp,:] .= 0.0;
+      Es_n_k_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_selection1_tmp,:]   .= 0.0;
+      Es_n_k_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_selection1_tmp,:] .= 0.0;
     end
-    if (length(orbital_mask3)>0)
-      orbital_mask3_tmp = collect(1:orbitalNums[atom1]);
-      for orbit3 in orbital_mask3
-          deleteat!(orbital_mask3_tmp, findall(orbital_mask3_tmp .== orbit3))
+    if (length(orbital_selection3)>0)
+      orbital_selection3_tmp = collect(1:orbitalNums[atom1]);
+      for orbit3 in orbital_selection3
+          deleteat!(orbital_selection3_tmp, findall(orbital_selection3_tmp .== orbit3))
       end
-      Es_m_kq_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:]   .= 0.0;
-      Es_m_kq_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_mask3_tmp,:] .= 0.0;
+      Es_m_kq_up_atom1[orbitalStartIdx_list[atom1] .+ orbital_selection3_tmp,:]   .= 0.0;
+      Es_m_kq_down_atom1[orbitalStartIdx_list[atom1] .+ orbital_selection3_tmp,:] .= 0.0;
     end
 
-    if (length(orbital_mask2)>0)
-      orbital_mask2_tmp = collect(1:orbitalNums[atom2]);
-      for orbit2 in orbital_mask2
-          deleteat!(orbital_mask2_tmp, findall(orbital_mask2_tmp .== orbit2))
+    if (length(orbital_selection2)>0)
+      orbital_selection2_tmp = collect(1:orbitalNums[atom2]);
+      for orbit2 in orbital_selection2
+          deleteat!(orbital_selection2_tmp, findall(orbital_selection2_tmp .== orbit2))
       end
-      Es_n_k_up_atom2[orbitalStartIdx_list[atom2]   .+ orbital_mask2_tmp,:] .= 0.0;
-      Es_n_k_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask2_tmp,:] .= 0.0;
+      Es_n_k_up_atom2[orbitalStartIdx_list[atom2]   .+ orbital_selection2_tmp,:] .= 0.0;
+      Es_n_k_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_selection2_tmp,:] .= 0.0;
     end
-    if (length(orbital_mask4)>0)
-      orbital_mask4_tmp = collect(1:orbitalNums[atom2]);
-      for orbit4 in orbital_mask4
-          deleteat!(orbital_mask4_tmp, findall(orbital_mask4_tmp .== orbit4))
+    if (length(orbital_selection4)>0)
+      orbital_selection4_tmp = collect(1:orbitalNums[atom2]);
+      for orbit4 in orbital_selection4
+          deleteat!(orbital_selection4_tmp, findall(orbital_selection4_tmp .== orbit4))
       end
-      Es_m_kq_up_atom2[orbitalStartIdx_list[atom2]   .+ orbital_mask4_tmp,:] .= 0.0;
-      Es_m_kq_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_mask4_tmp,:] .= 0.0;
+      Es_m_kq_up_atom2[orbitalStartIdx_list[atom2]   .+ orbital_selection4_tmp,:] .= 0.0;
+      Es_m_kq_down_atom2[orbitalStartIdx_list[atom2] .+ orbital_selection4_tmp,:] .= 0.0;
     end
 
     ## Do auctual calucations
@@ -560,24 +560,24 @@ end
 
 
 ## 4.1 Do K,Q sum
-# for orbital_mask1_list,orbital_mask2_list combinations
+# for orbital_selection1_list,orbital_selection2_list combinations
 
-for (orbital1_i,orbital_mask1_local) in enumerate(orbital_mask1_list)
-  for (orbital2_i,orbital_mask2_local) in enumerate(orbital_mask2_list)
+for (orbital1_i,orbital_selection1_local) in enumerate(orbital_selection1_list)
+  for (orbital2_i,orbital_selection2_local) in enumerate(orbital_selection2_list)
 
-    for (orbital3_i,orbital_mask3_local) in enumerate(orbital_mask3_list)
-      for (orbital4_i,orbital_mask4_local) in enumerate(orbital_mask4_list)
-        orbital_mask_input = orbital_mask_input_Type(orbital_mask1_local,orbital_mask2_local,
-          orbital_mask3_local,orbital_mask4_local,(-1,-1),false)
-        if (orbital_mask_on)
-            orbital_mask_input = orbital_mask_input_Type(orbital_mask1_local,orbital_mask2_local,
-            orbital_mask3_local,orbital_mask4_local,(-1,-1),true)
+    for (orbital3_i,orbital_selection3_local) in enumerate(orbital_selection3_list)
+      for (orbital4_i,orbital_selection4_local) in enumerate(orbital_selection4_list)
+        orbital_selection_input = orbital_selection_input_Type(orbital_selection1_local,orbital_selection2_local,
+          orbital_selection3_local,orbital_selection4_local,(-1,-1),false)
+        if (orbital_selection_on)
+            orbital_selection_input = orbital_selection_input_Type(orbital_selection1_local,orbital_selection2_local,
+            orbital_selection3_local,orbital_selection4_local,(-1,-1),true)
         end
-        orbital_mask_name = orbital_mask1_names[orbital1_i]*"_"*orbital_mask2_names[orbital2_i]*"__"*
-          orbital_mask3_names[orbital3_i]*"__"*orbital_mask4_names[orbital4_i];
+        orbital_selection_name = orbital_selection1_names[orbital1_i]*"_"*orbital_selection2_names[orbital2_i]*"__"*
+          orbital_selection3_names[orbital3_i]*"__"*orbital_selection4_names[orbital4_i];
         println(DFTcommon.bar_string) # print ====...====
-        println(orbital_mask_name," mask1 ",orbital_mask1_local,"\tmask2 ",orbital_mask2_local,
-        "\tmask3 ",orbital_mask3_local,"\tmask4 ",orbital_mask4_local)
+        println(orbital_selection_name," mask1 ",orbital_selection1_local,"\tmask2 ",orbital_selection2_local,
+        "\tmask3 ",orbital_selection3_local,"\tmask4 ",orbital_selection4_local)
 
         # setup extra info
         energywindow_all1234_list = [
@@ -585,7 +585,7 @@ for (orbital1_i,orbital_mask1_local) in enumerate(orbital_mask1_list)
           energywindow_1_list,energywindow_2_list,
           energywindow_3_list,energywindow_4_list
          ]
-        DFTforge.pwork(init_orbital_mask,orbital_mask_input)
+        DFTforge.pwork(init_orbital_selection,orbital_selection_input)
         DFTforge.pwork(init_variables,ChemP_delta_ev,band_selection_on, band_selection_lower, band_selection_upper, energywindow_all1234_list)
 
         (X_Q_nc,X_Q_mean_nc) = Qspace_Ksum_atomlist_parallel(Magnetic_Exchange_J_colinear,
@@ -621,13 +621,13 @@ for (orbital1_i,orbital_mask1_local) in enumerate(orbital_mask1_list)
         optionalOutputDict["VERSION_Spin_Exchange"] = string(X_VERSION);
 
         export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,q_point_list,k_point_list,atom12_list,
-        orbital_mask_on,
-        orbital_mask1_local,orbital_mask2_local,orbital_mask3_local,orbital_mask4_local,
+        orbital_selection_on,
+        orbital_selection1_local,orbital_selection2_local,orbital_selection3_local,orbital_selection4_local,
         energywindow_all1234_list,
         ChemP_delta_ev,
         optionalOutputDict,
         jq_output_dir,cal_name,
-        orbital_mask_name,cal_type);
+        orbital_selection_name,cal_type);
       end
     end
   end

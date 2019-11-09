@@ -32,18 +32,18 @@ mutable struct Arg_Inputs
   atom12_list::Vector{Tuple{Int64,Int64}}
   k_point_num::Array{Int,1}
   q_point_num::Array{Int,1}
-  orbital_mask1_list::Array{Array{Int}}
-  orbital_mask1_names::Array{AbstractString,1}
-  orbital_mask2_list::Array{Array{Int}}
-  orbital_mask2_names::Array{AbstractString,1}
+  orbital_selection1_list::Array{Array{Int}}
+  orbital_selection1_names::Array{AbstractString,1}
+  orbital_selection2_list::Array{Array{Int}}
+  orbital_selection2_names::Array{AbstractString,1}
 
-  orbital_mask3_list::Array{Array{Int}}
-  orbital_mask3_names::Array{AbstractString,1}
-  orbital_mask4_list::Array{Array{Int}}
-  orbital_mask4_names::Array{AbstractString,1}
+  orbital_selection3_list::Array{Array{Int}}
+  orbital_selection3_names::Array{AbstractString,1}
+  orbital_selection4_list::Array{Array{Int}}
+  orbital_selection4_names::Array{AbstractString,1}
 
-  orbital_mask_option::orbital_mask_enum
-  #orbital_mask_name
+  orbital_selection_option::orbital_selection_enum
+  #orbital_selection_name
 
 
   Hmode::nc_Hamiltonian_selection
@@ -61,8 +61,8 @@ mutable struct Arg_Inputs
   -1,-1,[(-1,-1)],[2,2,2],[2,2,2],
     convert(Array{Array{Int}}, [[]]),["all"],
     convert(Array{Array{Int}}, [[]]),["all"],
-    convert(Array{Array{Int}}, [[]]),["all"], #orbital_mask3_list,orbital_mask3_names
-    convert(Array{Array{Int}}, [[]]),["all"], #orbital_mask4_list,orbital_mask4_names
+    convert(Array{Array{Int}}, [[]]),["all"], #orbital_selection3_list,orbital_selection3_names
+    convert(Array{Array{Int}}, [[]]),["all"], #orbital_selection4_list,orbital_selection4_names
     nomask,nc_allH,"",0.0,"",
     Vector{k_point_Tuple}(undef,0),NULLDFT,NULLWANNIER,Wannier_OptionalInfo(),
     colinear_type,
@@ -395,30 +395,56 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       #println(toml_inputs["orbitals"])
       if (haskey(toml_inputs["orbitals"],"orbitalselection"))
         if (toml_inputs["orbitals"]["orbitalselection"])
-          input.orbital_mask_option = unmask
-          #input.orbital_mask_name = "masked"
+          input.orbital_selection_option = unmask
+          #input.orbital_selection_name = "masked"
+
+
           if (haskey(toml_inputs["orbitals"],"orbital_mask_option"))
+
             if ("unmask" == lowercase(toml_inputs["orbitals"]["orbital_mask_option"]))
-              input.orbital_mask_option = unmask
+              input.orbital_selection_option = unmask
             elseif ("mask" == lowercase(toml_inputs["orbitals"]["orbital_mask_option"]))
-              input.orbital_mask_option = mask
+              input.orbital_selection_option = mask
             end
+
+
+          end
+
+          ## The option keyword 'orbital_mask_option' -> renamed to 'orbital_selection_option' 201905
+          if (haskey(toml_inputs["orbitals"],"orbital_mask1_list"))
+            input.orbital_selection1_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask1_list"])
+            input.orbital_selection1_names = split(toml_inputs["orbitals"]["orbital_mask1_names"],r"\[|\]|,",keepempty=false)
+            input.orbital_selection2_list = convert(Array{Array{Int}},toml_inputs["orbitals"]["orbital_mask2_list"])
+            input.orbital_selection2_names = split(toml_inputs["orbitals"]["orbital_mask2_names"],r"\[|\]|,",keepempty=false)
+          end
+
+          if (haskey(toml_inputs["orbitals"],"orbital_selection1_list"))
+            input.orbital_selection1_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_selection1_list"])
+            input.orbital_selection1_names = split(toml_inputs["orbitals"]["orbital_selection1_names"],r"\[|\]|,",keepempty=false)
+            input.orbital_selection2_list = convert(Array{Array{Int}},toml_inputs["orbitals"]["orbital_selection2_list"])
+            input.orbital_selection2_names = split(toml_inputs["orbitals"]["orbital_selection2_names"],r"\[|\]|,",keepempty=false)
+          end
+          ##
+
+          if (haskey(toml_inputs["orbitals"],"orbital_selection_option"))
+            if ("unmask" == lowercase(toml_inputs["orbitals"]["orbital_selection_option"]))
+              input.orbital_selection_option = unmask
+            elseif ("mask" == lowercase(toml_inputs["orbitals"]["orbital_selection_option"]))
+              input.orbital_selection_option = mask
+            end
+
           end
           #if (haskey(toml_inputs["orbitals"],"orbital_mask_name"))
           #  input.orbital_mask_name = toml_inputs["orbitals"]["orbital_mask_name"]
           #end
-          input.orbital_mask1_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask1_list"])
-          input.orbital_mask1_names = split(toml_inputs["orbitals"]["orbital_mask1_names"],r"\[|\]|,",keepempty=false)
-          input.orbital_mask2_list = convert(Array{Array{Int}},toml_inputs["orbitals"]["orbital_mask2_list"])
-          input.orbital_mask2_names = split(toml_inputs["orbitals"]["orbital_mask2_names"],r"\[|\]|,",keepempty=false)
 
-          if (haskey(toml_inputs["orbitals"],"orbital_mask3_list"))
-            input.orbital_mask3_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask3_list"])
-            input.orbital_mask3_names = split(toml_inputs["orbitals"]["orbital_mask3_names"],r"\[|\]|,",keepempty=false)
+          if (haskey(toml_inputs["orbitals"],"orbital_selection3_list"))
+            input.orbital_selection3_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_selection3_list"])
+            input.orbital_selection3_names = split(toml_inputs["orbitals"]["orbital_selection3_names"],r"\[|\]|,",keepempty=false)
           end
-          if (haskey(toml_inputs["orbitals"],"orbital_mask4_list"))
-            input.orbital_mask4_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_mask4_list"])
-            input.orbital_mask4_names = split(toml_inputs["orbitals"]["orbital_mask4_names"],r"\[|\]|,",keepempty=false)
+          if (haskey(toml_inputs["orbitals"],"orbital_selection4_list"))
+            input.orbital_selection4_list = convert(Array{Array{Int}}, toml_inputs["orbitals"]["orbital_selection4_list"])
+            input.orbital_selection4_names = split(toml_inputs["orbitals"]["orbital_selection4_names"],r"\[|\]|,",keepempty=false)
           end
 
         end
@@ -692,22 +718,22 @@ function parse_input(args,input::Arg_Inputs)
         #action = :store_true   # this makes it a flag
         help = "q_point ex:) 5_5_5"
         "--om1"
-        help = "orbital_mask1_list ex) [[],[9,10,11,12,13],[9]] <= [all,d-only,z2]"
+        help = "orbital_selection1_list ex) [[],[9,10,11,12,13],[9]] <= [all,d-only,z2]"
         "--om1names"
         help = "obital mask1 names ex) [all,d,z2]"
 
         "--om2"
-        help = "orbital_mask2_list ex) [[],[9,10],[11]] <= [all,eg,xy]"
+        help = "orbital_selection2_list ex) [[],[9,10],[11]] <= [all,eg,xy]"
         "--om2names"
         help = "obital mask2 names ex) [all,eg,xy]"
 
         "--om3"
-        help = "orbital_mask1_list ex) [[],[9,10,11,12,13] <= [all,d-only]"
+        help = "orbital_selection1_list ex) [[],[9,10,11,12,13] <= [all,d-only]"
         "--om3names"
         help = "obital mask1 names ex) [all,d]"
 
         "--om4"
-        help = "orbital_mask2_list ex) [[],[9,10,11,12,13] <= [all,d-only]"
+        help = "orbital_selection2_list ex) [[],[9,10,11,12,13] <= [all,d-only]"
         "--om4names"
         help = "obital mask2 names ex) [all,d]"
 
@@ -741,7 +767,7 @@ function parse_input(args,input::Arg_Inputs)
             atom_str_list = split(val,",")
             atom12_list = Vector{Tuple{Int64,Int64}}();
             for (atom_i, atom12_str) in enumerate(atom_str_list)
-              if contains(atom12_str,"_")
+              if occursin("_",atom12_str)
                 atom12 =   map(x->parse(Int64,x),split(atom12_str,"_"))
                 push!(atom12_list,(atom12[1],atom12[2]));
               end
@@ -831,56 +857,56 @@ function parse_input(args,input::Arg_Inputs)
         end
         if (key =="om1" && typeof(val) <: AbstractString)
             #input.orbital_mask1 = parse_int_list(val)
-            orbital_mask1_list = string("orbital_mask1_list = ",val);
-            v = TOML.parse(orbital_mask1_list);
-            input.orbital_mask1_list = convert(Array{Array{Int}},v["orbital_mask1_list"])
+            orbital_selection1_list = string("orbital_selection1_list = ",val);
+            v = TOML.parse(orbital_selection1_list);
+            input.orbital_selection1_list = convert(Array{Array{Int}},v["orbital_selection1_list"])
         end
         if (key =="om1names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask1_names = split(val,r"\[|\]|,",keepempty=false)
+            input.orbital_selection1_names = split(val,r"\[|\]|,",keepempty=false)
         end
         if (key =="om2" && typeof(val) <: AbstractString)
-            #input.orbital_mask2 = parse_int_list(val)
-            orbital_mask2_list = string("orbital_mask2_list = ",val);
-            v = TOML.parse(orbital_mask2_list);
-            input.orbital_mask2_list =  convert(Array{Array{Int}},v["orbital_mask2_list"])
+            #input.orbital_selection2 = parse_int_list(val)
+            orbital_selection2_list = string("orbital_selection2_list = ",val);
+            v = TOML.parse(orbital_selection2_list);
+            input.orbital_selection2_list =  convert(Array{Array{Int}},v["orbital_selection2_list"])
         end
         if (key =="om2names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask2_names = split(val,r"\[|\]|,",keepempty=false)
+            input.orbital_selection2_names = split(val,r"\[|\]|,",keepempty=false)
         end
 
         if (key =="om3" && typeof(val) <: AbstractString)
-            #input.orbital_mask1 = parse_int_list(val)
-            orbital_mask3_list = string("orbital_mask3_list = ",val);
-            v = TOML.parse(orbital_mask3_list);
-            input.orbital_mask3_list = convert(Array{Array{Int}},v["orbital_mask3_list"])
+            #input.orbital_selection1 = parse_int_list(val)
+            orbital_selection3_list = string("orbital_selection3_list = ",val);
+            v = TOML.parse(orbital_selection3_list);
+            input.orbital_selection3_list = convert(Array{Array{Int}},v["orbital_selection3_list"])
         end
         if (key =="om3names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask3_names = split(val,r"\[|\]|,",keepempty=false)
+            input.orbital_selection3_names = split(val,r"\[|\]|,",keepempty=false)
         end
         if (key =="om4" && typeof(val) <: AbstractString)
-            #input.orbital_mask2 = parse_int_list(val)
-            orbital_mask4_list = string("orbital_mask4_list = ",val);
-            v = TOML.parse(orbital_mask4_list);
-            input.orbital_mask4_list =  convert(Array{Array{Int}},v["orbital_mask4_list"])
+            #input.orbital_selection2 = parse_int_list(val)
+            orbital_selection4_list = string("orbital_selection4_list = ",val);
+            v = TOML.parse(orbital_selection4_list);
+            input.orbital_selection4_list =  convert(Array{Array{Int}},v["orbital_selection4_list"])
         end
         if (key =="om4names" && typeof(val) <: AbstractString)
             #println(val)
-            input.orbital_mask4_names = split(val,r"\[|\]|,",keepempty=false)
+            input.orbital_selection4_names = split(val,r"\[|\]|,",keepempty=false)
         end
 
         if ("ommode"==key)
             if(1 == val)
-               input.orbital_mask_option = unmask
+               input.orbital_selection_option = unmask
             elseif(2 == val)
-               input.orbital_mask_option = mask
+               input.orbital_selection_option = mask
             end
         end
         if ("omname"==key)
             #println(val)
-            input.orbital_mask_name = val;
+            input.orbital_selection_name = val;
         end
         if ("hdftmpdir" ==key)
             if (nothing!=val)
@@ -954,17 +980,17 @@ function input_checker(input::Arg_Inputs)
     end
   end
   # Check orbital_selection properties
-  if (nomask != input.orbital_mask_option)
-    if (0 == length(input.orbital_mask1_list)|| 0 == length(input.orbital_mask2_list) )
-      println(" orbital_mask1_list or orbital_mask2 is not set. ");
+  if (nomask != input.orbital_selection_option)
+    if (0 == length(input.orbital_selection1_list)|| 0 == length(input.orbital_selection2_list) )
+      println(" orbital_selection1_list or orbital_selection2 is not set. ");
       exit_programe = true;
     end
-    if (length(input.orbital_mask1_list) != length(input.orbital_mask1_names))
-      println(" Length of orbital_mask1_list  orbital_mask1_names is not same. ");
+    if (length(input.orbital_selection1_list) != length(input.orbital_selection1_names))
+      println(" Length of orbital_selection1_list  orbital_selection1_names is not same. ");
       exit_programe = true;
     end
-    if (length(input.orbital_mask2_list) != length(input.orbital_mask2_names))
-      println(" Length of orbital_mask1_list  orbital_mask2_names is not same. ");
+    if (length(input.orbital_selection2_list) != length(input.orbital_selection2_names))
+      println(" Length of orbital_selection1_list  orbital_mask2_names is not same. ");
       exit_programe = true;
     end
   end
