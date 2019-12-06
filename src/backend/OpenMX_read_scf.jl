@@ -184,11 +184,37 @@ function read_scf(scf_name::AbstractString)
 
     f = open(scf_name,"r")
     atomnum =  read(f,Int32)
-    SpinP_switch =  read(f,Int32)
+    #SpinP_switch =  read(f,Int32)
+    version_info = read(f,Int32)
+
+    version = Int32(round(version_info / 4))
+    SpinP_switch  = rem(version_info, 4)
+
+    openmxVersion = "notset";
+    if (version==0)
+        openmxVersion="3.7, 3.8 or an older distribution";
+    elseif (version==1)
+        openmxVersion="3.7.x (for development of HWC)";
+    elseif (version==2)
+        openmxVersion="3.7.x (for development of HWF)";
+    elseif (version==3)
+        openmxVersion="3.9";
+    end
+    print("version: ",version," SpinP_switch:", SpinP_switch, " ", openmxVersion )
+    # Endian conversion
+
     Catomnum =  read(f,Int32)
     Latomnum =  read(f,Int32)
     Ratomnum =  read(f,Int32)
     TCpyCell =  read(f,Int32)
+
+
+    # Added in OpenMX3.9
+    order_max = 1
+    if (0 < version)
+        order_max =  read(f,Int32)
+        @assert(1==order_max) # if not 1 check the code
+    end
 
     # atv
     atv = zeros(Float64,TCpyCell+1,3)
@@ -325,6 +351,9 @@ function read_scf(scf_name::AbstractString)
     OLPpoz = Array{Array{Array{Array{Float64}}}}(undef,atomnum);
     DM = Array{Array{Array{Array{Array{Float64}}}}}(undef,SpinP_switch+1)
 
+    iDM = Array{Array{Array{Array{Array{Float64}}}}}(undef,2) # OpenMx 3.9
+
+
     for spin = 1:SpinP_switch+1
         Hks[spin] = Array{Array{Array{Array{Float64}}}}(undef,atomnum)
         init_Hamil!(Hks, spin, atomnum, Total_NumOrbs, FNAN, natn)
@@ -355,6 +384,22 @@ function read_scf(scf_name::AbstractString)
     read_OLPmat!(f, OLPpoy, atomnum, Total_NumOrbs, FNAN, natn)
     read_OLPmat!(f, OLPpoz, atomnum, Total_NumOrbs, FNAN, natn)
 
+    # Added OpenMX 3.9 OLPmo
+    OLPmox = Array{Array{Array{Array{Float64}}}}(undef,atomnum);
+    OLPmoy = Array{Array{Array{Array{Float64}}}}(undef,atomnum);
+    OLPmoz = Array{Array{Array{Array{Float64}}}}(undef,atomnum);
+
+    if 0 < version # OpenMx 3.9 or above
+        init_OLPmat!(OLPmox, atomnum, Total_NumOrbs, FNAN, natn)
+        init_OLPmat!(OLPmoy, atomnum, Total_NumOrbs, FNAN, natn)
+        init_OLPmat!(OLPmoz, atomnum, Total_NumOrbs, FNAN, natn)
+
+
+        read_OLPmat!(f, OLPmox, atomnum, Total_NumOrbs, FNAN, natn)
+        read_OLPmat!(f, OLPmoy, atomnum, Total_NumOrbs, FNAN, natn)
+        read_OLPmat!(f, OLPmoz, atomnum, Total_NumOrbs, FNAN, natn)
+
+    end
     #for spin = 1:3
     #    iHks[spin] = Array(Array{Array{Array{Float64,},},},atomnum)
     #    init_Hamil!(iHks,spin)
@@ -366,6 +411,16 @@ function read_scf(scf_name::AbstractString)
     end
     for spin = 1:SpinP_switch+1
         read_Hamil(f, DM, spin, atomnum, Total_NumOrbs, FNAN, natn, 1.0)
+    end
+
+    if 0 < version # OpenMx 3.9 or above
+        for spin = 1:2
+            iDM[spin] = Array{Array{Array{Array{Float64}}}}(undef,atomnum)
+            init_Hamil!(iDM, spin, atomnum, Total_NumOrbs,FNAN, natn)
+        end
+        for spin = 1:2
+            read_Hamil(f, iDM, spin, atomnum, Total_NumOrbs, FNAN, natn, 1.0)
+        end
     end
     #############
     # Solver
@@ -388,6 +443,7 @@ function read_scf(scf_name::AbstractString)
     Total_SpinS = d_vec[10];
 
 
+    print("ChemP ",ChemP, " E_temp:",E_Temp)
     #
     ########################
     # input file
