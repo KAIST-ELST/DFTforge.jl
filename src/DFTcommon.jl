@@ -55,7 +55,7 @@ export bar_string;
 
 # #=
 @enum SPINtype para_type = 1 colinear_type = 2 non_colinear_type = 4
-@enum DFTtype OpenMX = 1 Wannier90 = 2 EcalJ = 3 NULLDFT = -1
+@enum DFTtype OpenMX = 1 Wannier90 = 2 EcalJ = 3 Wien2kDMFT = 4 NULLDFT = -1
 @enum Wannier90type OpenMXWF = 1 Wannier90WF = 2 EcalJWF = 3  NULLWANNIER = -1
 @enum ChargeAnalysis Lowdin = 1 NAO = 2
 

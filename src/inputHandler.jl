@@ -222,7 +222,9 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       elseif ( lowercase("ecalj") == lowercase(Hamiltonian_type))
         input.DFT_type = Wannier90
         input.Wannier90_type = EcalJWF;
-      #elseif ( lowercase("wien2k") == lowercase(result_type))
+        #elseif ( lowercase("wien2k") == lowercase(result_type))
+      elseif (lowercase("Wien2kDMFT") == lowercase(Hamiltonian_type))
+        input.DFT_type = Wien2kDMFT
       end
     end
 
@@ -235,20 +237,19 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         result_file =  toml_inputs["result_file"]
         println(result_file) # TODO: remove it
         #if !isfile(result_file)
-          toml_dir =  dirname(toml_realpath)
-          if isfile(joinpath(pwd(),result_file))
-            result_file = joinpath(pwd(),result_file)
-          elseif isfile(joinpath(toml_dir,result_file))
-            result_file = joinpath(toml_dir,result_file)
-          else
-
-          end
+        toml_dir =  dirname(toml_realpath)
+        if isfile(joinpath(pwd(),result_file))
+          result_file = joinpath(pwd(),result_file)
+        elseif isfile(joinpath(toml_dir,result_file))
+          result_file = joinpath(toml_dir,result_file)
+        end
         #end
         println(result_file)
         if isfile(result_file)
           input.result_file = result_file
+        else
+          print("File not found?")
         end
-
       end
     elseif ( EcalJ == input.DFT_type )
       if (haskey(toml_inputs,"result_file"))
@@ -310,34 +311,54 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         println(result_file_dict)
         #result_file_dict = Dict
       end
-  elseif ((Wannier90 == input.DFT_type &&  EcalJWF ==  input.Wannier90_type))
-    ## Wannier90
-    #result_file =  toml_inputs["result_file"];
-    if (haskey(toml_inputs,"result_file"))
+    elseif ((Wannier90 == input.DFT_type &&  EcalJWF ==  input.Wannier90_type))
+        ## Wannier90
+        #result_file =  toml_inputs["result_file"];
+        if (haskey(toml_inputs,"result_file"))
 
-      result_file_list_input =  toml_inputs["result_file"]
-      if (length(result_file_list_input) > 1)
-        result_file_1 = result_file_list_input[1]
-        input.result_file = split(split(result_file_1,".")[1],"_")[1];
-      end
-      result_file_list = Array{AbstractString}(undef,0);
-      for (k,v) in enumerate(result_file_list_input)
-        (exits_check,result_file_path) = detect_file(v, toml_realpath)
-        if (exits_check)
-          push!(result_file_list,result_file_path);
-        else
-          println("File not found  ",v)
-          @assert(false)
+          result_file_list_input =  toml_inputs["result_file"]
+          if (length(result_file_list_input) > 1)
+            result_file_1 = result_file_list_input[1]
+            input.result_file = split(split(result_file_1,".")[1],"_")[1];
+          end
+          result_file_list = Array{AbstractString}(undef,0);
+          for (k,v) in enumerate(result_file_list_input)
+            (exits_check,result_file_path) = detect_file(v, toml_realpath)
+            if (exits_check)
+              push!(result_file_list,result_file_path);
+            else
+              println("File not found  ",v)
+              @assert(false)
+            end
+
+          end
+          result_file_dict = Dict(
+          "result_file_up" => result_file_list[1],
+          "result_file_down" => result_file_list[2])
+          input.result_file_dict = result_file_dict;
+          println(result_file_dict)
+          #result_file_dict = Dict
+         end
+    elseif ((Wien2kDMFT == input.DFT_type))
+        # Wien2K + DMFT_rutgers & json output patched
+      if (haskey(toml_inputs,"result_file"))
+        result_file =  toml_inputs["result_file"]
+        println(result_file) # TODO: remove it
+        #if !isfile(result_file)
+        toml_dir =  dirname(toml_realpath)
+        if isfile(joinpath(pwd(),result_file))
+          result_file = joinpath(pwd(),result_file)
+        elseif isfile(joinpath(toml_dir,result_file))
+          result_file = joinpath(toml_dir,result_file)
         end
-
+        #end
+        println(result_file)
+        if isfile(result_file)
+          input.result_file = result_file
+        else
+          print("File not found?")
+        end
       end
-      result_file_dict = Dict(
-      "result_file_up" => result_file_list[1],
-      "result_file_down" => result_file_list[2])
-      input.result_file_dict = result_file_dict;
-      println(result_file_dict)
-      #result_file_dict = Dict
-    end
     end
 
     if (haskey(toml_inputs,"spintype"))
@@ -388,8 +409,8 @@ function parse_TOML(toml_file,input::Arg_Inputs)
     end
 
     if (haskey(toml_inputs,"bandselection"))
-       input.Optional["band_selection"] =  toml_inputs["bandselection"]["band_selection"]::Bool
-       input.Optional["band_selection_boundary"] =  toml_inputs["bandselection"]["band_selection_boundary"]
+      input.Optional["band_selection"] =  toml_inputs["bandselection"]["band_selection"]::Bool
+      input.Optional["band_selection_boundary"] =  toml_inputs["bandselection"]["band_selection_boundary"]
     end
     if (haskey(toml_inputs,"orbitals"))
       #println(toml_inputs["orbitals"])
@@ -958,6 +979,7 @@ function input_checker(input::Arg_Inputs)
   if (DFTcommon.OpenMX == input.DFT_type)
   elseif (DFTcommon.EcalJ == input.DFT_type)
   elseif (DFTcommon.Wannier90 == input.DFT_type)
+  elseif (DFTcommon.Wien2kDMFT == input.DFT_type )
   else
     println(" Set DFTresult type with -D option. TRY -h OPTION FOR HELP.")
     exit_programe = true;
