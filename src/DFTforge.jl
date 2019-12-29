@@ -55,6 +55,10 @@ module Wannierdata
 include("backend/Wannier_PostCommon.jl")
 end
 
+module PlainwaveLobsterdata
+include("backend/Plainwave_PostCommon.jl")
+end
+
 module Plugins
 include("plugins/OpenMX_scfout_update.jl")
 end
@@ -82,6 +86,25 @@ function read_dftresult(scf_fname::AbstractString, result_file_dict::Dict{Abstra
       return hamiltonian_info;
     end
 
+end
+
+
+function read_dftresult(scf_fname::AbstractString, result_file_dict::Dict{AbstractString,AbstractString},
+  dfttype::DFTcommon.DFTtype,spin_type::DFTcommon.SPINtype,optionalInfo::Dict{AbstractString,Any},
+  basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type())
+  # Onlyfor PlainwaveLobster
+
+  if (DFTcommon.PlainwaveLobster == dfttype)
+    atomnum = optionalInfo["atomnum"]
+    atompos = optionalInfo["atompos"]
+    tv = optionalInfo["tv"]
+    ChemP = optionalInfo["ChemP"]
+    if(isdirpath(scf_fname))
+      scf_r = PlainwaveLobsterdata.read_lobster(scf_fname,spin_type, atomnum, atompos, tv, ChemP)
+      hamiltonian_info = Hamiltonian_info_type(scf_r,dfttype,spin_type,basisTransform_rule)
+    end
+    return hamiltonian_info;
+  end
 end
 
 function read_dftresult(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
@@ -112,6 +135,8 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,
         EcalJdata.cal_colinear_eigenstate(k_point,hamiltonian_info,spin_list);
     elseif (DFTcommon.Wannier90 == dfttype)
       Eigenstate = Wannierdata.cal_eigenstate(k_point,hamiltonian_info,spin_list)
+    elseif (DFTcommon.PlainwaveLobster == dfttype)
+      Eigenstate = PlainwaveLobsterdata.cal_colinear_eigenstate(k_point, hamiltonian_info, spin_list)
     end
 
     return Eigenstate;
@@ -154,6 +179,8 @@ function cal_colinear_Hamiltonian(k_point::k_point_Tuple,
     H =  OpenMXdata.colinear_Hamiltonian(k_point,hamiltonian_info,spin)
   elseif (DFTcommon.Wannier90 == dfttype)
     H = Wannierdata.cal_Hamiltonian(k_point,hamiltonian_info,spin)
+  elseif (DFTcommon.PlainwaveLobster == dfttype)
+    H = PlainwaveLobsterdata.cal_Hamiltonian(k_point,hamiltonian_info,spin)
   end
   return H
 end

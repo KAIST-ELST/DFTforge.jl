@@ -123,7 +123,7 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
   dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
     basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),result_index=1)
   global dftresult;
-  if (DFTcommon.OpenMX == dfttype || DFTcommon.EcalJ == dfttype)
+  if (DFTcommon.OpenMX == dfttype || DFTcommon.EcalJ == dfttype )
     # Read SCF and Set as current dftdata
     #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
     hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
@@ -147,6 +147,20 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
     return hamiltonian_info;
   end
 end
+
+function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
+  dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
+    basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(), optionalInfo = Dict{AbstractString,Any}(),result_index=1)
+
+  global dftresult;
+  if( DFTcommon.PlainwaveLobster == dfttype)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,optionalInfo, basisTransform_rule)
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  end
+
+end
+
 function set_current_dftdataset(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,
     Wannier90_type::DFTcommon.Wannier90type,spin_type::DFTcommon.SPINtype,
@@ -163,6 +177,7 @@ function set_current_dftdataset(wannier_fname::AbstractString,result_file_dict::
     return hamiltonian_info;
   end
 end
+
 function set_current_dftdataset(scf_r,
   dfttype::DFTcommon.DFTtype,spin_type::DFTcommon.SPINtype,result_index=1)
   if (DFTcommon.OpenMX == dfttype)
@@ -198,6 +213,7 @@ function set_current_dftdataset(scf_r,
     return scf_r;
   end
 end
+
 function set_current_dftdataset(input)
   hamiltonian_info::Hamiltonian_info_type = input[1]
   result_index::Int = input[2]

@@ -220,9 +220,15 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         input.DFT_type = Wannier90
         input.Wannier90_type = Wannier90WF;
       elseif ( lowercase("ecalj") == lowercase(Hamiltonian_type))
+        input.DFT_type = EcalJ
+      elseif ( lowercase("ecaljWannier") == lowercase(Hamiltonian_type))
         input.DFT_type = Wannier90
         input.Wannier90_type = EcalJWF;
       #elseif ( lowercase("wien2k") == lowercase(result_type))
+      elseif ( lowercase("PlainwaveLobster") == lowercase(Hamiltonian_type))
+        input.DFT_type = PlainwaveLobster
+      else
+        println("Hamiltonian_type ", Hamiltonian_type, " is not valid. Select from OpenMX, OpenMXWannier, Wannier90, ecalj, ecaljWannier, PlainwaveLobster   ")
       end
     end
 
@@ -310,34 +316,60 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         println(result_file_dict)
         #result_file_dict = Dict
       end
-  elseif ((Wannier90 == input.DFT_type &&  EcalJWF ==  input.Wannier90_type))
-    ## Wannier90
-    #result_file =  toml_inputs["result_file"];
-    if (haskey(toml_inputs,"result_file"))
+    elseif ((Wannier90 == input.DFT_type &&  EcalJWF ==  input.Wannier90_type))
+      ## Wannier90
+      #result_file =  toml_inputs["result_file"];
+      if (haskey(toml_inputs,"result_file"))
 
-      result_file_list_input =  toml_inputs["result_file"]
-      if (length(result_file_list_input) > 1)
-        result_file_1 = result_file_list_input[1]
-        input.result_file = split(split(result_file_1,".")[1],"_")[1];
-      end
-      result_file_list = Array{AbstractString}(undef,0);
-      for (k,v) in enumerate(result_file_list_input)
-        (exits_check,result_file_path) = detect_file(v, toml_realpath)
-        if (exits_check)
-          push!(result_file_list,result_file_path);
-        else
-          println("File not found  ",v)
-          @assert(false)
+        result_file_list_input =  toml_inputs["result_file"]
+        if (length(result_file_list_input) > 1)
+          result_file_1 = result_file_list_input[1]
+          input.result_file = split(split(result_file_1,".")[1],"_")[1];
         end
+        result_file_list = Array{AbstractString}(undef,0);
+        for (k,v) in enumerate(result_file_list_input)
+          (exits_check,result_file_path) = detect_file(v, toml_realpath)
+          if (exits_check)
+            push!(result_file_list,result_file_path);
+          else
+            println("File not found  ",v)
+            @assert(false)
+          end
 
+        end
+        result_file_dict = Dict(
+        "result_file_up" => result_file_list[1],
+        "result_file_down" => result_file_list[2])
+        input.result_file_dict = result_file_dict;
+        println(result_file_dict)
+        #result_file_dict = Dict
       end
-      result_file_dict = Dict(
-      "result_file_up" => result_file_list[1],
-      "result_file_down" => result_file_list[2])
-      input.result_file_dict = result_file_dict;
-      println(result_file_dict)
-      #result_file_dict = Dict
-    end
+    elseif ((PlainwaveLobster == input.DFT_type))
+      # PlainwaveLobster
+      println("PlainwaveLobster ")
+      if (haskey(toml_inputs,"result_file"))
+        result_file_list_input =  toml_inputs["result_file"]
+        if (length(result_file_list_input) > 1)
+          #result_file_1 = result_file_list_input[1]
+          #input.result_file = split(split(result_file_1,".")[1],"_")[1];
+        end
+        result_file_list = Array{AbstractString}(undef,0);
+        for (k,v) in enumerate(result_file_list_input)
+          (exits_check,result_file_path) = detect_file(v, toml_realpath)
+          if (exits_check)
+            push!(result_file_list,result_file_path);
+          else
+            println("File not found  ",v)
+            @assert(false)
+          end
+
+        end
+        result_file_dict = Dict(
+        "RealSpaceHamiltonians" => result_file_list[1],
+        "RealSpaceOverlaps" => result_file_list[2])
+        input.result_file_dict = result_file_dict;
+        println(result_file_dict)
+      end
     end
 
     if (haskey(toml_inputs,"spintype"))
@@ -387,9 +419,36 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       input.Wannier_Optional_Info = wannier_options
     end
 
+    if (haskey(toml_inputs,"lobster_optional"))
+      wannier_options = Wannier_OptionalInfo()
+
+      atomnum = toml_inputs["lobster_optional"]["atomnum"]
+      atompos = toml_inputs["lobster_optional"]["atompos"]
+      atompos2 = convert(Array{Array{Float64},1},atompos)
+      atompos = zeros(atomnum,3);
+      for i in 1:atomnum
+        atompos[i,:] = atompos2[i]
+      end
+      #atoms_orbitals_list2 = toml_inputs["lobster_optional"]["atoms_orbitals_list"]
+      #atoms_orbitals_list = convert(Array{Array{Int},1},atoms_orbitals_list2)
+
+      wannier_options.atomnum = atomnum;
+      wannier_options.atompos = atompos;
+      #wannier_options.atoms_orbitals_list = atoms_orbitals_list;
+      println(wannier_options)
+      input.Wannier_Optional_Info = wannier_options
+
+      tv = zeros(3,3)
+      a = toml_inputs["lobster_optional"]["tv"]
+      println(a[1],typeof(a[1]))
+      tv[1,:] = a[1]; tv[2,:] = a[2]; tv[3,:] = a[3]
+      input.Optional["tv"] = tv;
+      input.Optional["ChemP"] = toml_inputs["lobster_optional"]["ChemP"]
+    end
+
     if (haskey(toml_inputs,"bandselection"))
-       input.Optional["band_selection"] =  toml_inputs["bandselection"]["band_selection"]::Bool
-       input.Optional["band_selection_boundary"] =  toml_inputs["bandselection"]["band_selection_boundary"]
+      input.Optional["band_selection"] =  toml_inputs["bandselection"]["band_selection"]::Bool
+      input.Optional["band_selection_boundary"] =  toml_inputs["bandselection"]["band_selection_boundary"]
     end
     if (haskey(toml_inputs,"orbitals"))
       #println(toml_inputs["orbitals"])
@@ -958,6 +1017,7 @@ function input_checker(input::Arg_Inputs)
   if (DFTcommon.OpenMX == input.DFT_type)
   elseif (DFTcommon.EcalJ == input.DFT_type)
   elseif (DFTcommon.Wannier90 == input.DFT_type)
+  elseif (DFTcommon.PlainwaveLobster == input.DFT_type)
   else
     println(" Set DFTresult type with -D option. TRY -h OPTION FOR HELP.")
     exit_programe = true;
