@@ -28,6 +28,8 @@ struct Lobsterdatatype
 
     R_vector_mat::Array{Array{Int,2}}
     Hks_R::H_type
+
+    R_vector_Overlap_mat::Array{Array{Int,2}}
     OverlapS_R::H_type
 
 
@@ -97,7 +99,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamilt
         orbitalStartIdx += orbitalNums[i]
     end
 
-    Overlap_Band!(lobster_r.OverlapS_R, lobster_r.R_vector_mat, 1, S, TotalOrbitalNum, k_point[1], k_point[2], k_point[3])
+    Overlap_Band!(lobster_r.OverlapS_R, lobster_r.R_vector_Overlap_mat, 1, S, TotalOrbitalNum, k_point[1], k_point[2], k_point[3])
 
     # S rotation  & Merge
     if hamiltonian_info.basisTransform_rule.orbital_rot_on
@@ -155,10 +157,8 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
     overlapMatrices_fname = joinpath(lobster_dirname,"RealSpaceOverlaps.lobster")
 
     hamiltonMatrices_fname_text  = readlines(hamiltonMatrices_fname);
-    overlapMatrices_fname_text  = readlines(overlapMatrices_fname);
 
-    println(" Total Hamiltonian length: ",length(hamiltonMatrices_fname_text)," ", length(overlapMatrices_fname_text))
-    @assert(length(hamiltonMatrices_fname_text) == length(overlapMatrices_fname_text)) # Check if Hamiltonian and Overlapmaxitrx length is same
+    println(" Total Hamiltonian length: ",length(hamiltonMatrices_fname_text))
     for i in 1:9
         println(hamiltonMatrices_fname_text[i])
     end
@@ -202,16 +202,19 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
     println("Total_NumOrbs ",Total_NumOrbs)
     @assert(sum(Total_NumOrbs) == TotalOrbitalNum)
 
-    # Initialize
+
+    ###################################################
+    ## HK_R matrix
+    ###################################################
+
     R_vector_mat = Array{Array{Int,2}}(undef,SpinP_switch)
     Hks_R = Array{Array{Array{ComplexF64,2}}}(undef,SpinP_switch)
-    OverlapS_R = Array{Array{Array{ComplexF64,2}}}(undef,SpinP_switch)
+
     for spin in 1:SpinP_switch
         Hks_R[spin]      = Array{Array{ComplexF64,2}}(undef,num_R_vector);
-        OverlapS_R[spin] = Array{Array{ComplexF64,2}}(undef,num_R_vector);
-        R_vector_mat[spin] = zeros(Int,num_R_vector,3);
+        R_vector_mat[spin] = zeros(Int,num_R_vector,3)
     end
-    ###################################################
+
     current_line = 1
     while(current_line < length(hamiltonMatrices_fname_text))
         next_delimiter = search_next_delimiter(current_line, hamiltonMatrices_fname_text, "Real-space Hamiltonian for spin")
@@ -235,7 +238,6 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
         R_vector_mat[spin][current_R_vector_i,:] = R_vector
 
         Hks_R[spin][current_R_vector_i] = zeros(ComplexF64, TotalOrbitalNum, TotalOrbitalNum)
-        OverlapS_R[spin][current_R_vector_i]  = zeros(ComplexF64, TotalOrbitalNum, TotalOrbitalNum)
         for i in 1:TotalOrbitalNum
             # Hk_R
             tmp_str_list_real = split(hamiltonMatrices_fname_text[next_delimiter+4+i]);
@@ -245,6 +247,59 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
             ham_imag =  parse.(Float64, tmp_str_list_imag[2:end])
 
             Hks_R[spin][current_R_vector_i][i,:] = ham_real + 1.0im*ham_imag
+            
+        end
+        current_line = next_delimiter+4+TotalOrbitalNum+3+ TotalOrbitalNum
+    end
+    hamiltonMatrices_fname_text = []
+    ###################################################
+    ## Read Overlap matrix
+    ###################################################
+    overlapMatrices_fname_text  = readlines(overlapMatrices_fname);
+    println(" ===================== ")
+    println(" Total Overlap Matrix length: ",length(overlapMatrices_fname_text))
+    for i in 1:9
+        println(overlapMatrices_fname_text[i])
+    end
+
+    # num_R_vector_Overlap
+    tmp_str_list = split(overlapMatrices_fname_text[1])
+    num_R_vector_Overlap = parse(Int64, tmp_str_list[4])
+    R_vector_Overlap_cnt = zeros(Int,SpinP_switch)
+    println("num_R_vector_Overlap ",num_R_vector_Overlap)
+
+    R_vector_Overlap_mat = Array{Array{Int,2}}(undef,SpinP_switch)
+    OverlapS_R = Array{Array{Array{ComplexF64,2}}}(undef,SpinP_switch)
+    
+    for spin in 1:SpinP_switch
+        OverlapS_R[spin]           = Array{Array{ComplexF64,2}}(undef,num_R_vector_Overlap);
+        R_vector_Overlap_mat[spin] = zeros(Int,num_R_vector_Overlap,3)
+    end
+    
+    current_line = 1
+    while(current_line < length(overlapMatrices_fname_text))
+        next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text, "Real-space Overlap for spin")
+
+        # Detect spin
+        tmp_str_list = split(overlapMatrices_fname_text[next_delimiter])
+        spin = parse(Int, tmp_str_list[end])
+        ##println("spin ",spin)
+
+        # Detect R vector
+        tmp_str_list = split(overlapMatrices_fname_text[next_delimiter+1])
+        R_vector = zeros(Int,3)
+        R_vector[1] = parse(Int,tmp_str_list[end-2])
+        R_vector[2] = parse(Int,tmp_str_list[end-1])
+        R_vector[3] = parse(Int,tmp_str_list[end-0])
+
+
+        ##println("R_vector ", R_vector)
+
+        current_R_vector_i = (R_vector_Overlap_cnt[spin] +=1)
+        R_vector_Overlap_mat[spin][current_R_vector_i,:] = R_vector
+
+        OverlapS_R[spin][current_R_vector_i]  = zeros(ComplexF64, TotalOrbitalNum, TotalOrbitalNum)
+        for i in 1:TotalOrbitalNum
             # OverlapMatix
             tmp_str_list_real = split(overlapMatrices_fname_text[next_delimiter+4+i]);
             tmp_str_list_imag = split(overlapMatrices_fname_text[next_delimiter+4+TotalOrbitalNum+3+ i])
@@ -256,10 +311,11 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
         end
         current_line = next_delimiter+4+TotalOrbitalNum+3+ TotalOrbitalNum
     end
+    overlapMatrices_fname_text = []
     ###################################################
     #ChemP = 0.0
     Wannier_info = Lobsterdatatype(atomnum,  SpinP_switch,Total_NumOrbs, tv, rv,
-    Gxyz, R_vector_mat, Hks_R, OverlapS_R, ChemP,
-      spin_type, 300.0)
-  return Wannier_info;
+    Gxyz, R_vector_mat, Hks_R, R_vector_Overlap_mat, OverlapS_R, ChemP,
+    spin_type, 300.0)
+    return Wannier_info;
 end
