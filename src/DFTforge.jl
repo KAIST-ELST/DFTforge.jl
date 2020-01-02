@@ -58,10 +58,14 @@ end
 module PlainwaveLobsterdata
 include("backend/Plainwave_PostCommon.jl")
 end
+module Wien2kDMFTdata
+include("backend/DMFT_PostCommon.jl")
+end
 
 module Plugins
 include("plugins/OpenMX_scfout_update.jl")
 end
+
 
 
 
@@ -82,6 +86,11 @@ function read_dftresult(scf_fname::AbstractString, result_file_dict::Dict{Abstra
       return hamiltonian_info;
     elseif (DFTcommon.EcalJ == dfttype)
       scf_r = EcalJdata.read_EcalJ_scf(result_file_dict, spin_type);
+      hamiltonian_info = Hamiltonian_info_type(scf_r,dfttype,spin_type,basisTransform_rule)
+      return hamiltonian_info;
+    elseif (DFTcommon.Wien2kDMFT == dfttype)
+      println(scf_fname)
+      scf_r = Wien2kDMFTdata.read_wien2k_DFT_SCF(scf_fname, spin_type);
       hamiltonian_info = Hamiltonian_info_type(scf_r,dfttype,spin_type,basisTransform_rule)
       return hamiltonian_info;
     end
@@ -133,6 +142,9 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,
     elseif (DFTcommon.EcalJ == dfttype)
       Eigenstate =
         EcalJdata.cal_colinear_eigenstate(k_point,hamiltonian_info,spin_list);
+    elseif (DFTcommon.Wien2kDMFT == dfttype)
+      Eigenstate =
+        Wien2kDMFTdata.cal_colinear_eigenstate(k_point,hamiltonian_info,spin_list);
     elseif (DFTcommon.Wannier90 == dfttype)
       Eigenstate = Wannierdata.cal_eigenstate(k_point,hamiltonian_info,spin_list)
     elseif (DFTcommon.PlainwaveLobster == dfttype)
@@ -181,6 +193,8 @@ function cal_colinear_Hamiltonian(k_point::k_point_Tuple,
     H = Wannierdata.cal_Hamiltonian(k_point,hamiltonian_info,spin)
   elseif (DFTcommon.PlainwaveLobster == dfttype)
     H = PlainwaveLobsterdata.cal_Hamiltonian(k_point,hamiltonian_info,spin)
+  elseif (DFTcommon.Wien2kDMFT == dfttype)
+    H = Wien2kDMFTdata.cal_Hamiltonian(k_point,hamiltonian_info,spin)
   end
   return H
 end

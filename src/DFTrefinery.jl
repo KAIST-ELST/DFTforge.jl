@@ -145,6 +145,12 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
     =#
     dftresult[result_index] = hamiltonian_info;
     return hamiltonian_info;
+  elseif (DFTcommon.Wien2kDMFT == dfttype)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
+
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+
   end
 end
 

@@ -227,8 +227,11 @@ function parse_TOML(toml_file,input::Arg_Inputs)
       #elseif ( lowercase("wien2k") == lowercase(result_type))
       elseif ( lowercase("PlainwaveLobster") == lowercase(Hamiltonian_type))
         input.DFT_type = PlainwaveLobster
+        #elseif ( lowercase("wien2k") == lowercase(result_type))
+      elseif (lowercase("Wien2kDMFT") == lowercase(Hamiltonian_type))
+        input.DFT_type = Wien2kDMFT
       else
-        println("Hamiltonian_type ", Hamiltonian_type, " is not valid. Select from OpenMX, OpenMXWannier, Wannier90, ecalj, ecaljWannier, PlainwaveLobster   ")
+        println("Hamiltonian_type ", Hamiltonian_type, " is not valid. Select from OpenMX, OpenMXWannier, Wannier90, ecalj, ecaljWannier, PlainwaveLobster, Wien2kDMFT")
       end
     end
 
@@ -241,20 +244,19 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         result_file =  toml_inputs["result_file"]
         println(result_file) # TODO: remove it
         #if !isfile(result_file)
-          toml_dir =  dirname(toml_realpath)
-          if isfile(joinpath(pwd(),result_file))
-            result_file = joinpath(pwd(),result_file)
-          elseif isfile(joinpath(toml_dir,result_file))
-            result_file = joinpath(toml_dir,result_file)
-          else
-
-          end
+        toml_dir =  dirname(toml_realpath)
+        if isfile(joinpath(pwd(),result_file))
+          result_file = joinpath(pwd(),result_file)
+        elseif isfile(joinpath(toml_dir,result_file))
+          result_file = joinpath(toml_dir,result_file)
+        end
         #end
         println(result_file)
         if isfile(result_file)
           input.result_file = result_file
+        else
+          print("File not found?")
         end
-
       end
     elseif ( EcalJ == input.DFT_type )
       if (haskey(toml_inputs,"result_file"))
@@ -362,7 +364,6 @@ function parse_TOML(toml_file,input::Arg_Inputs)
             println("File not found  ",v)
             @assert(false)
           end
-
         end
         result_file_dict = Dict(
         "RealSpaceHamiltonians" => result_file_list[1],
@@ -370,6 +371,28 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         input.result_file_dict = result_file_dict;
         println(result_file_dict)
       end
+
+    elseif ((Wien2kDMFT == input.DFT_type))
+      # Wien2K + DMFT_rutgers & json output patched
+      if (haskey(toml_inputs,"result_file"))
+        result_file =  toml_inputs["result_file"]
+        println(result_file) # TODO: remove it
+        #if !isfile(result_file)
+        toml_dir =  dirname(toml_realpath)
+        if isfile(joinpath(pwd(),result_file))
+          result_file = joinpath(pwd(),result_file)
+        elseif isfile(joinpath(toml_dir,result_file))
+          result_file = joinpath(toml_dir,result_file)
+        end
+        #end
+        println(result_file)
+        if isfile(result_file)
+          input.result_file = result_file
+        else
+          print("File not found?")
+        end
+      end
+
     end
 
     if (haskey(toml_inputs,"spintype"))
@@ -1018,6 +1041,7 @@ function input_checker(input::Arg_Inputs)
   elseif (DFTcommon.EcalJ == input.DFT_type)
   elseif (DFTcommon.Wannier90 == input.DFT_type)
   elseif (DFTcommon.PlainwaveLobster == input.DFT_type)
+  elseif (DFTcommon.Wien2kDMFT == input.DFT_type )
   else
     println(" Set DFTresult type with -D option. TRY -h OPTION FOR HELP.")
     exit_programe = true;
