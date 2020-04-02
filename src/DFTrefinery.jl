@@ -123,10 +123,53 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
   dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
     basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),result_index=1)
   global dftresult;
+  println("set_current_dftdataset:1")
   if (DFTcommon.OpenMX == dfttype || DFTcommon.EcalJ == dfttype )
     # Read SCF and Set as current dftdata
     #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
     hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
+    println(typeof(hamiltonian_info))
+    #=
+    orbitalStartIdx = zeros(Int,scf_r.atomnum);
+    orbitalIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
+    orbitalNums = zeros(Int,scf_r.atomnum)
+    for i = 1:scf_r.atomnum
+        orbitalStartIdx[i] = orbitalIdx;
+        orbitalIdx += scf_r.Total_NumOrbs[i]
+        orbitalNums[i] = scf_r.Total_NumOrbs[i];
+    end
+
+    #@assert(0 == scf_r.SpinP_switch - spin_type);
+    dftresult[result_index] =
+    DFTdataset(dfttype, scf_r,spin_type,
+      orbitalStartIdx,orbitalNums);
+
+    =#
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  elseif (DFTcommon.Wien2kDMFT == dfttype)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
+
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  elseif ( DFTcommon.PlainwaveLobster == dfttype)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,optionalInfo, basisTransform_rule)
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  end
+end
+
+#=
+function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
+  dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
+    basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(), optionalInfo = Dict{AbstractString,Any}(),result_index=1)
+  global dftresult;
+  println("set_current_dftdataset: 2")
+  if (DFTcommon.OpenMX == dfttype || DFTcommon.EcalJ == dfttype )
+    # Read SCF and Set as current dftdata
+    #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
+    println(typeof(hamiltonian_info))
     #=
     orbitalStartIdx = zeros(Int,scf_r.atomnum);
     orbitalIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
@@ -151,22 +194,15 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
     dftresult[result_index] = hamiltonian_info;
     return hamiltonian_info;
 
-  end
-end
 
-function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
-  dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
-    basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(), optionalInfo = Dict{AbstractString,Any}(),result_index=1)
-
-  global dftresult;
-  if( DFTcommon.PlainwaveLobster == dfttype)
+  elseif ( DFTcommon.PlainwaveLobster == dfttype)
     hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,optionalInfo, basisTransform_rule)
     dftresult[result_index] = hamiltonian_info;
     return hamiltonian_info;
   end
 
 end
-
+=#
 function set_current_dftdataset(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,
     Wannier90_type::DFTcommon.Wannier90type,spin_type::DFTcommon.SPINtype,
@@ -174,6 +210,8 @@ function set_current_dftdataset(wannier_fname::AbstractString,result_file_dict::
     atomnum::Int,atompos::Array{Float64,2},basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),
     result_index=1)
   global dftresult;
+  println("set_current_dftdataset:3")
+
   if (DFTcommon.Wannier90 ==dfttype)
     hamiltonian_info = read_dftresult(wannier_fname, result_file_dict, dfttype,
         Wannier90_type,spin_type,
@@ -186,6 +224,7 @@ end
 
 function set_current_dftdataset(scf_r,
   dfttype::DFTcommon.DFTtype,spin_type::DFTcommon.SPINtype,result_index=1)
+  println("set_current_dftdataset:4")
   if (DFTcommon.OpenMX == dfttype)
     # Read SCF and Set as current dftdata
     #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
@@ -221,6 +260,7 @@ function set_current_dftdataset(scf_r,
 end
 
 function set_current_dftdataset(input)
+  println("set_current_dftdataset:5")
   hamiltonian_info::Hamiltonian_info_type = input[1]
   result_index::Int = input[2]
 
@@ -1015,7 +1055,7 @@ function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
   end
   #Q_ksum = Dict{k_point_int_Tuple,Array{Complex_my,1}}();
   println(DFTcommon.bar_string) # print ====...====
-  p = Progress( ceil(Int, length(q_point_list)/10),
+  p = Progress( ceil(Int, length(q_point_list)/2),
     string("Computing  (Q:",length(q_point_list),", K:",length(k_point_list),")...") );
   p.barglyphs=BarGlyphs("[=> ]")
   p.output = stdout
@@ -1023,27 +1063,51 @@ function Qspace_Ksum_atomlist_parallel(kq_function,q_point_list,k_point_list,
     q_point_int = k_point_float2int(q_point);
 
     job_list = Array{Job_input_kq_atom_list_Type}(undef,0)
-    for k_point in k_point_list
-      kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
-      kq_point = kPoint2BrillouinZone_Tuple(kq_point);
-      kq_point_int = k_point_float2int(kq_point);
-      push!(job_list,Job_input_kq_atom_list_Type(k_point,kq_point,spin_type,atom12_list));
-    end
-    X_temp = pmap(kq_function,job_list);
-    for xyz_ij = 1:num_return
-      for atom12_i = 1:length(atom12_list)
-        tmp = zeros(Complex_my,length(k_point_list))
-        for ii = 1:length(k_point_list)
-            tmp[ii] = X_temp[ii][xyz_ij,atom12_i];
-        end
-        Xij_Q[xyz_ij,atom12_i][q_point_int] = copy(tmp);
-        Xij_Q_mean[xyz_ij,atom12_i][q_point_int] = mean(tmp);
+    if length(atom12_list) < 8
+      for k_point in k_point_list
+        kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
+        kq_point = kPoint2BrillouinZone_Tuple(kq_point);
+        kq_point_int = k_point_float2int(kq_point);
+        push!(job_list,Job_input_kq_atom_list_Type(k_point,kq_point,spin_type,atom12_list));
       end
+      X_temp = pmap(kq_function,job_list);
+      for xyz_ij = 1:num_return
+        for atom12_i = 1:length(atom12_list)
+          tmp = zeros(Complex_my,length(k_point_list))
+          for ii = 1:length(k_point_list)
+            tmp[ii] = X_temp[ii][xyz_ij,atom12_i];
+          end
+          Xij_Q[xyz_ij,atom12_i][q_point_int] = copy(tmp);
+          Xij_Q_mean[xyz_ij,atom12_i][q_point_int] = mean(tmp);
+        end
+      end
+    else # 13 < atom12_list 
+      for k_point in k_point_list
+        kq_point = (q_point[1] + k_point[1],q_point[2] + k_point[2],q_point[3] + k_point[3]) ;
+        kq_point = kPoint2BrillouinZone_Tuple(kq_point);
+        kq_point_int = k_point_float2int(kq_point);
+        for (atom12_i,atom12) in enumerate(atom12_list)
+          push!(job_list,Job_input_kq_atom_list_Type(k_point,kq_point,spin_type,[atom12]));
+        end
+      end
+      X_temp = pmap(kq_function,job_list);
+      for xyz_ij = 1:num_return
+        for atom12_i = 1:length(atom12_list)
+          tmp = zeros(Complex_my,length(k_point_list))
+          for ii = 1:length(k_point_list)
+            #tmp[ii] = X_temp[ii][xyz_ij,atom12_i];
+            tmp[ii] = X_temp[(ii - 1) * length(atom12_list)  + (atom12_i - 1) + 1][xyz_ij,1];
+          end
+          Xij_Q[xyz_ij,atom12_i][q_point_int] = copy(tmp);
+          Xij_Q_mean[xyz_ij,atom12_i][q_point_int] = mean(tmp);
+        end
+      end
+
     end
 
     #Q_ksum[q_point_int] = vcat(temp...);
     ## End of each q_point
-    if (1==rem(q_i,10))
+    if (1==rem(q_i,2))
       next!(p)
     end
     if (1==rem(q_i,50))

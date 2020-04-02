@@ -379,24 +379,33 @@ end
     #ni_start =  findfirst(OLP_eigen_cut .< S_eigvals ); # find idx to cut ( if ni_start == 1, nothing should happen)
     M1 = zeros(size(S_eigvals))
     #M1[S_eigvals.>OLP_eigen_cut] = 1.0 ./sqrt.(S_eigvals[S_eigvals.>OLP_eigen_cut]);
-    S_eigvals[ S_eigvals .< OLP_eigen_cut ] .= OLP_eigen_cut/2; # negtiave eigen value filter
-    selected_S_mask = OLP_eigen_cut .< S_eigvals
 
-    M1= 1.0 ./sqrt.(S_eigvals);
+    #println(S_eigvals)
+    #println("S_eigvals: ",S_eigvals)
+    selected_S_mask = OLP_eigen_cut .< S_eigvals
+    #S_eigvals[ .! selected_S_mask ] .= 0.0; # negtiave eigen value filter
+
+    M1= 1.0 ./sqrt.(S_eigvals[selected_S_mask]);
 
     #S2 = zeros(Complex_my, n,n2)
-
+    
     S2 = zeros(Complex_my, n, n ) #sum(selected_S_mask))
+    S2 = zeros(Complex_my, n, sum(selected_S_mask))
+    #println(" S2: ", size(S2))
+    j1_cnt = 0;
     for j1 = 1:n # ni_start:n
         if OLP_eigen_cut < S_eigvals[j1]
-            S2[:,j1] = M1[j1] * U[:,j1]
+          j1_cnt += 1
+          S2[:,j1_cnt] = M1[j1_cnt] * U[:,j1]
         else
-            println(S_eigvals[j1])
+          println(j1," ",S_eigvals[j1],)
         end
     end
-    S2 = S2[:,selected_S_mask]
-
+    #S2 = S2[:,selected_S_mask]
+    #println(" S2 2: ", size(S2))
+    #println(size(S2),size(Hk),n);
     Hk_tilta_zz = S2' * (Hk * S2)
+    #println("Hk_tilta_zz ", size(Hk_tilta_zz))
     Eigen_vect = copy(Hk_tilta_zz)
     Eigen_value = zeros( size(S2)[2]);
 
