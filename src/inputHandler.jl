@@ -135,6 +135,7 @@ function parse_Kpath(kPoint_toml,kPoint_step_num)
     K_start_point_name = ""
     K_end_point_name = ""
     if (length(v)>=3 && (typeof(v[3][1]) <: AbstractString) )
+      println(v)
       K_start_point_name = v[3][1];
       K_end_point_name = v[3][2];
       if (length(v)>=4 && (Int == typeof(v[4])))
@@ -180,7 +181,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
   if (isfile(toml_file))
     toml_inputs = TOML.parse(read(input.TOMLinput,String))
-    toml_realpath = realpath(input.TOMLinput);
+    toml_realpath = normpath(input.TOMLinput); #realpath(input.TOMLinput); 
     toml_dir =  dirname(toml_realpath)
     println(" TOML file: ",toml_realpath)
     if (haskey(toml_inputs,"DFTtype"))

@@ -113,7 +113,7 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamilt
         H = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum);
         H[:,:] = cal_Hamiltonian(k_point, hamiltonian_info, spin)
 
-        Eigen_vect::Array{Complex{Float64},2},Eigen_value::Array{Float64,1}, Hk_tilta::Array{Complex{Float64},2} = cal_eigenVectVal(H,S, OLP_eigen_cut=1e-5)
+        Eigen_vect::Array{Complex{Float64},2},Eigen_value::Array{Float64,1}, Hk_tilta::Array{Complex{Float64},2} = cal_eigenVectVal(H,S, OLP_eigen_cut=1e-4)
 
         kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Eigen_vect, Eigen_value,k_point,Hk_tilta); # Lowdin
         #kpoint_common::Kpoint_eigenstate = Kpoint_eigenstate(Coes,ko,k_point,H);
@@ -127,7 +127,7 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
     atomnum::Int64, atompos::Array{Float64,2}, tv::Array{Float64,2}, ChemP::Float64)
 
     rv = 2*pi*inv((tv')); # Check required
-    
+
     Gxyz = zeros(atomnum,3);
     for i in 1:atomnum
       Gxyz[i,:] += atompos[i,1]*tv[1,:] ;
@@ -247,7 +247,7 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
             ham_imag =  parse.(Float64, tmp_str_list_imag[2:end])
 
             Hks_R[spin][current_R_vector_i][i,:] = ham_real + 1.0im*ham_imag
-            
+
         end
         current_line = next_delimiter+4+TotalOrbitalNum+3+ TotalOrbitalNum
     end
@@ -270,12 +270,12 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
 
     R_vector_Overlap_mat = Array{Array{Int,2}}(undef,SpinP_switch)
     OverlapS_R = Array{Array{Array{ComplexF64,2}}}(undef,SpinP_switch)
-    
+
     for spin in 1:SpinP_switch
         OverlapS_R[spin]           = Array{Array{ComplexF64,2}}(undef,num_R_vector_Overlap);
         R_vector_Overlap_mat[spin] = zeros(Int,num_R_vector_Overlap,3)
     end
-    
+
     current_line = 1
     while(current_line < length(overlapMatrices_fname_text))
         next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text, "Real-space Overlap for spin")
