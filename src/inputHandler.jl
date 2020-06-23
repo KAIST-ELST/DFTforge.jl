@@ -700,7 +700,7 @@ function parse_input(args,input::Arg_Inputs)
                       "flags, options help, " *
                       "required arguments.")
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         "--TOMLinput","-T"
         help = "input.toml file ex:) nio.toml "
         "--MPI_HOSTFILE"
