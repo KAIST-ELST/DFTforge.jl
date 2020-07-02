@@ -373,6 +373,11 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
   tv[2,:] = map(x->parse(Float64,x),split(wannier90_win_file_lowercase[cell_vect_end_line-1]))
   tv[3,:] = map(x->parse(Float64,x),split(wannier90_win_file_lowercase[cell_vect_end_line-0]))
 
+  # if lenght unit is Bohr -> change to Ang
+  if "bohr" .== wannier90_win_file_lowercase[cell_vect_end_line-3]
+    tv = tv / DFTcommon.bohr
+  end
+
   rv = 2*pi*inv(collect(tv')); # Check required
 
   #ChemP = 8.1400
