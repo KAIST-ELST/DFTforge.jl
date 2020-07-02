@@ -375,7 +375,7 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
 
   # if lenght unit is Bohr -> change to Ang
   if "bohr" .== wannier90_win_file_lowercase[cell_vect_end_line-3]
-    tv = tv / DFTcommon.bohr
+    tv = tv / DFTcommon.ang2bohr
   end
 
   rv = 2*pi*inv(collect(tv')); # Check required
