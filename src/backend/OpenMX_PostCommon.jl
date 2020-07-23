@@ -282,3 +282,172 @@ function cal_colinear_eigenstate_as_nc(k_point::k_point_Tuple,hamiltonian_info::
     kpoint_common = Kpoint_eigenstate(Eigen_vect,Eigen_value,k_point,Hk_tilta);
     return kpoint_common
 end
+
+######################################
+# NC
+######################################
+
+function noncolinear_Hamiltonian!(Hout::Array{Complex{Float_my},2},
+    H::H_type,iH::H_type,MP,k1::Float64,k2::Float64,k3::Float64,
+    Hmode::DFTcommon.nc_Hamiltonian_selection,scf_r::Openmxscf)
+    # Essentially same as Overlap_Band!
+	#println(size(H))
+    @assert(4 == size(H)[1]);
+    @assert(3 == size(iH)[1]);
+
+    k_point::Array{Float_my,1} = [k1,k2,k3];
+    TotalOrbitalNum::Int = sum(scf_r.Total_NumOrbs[:])
+    orbitalStartIdx::Int = 0; #각 atom별로 orbital index시작하는 지점
+    #MP = Array{Int}(scf_r.atomnum)
+	MP = zeros(Int,scf_r.atomnum)
+    for i = 1:scf_r.atomnum
+        MP[i] = orbitalStartIdx;
+        orbitalStartIdx += scf_r.Total_NumOrbs[i]
+    end
+    @assert(TotalOrbitalNum==orbitalStartIdx);
+
+    # non collinear Hamiltonian: the matrix size is 2*TotalOrbitalNum,2*TotalOrbitalNum
+    #Hout = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum);
+    @assert((2*TotalOrbitalNum,2*TotalOrbitalNum) == size(Hout));
+
+    for GA_AN=1:scf_r.atomnum
+        atom1_orbitalNum = scf_r.Total_NumOrbs[GA_AN];
+        atom1_orbitalStart = MP[GA_AN];
+        for LB_AN = 1:scf_r.FNAN[GA_AN]+1 #atom_i is not atom1,2 index
+            GB_AN::UInt = scf_r.natn[GA_AN][LB_AN]
+            Rn::UInt = 1+scf_r.ncn[GA_AN][LB_AN]
+            atom2_orbitalNum::UInt = scf_r.Total_NumOrbs[GB_AN]
+            atom2_orbitalStart::UInt = MP[GB_AN];
+            kRn::Float_my = sum(scf_r.atv_ijk[Rn,:][:].*k_point);
+            si::Float_my = sin(2.0*pi*kRn);
+            co::Float_my = cos(2.0*pi*kRn);
+            si_co = co + im*si;
+            #
+            for i = 1:atom1_orbitalNum
+                for j = 1:atom2_orbitalNum
+                    RH1 =  H[1][GA_AN][LB_AN][i][j];
+                    RH2 =  H[2][GA_AN][LB_AN][i][j];
+                    RH3 =  H[3][GA_AN][LB_AN][i][j];
+                    RH4 =  H[4][GA_AN][LB_AN][i][j];
+
+                    iH1 =  iH[1][GA_AN][LB_AN][i][j];
+                    iH2 =  iH[2][GA_AN][LB_AN][i][j];
+                    iH3 =  iH[3][GA_AN][LB_AN][i][j];
+                    if DFTcommon.nc_realH_only == Hmode
+                        iH1 *= 0 ;iH2 *= 0 ;iH3 *= 0 ;
+                    elseif DFTcommon.nc_imagH_only == Hmode
+                        RH1 *= 0 ;RH2 *= 0 ;RH3 *= 0 ;RH4 *= 0 ;
+                    end
+
+                    Hout[atom1_orbitalStart+i,atom2_orbitalStart+j] +=
+                    (RH1+im*iH1) * si_co;
+                    Hout[atom1_orbitalStart+i+TotalOrbitalNum,atom2_orbitalStart+j+TotalOrbitalNum] +=
+                    (RH2+im*iH2) * si_co;
+                    Hout[atom1_orbitalStart+i,atom2_orbitalStart+j+TotalOrbitalNum] +=
+                    (RH3+im*(RH4+iH3)) * si_co;
+
+                end
+            end
+        end
+    end
+    # set off-diagnoal part
+    #Hout[TotalOrbitalNum+(1:TotalOrbitalNum),1:TotalOrbitalNum] =
+    #   conj( Hout'[1:TotalOrbitalNum,TotalOrbitalNum+(1:TotalOrbitalNum)]);
+    for i = (1:TotalOrbitalNum)
+        for j = TotalOrbitalNum .+ (1:TotalOrbitalNum)
+            Hout[j,i] = conj( Hout[i,j]);
+            #Hout[i,j] = conj( Hout[i,j]); # test code
+        end
+    end
+end
+
+function noncolinear_Hamiltonian(k_point, hamiltonian_info::Hamiltonian_info_type,
+  Hmode::DFTcommon.nc_Hamiltonian_selection)
+
+  scf_r = hamiltonian_info.scf_r;
+
+  TotalOrbitalNum = sum(scf_r.Total_NumOrbs[:])
+  orbitalStartIdx_list = zeros(Int,scf_r.atomnum)
+  orbitalStartIdx = 0;
+  for i = 1:scf_r.atomnum
+      orbitalStartIdx_list[i] = orbitalStartIdx;
+      orbitalStartIdx += scf_r.Total_NumOrbs[i]
+  end
+  H0 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  noncolinear_Hamiltonian!(H0,scf_r.Hks,scf_r.iHks,orbitalStartIdx_list,k_point[1],
+    k_point[2],k_point[3], Hmode, scf_r);
+  return H0;
+end
+
+function cal_noncolinear_eigenstate(k_point,hamiltonian_info::Hamiltonian_info_type)
+  scf_r = hamiltonian_info.scf_r;
+  #function nc_update_Energy(k_point_int::k_point_int_Tuple)
+  # non collinear Enk and Eigen function \Psi
+
+  #k_point = k_point_int2float(k_point_int);
+  ## Common variables
+  TotalOrbitalNum = sum(scf_r.Total_NumOrbs[:])
+
+  ## Overlap matrix S
+  S = zeros(Complex_my,TotalOrbitalNum,TotalOrbitalNum)
+  MPF = zeros(Int,scf_r.atomnum)
+  orbitalStartIdx = 0;
+  for i = 1:scf_r.atomnum
+      MPF[i] = orbitalStartIdx;
+      orbitalStartIdx += scf_r.Total_NumOrbs[i]
+  end
+  orbitalStartIdx_list = MPF; #TODO: use  orbitalStartIdx_list instead MPF
+  Overlap_Band!(scf_r.OLP,S,MPF,k_point[1],k_point[2],k_point[3],scf_r);
+  #S = S';
+  # S rotation  & Merge
+  if hamiltonian_info.basisTransform_rule.orbital_rot_on
+    S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+  end
+
+  ## S2 = (S^1/2)^-1
+  #Sq = sqrtm(S)
+  #S2 = inv(Sq);
+  S2 = sqrtm_inv(S);
+  S22 = zeros(Complex_my, 2*TotalOrbitalNum, 2*TotalOrbitalNum)
+  up_spin = 1:TotalOrbitalNum;
+  dn_spin = TotalOrbitalNum .+ up_spin;
+  S22[up_spin,up_spin] = S2;
+  S22[dn_spin,dn_spin] = S2;
+  ## non-collinear Eigen funtion (S^(1/2)\Psi) and Eigen values (Enk)
+  ##
+  H0 = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+  # H_orig is updated
+  noncolinear_Hamiltonian!(H0,scf_r.Hks,scf_r.iHks,MPF,k_point[1],
+  k_point[2],k_point[3],DFTcommon.nc_allH,scf_r);
+  # C = M1 Ut H U M1
+
+  if hamiltonian_info.basisTransform_rule.orbital_rot_on
+    orbitals_up =   1:TotalOrbitalNum
+    orbitals_down =  TotalOrbitalNum .+ orbitals_up
+    Htmp = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
+    H = H0[orbitals_up,orbitals_up];
+    Htmp[orbitals_up,orbitals_up] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+
+    H = H0[orbitals_up,orbitals_down];
+    Htmp[orbitals_up,orbitals_down] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+
+    H = H0[orbitals_down,orbitals_up];
+    Htmp[orbitals_down,orbitals_up] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+
+    H = H0[orbitals_down,orbitals_down];
+    Htmp[orbitals_down,orbitals_down] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+    H0 = Htmp;
+    #println( sum(abs(H2-H)) )
+  end
+
+  # find Eigenvalues & Eigenvector
+  Hk_tilta = S22' * H0 * S22;
+  Eigen_vect = copy(Hk_tilta)
+  Eigen_value = zeros(Float_my,2*TotalOrbitalNum);
+  eigfact_hermitian(Eigen_vect,Eigen_value);
+  if (!check_eigmat(Hk_tilta,Eigen_vect,Eigen_value))
+      println("H3 :",k_point)
+  end
+  kpoint_common = Kpoint_eigenstate(Eigen_vect,Eigen_value,k_point,Hk_tilta);
+  return kpoint_common
+end
