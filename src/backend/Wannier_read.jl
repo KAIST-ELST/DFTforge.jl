@@ -202,7 +202,7 @@ function read_wannier_OpenMX_nonCol_linear(wannier_fname,atoms_orbitals_list::Ve
     current_line+= 1
   end
   if (length(start_linenums) > 1)
-    linePer_R =  start_linenums[2:end] - start_linenums[1:end-1] - 1;
+    linePer_R =  start_linenums[2:end] .- start_linenums[1:end-1] .- 1;
     @assert(0 == sum(false .==(linePer_R[1] .== linePer_R)))
     @assert(Float64(Int64(sqrt(linePer_R[1]))) == sqrt(linePer_R[1]))
     @assert(TotalOrbitalNum2 == Int64(sqrt(linePer_R[1])))
@@ -220,9 +220,9 @@ function read_wannier_OpenMX_nonCol_linear(wannier_fname,atoms_orbitals_list::Ve
   end
   #println(wannierOrbital2atomGrouped)
 
-  R_vector_mat = Array{Array{Int,2}}(SpinP_switch)
+  R_vector_mat = Array{Array{Int,2}}(undef,SpinP_switch)
   #R_vector_mat = zeros(length(start_linenums),3)
-  Hks_R = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
+  Hks_R = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
   for spin in 1:SpinP_switch
     Hks_R[spin] = Array{Array{Complex_my,2}}(undef,0);
     R_vector_mat[spin] = zeros(convert(Int,length(start_linenums)/SpinP_switch),3);
@@ -258,7 +258,7 @@ function read_wannier_OpenMX_nonCol_linear(wannier_fname,atoms_orbitals_list::Ve
     cnt += 1;
   end
   # re arange wannier group same atoms orbitals
-  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(SpinP_switch)
+  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
   for spin in 1:SpinP_switch
     Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
   end
@@ -331,10 +331,14 @@ function read_wannier_Wannier90(result_file_dict::Dict{AbstractString,AbstractSt
           wannierOrbital2atomGrouped, 300.0, spin_type)
       return Wannier_info;
   elseif (DFTcommon.para_type == spin_type)
-      return  read_wannier_Wannier90_internal(result_file_dict["result_file_up"],
+      return  read_wannier_Wannier90_internal(result_file_dict["result_file"],
           atoms_orbitals_list,
           atomnum, atompos, spin_type)
-   end
+  elseif (DFTcommon.non_colinear_type == spin_type)
+      return  read_wannier_Wannier90_internal_nc(result_file_dict["result_file"],
+          atoms_orbitals_list,
+          atomnum, atompos, spin_type)
+  end
 
 end
 
@@ -524,6 +528,208 @@ function read_wannier_Wannier90_internal(wannier_fname::AbstractString,
     wannierOrbital2atomGrouped, 300.0, spin_type)
   return Wannier_info;
 end
+
+
+
+function read_wannier_Wannier90_internal_nc(wannier_fname::AbstractString,
+  atoms_orbitals_list::Vector{Array{Int64}},
+  atomnum::Int, atompos::Array{Float64,2}, spin_type::DFTcommon.SPINtype)
+
+  @assert(atomnum == length(atoms_orbitals_list))
+  @assert(atomnum == size(atompos)[1]);
+
+  #TODO: Read ChemP froms somewhere
+
+
+
+  Total_NumOrbs = Array{Int,1}(undef,0);
+  for i in 1:length(atoms_orbitals_list)
+    push!(Total_NumOrbs,length(atoms_orbitals_list[i]));
+  end
+  # read wannier90 "win" file
+
+  # Read Cell Vector
+  f = open((wannier_fname * ".win"))
+  println(wannier_fname * ".win")
+  wannier90_win_file = readlines(f)
+  close(f)
+  wannier90_win_file_lowercase = map(x->strip(lowercase(x)), wannier90_win_file);
+  # Read cell vector
+  cell_vect_start_line = findfirst("begin unit_cell_cart" .== wannier90_win_file_lowercase ) + 1
+  cell_vect_end_line = findfirst("end unit_cell_cart" .== wannier90_win_file_lowercase ) -1
+  #println(cell_vect_start_line,cell_vect_end_line)
+  @assert(cell_vect_end_line > cell_vect_start_line)
+  @assert(3 <= (cell_vect_end_line - cell_vect_start_line + 1)  )
+
+  tv = zeros(3,3)
+  tv[1,:] = map(x->parse(Float64,x),split(wannier90_win_file_lowercase[cell_vect_end_line-2]))
+  tv[2,:] = map(x->parse(Float64,x),split(wannier90_win_file_lowercase[cell_vect_end_line-1]))
+  tv[3,:] = map(x->parse(Float64,x),split(wannier90_win_file_lowercase[cell_vect_end_line-0]))
+
+  # if lenght unit is Bohr -> change to Ang
+  if "bohr" .== wannier90_win_file_lowercase[cell_vect_end_line-3]
+    tv = tv / DFTcommon.ang2bohr
+  end
+
+  rv = 2*pi*inv(collect(tv')); # Check required
+
+  #ChemP = 8.1400
+  # Read Chemical potentail
+  chemp_line = 0
+  try
+    chemp_line = findfirst( 0 .< map(x-> sum("fermi_energy".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
+    if (nothing==chemp_line)
+        println(" No fermi_energy found in " * wannier_fname * ".win ex) fermi_energy = 1.234 !eV ")
+        @assert(true)
+    end
+  catch
+    println(" No fermi_energy found in " * wannier_fname * ".win ex) fermi_energy = 1.234 !eV ")
+  end
+  ChemP = parse(Float64, split(wannier90_win_file_lowercase[chemp_line],['=',' '],keepempty=false)[2])
+  println(wannier90_win_file_lowercase[chemp_line])
+
+  num_wann_line  = findfirst( 0 .< map(x-> sum("num_wann".==split(x,['=',' '],keepempty=false)), wannier90_win_file_lowercase));
+  num_wann = parse(Int64, split(wannier90_win_file_lowercase[num_wann_line],['=',' '],keepempty=false)[2]);
+
+  # Read position vector
+  #=
+  pos_vect_start_line = findfirst(lowercase("Begin Projections") .== wannier90_win_file_lowercase) + 1
+  pos_vect_end_line = findfirst(lowercase("End Projections") .== wannier90_win_file_lowercase) - 1
+
+  postion_list = [];
+  for line_num = pos_vect_start_line:pos_vect_end_line
+    postion_raw_str = wannier90_win_file[line_num];
+    postion_raw_str = strip(postion_raw_str);
+    if !startswith(postion_raw_str,"#")
+        postion_1 = map(x->parse(Float64,x),
+        split(split(postion_raw_str,":")[1],[',','='])[2:4])
+        push!(postion_list, postion_1)
+    end
+  end
+  # Check if atom infomations are correct
+  check_fail = false;
+  for (i,v) in enumerate(atoms_orbitals_list)
+      if (sum(abs.(atompos[i,:] - postion_list[i])) > 10.0^-4.0)
+          println(" read_wannier_Wannier90 atom ",i," position not matched ",position_1,"  ",atompos[i,:])
+          check_fail = true;
+      end
+  end
+  if check_fail
+    println(" read_wannier_Wannier90 atom position not matched ")
+    println(DFTcommon.bar_string) # print ====...====
+    @assert(true);
+  end
+  =#
+
+  # Read wannier H
+  f = open((wannier_fname * "_hr.dat"))
+  wannier90_hr_file = readlines(f)
+  close(f)
+
+  TotalOrbitalNum2 = parse(Int64,split(wannier90_hr_file[2])[1])
+  @assert(num_wann == TotalOrbitalNum2); # Check orbital numbers between .win and _hr.dat file
+  TotalOrbitalNum = Int(round(TotalOrbitalNum2/2))
+  @assert(TotalOrbitalNum ≈ TotalOrbitalNum2/2) # TotalOrbitalNum should be even number
+
+  
+  num_Rvector = parse(Int64,split(wannier90_hr_file[3])[1])
+
+  # Read num_degen_list
+  num_degen_linenum = Int64(ceil(num_Rvector/15))
+  num_degen_list = Array{Int}(undef,0);
+  for num_degen_lineidx = 1:num_degen_linenum
+    tmp = map( x->parse(Int64,x),split(wannier90_hr_file[4+num_degen_lineidx-1 ]));
+    append!(num_degen_list,tmp)
+  end
+  num_degen_list
+
+  # wannierOrbital2atomGrouped
+  wannierOrbital2atomGrouped = zeros(Int,TotalOrbitalNum2)
+  cnt = 1;
+  for i in 1:length(atoms_orbitals_list)
+    for j in 1:length(atoms_orbitals_list[i])
+      wannierOrbital2atomGrouped[cnt] = atoms_orbitals_list[i][j]; # up spin
+      cnt+=1;
+    end
+  end
+  for i in 1:length(atoms_orbitals_list)
+    for j in 1:length(atoms_orbitals_list[i])
+      wannierOrbital2atomGrouped[cnt] = TotalOrbitalNum + atoms_orbitals_list[i][j]; #down spin
+      cnt+=1;
+    end
+  end
+  #println("wannierOrbital2atomGrouped ", wannierOrbital2atomGrouped)
+  
+
+  # Read wannier H
+
+  start_linenum = 4 + num_degen_linenum ;
+  end_linenum = length(wannier90_hr_file)
+
+  @assert((end_linenum - start_linenum+1) == TotalOrbitalNum2*TotalOrbitalNum2*num_Rvector);
+
+  SpinP_switch = 1
+  spin = 1
+  R_vector_mat = Array{Array{Int,2}}(undef,SpinP_switch)
+  Hks_R = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
+  for spin in 1:SpinP_switch
+    Hks_R[spin] = Array{Array{ComplexF64,2}}(undef,0);
+    R_vector_mat[spin] = zeros(num_Rvector,3);
+  #end
+    for R_vect_idx = 1:num_Rvector
+      start_cell_vect =  start_linenum + (R_vect_idx-1)*TotalOrbitalNum2^2;
+      HWR_mat = zeros(Complex_my, TotalOrbitalNum2,TotalOrbitalNum2);
+      rel_line = 0;
+
+      R_vector =  map(x->parse(Int,x),split(chomp(wannier90_hr_file[start_cell_vect+0]))[1:3]);
+      R_vector_mat[spin][R_vect_idx,:] = R_vector;
+      for y in 1:TotalOrbitalNum2
+          for x in 1:TotalOrbitalNum2
+              tmp = map(x->parse(Float64,x),split(chomp(wannier90_hr_file[start_cell_vect+rel_line]))[6:7]);
+              value = tmp[1] + tmp[2]*im;
+              HWR_mat[x,y] = value;
+
+              tmp = map(x->parse(Int,x),split(chomp(wannier90_hr_file[start_cell_vect+rel_line]))[1:5]);
+              @assert(tmp[1:3] == R_vector) # Check if same R_vector
+              #println(tmp)
+              @assert(tmp[4] == x && tmp[5] == y)
+
+              rel_line += 1;
+          end
+      end
+      HWR_mat *= 1.0 # Transform to eV unit
+      push!(Hks_R[spin],HWR_mat);
+    end
+  end
+
+  # re arange wannier group same atoms orbitals
+  Hks_R_grouped = Array{Array{Array{Complex_my,2}}}(undef,SpinP_switch)
+  for spin in 1:SpinP_switch
+    Hks_R_grouped[spin] = Array{Array{Complex_my,2}}(undef,0);
+  end
+  for spin in 1:SpinP_switch
+    for i in 1:length(Hks_R[spin])
+
+      HWR_mat = zeros(Complex_my, TotalOrbitalNum2,TotalOrbitalNum2);
+      HWR_mat[:,:] = Hks_R[spin][i][wannierOrbital2atomGrouped,wannierOrbital2atomGrouped]
+      push!(Hks_R_grouped[spin],HWR_mat);
+    end
+  end
+  Gxyz = zeros(atomnum,3);
+  for i in 1:atomnum
+    Gxyz[i,:] += atompos[i,1]*tv[1,:] ;
+    Gxyz[i,:] += atompos[i,2]*tv[2,:] ;
+    Gxyz[i,:] += atompos[i,3]*tv[3,:] ;
+  end
+
+
+
+  Wannier_info = Wannierdatatype(atomnum, Total_NumOrbs, SpinP_switch, tv, rv,
+    Gxyz, Hks_R, Hks_R_grouped, R_vector_mat, num_degen_list, ChemP,
+    wannierOrbital2atomGrouped, 300.0, spin_type)
+  return Wannier_info;
+end
+
 
 function read_wannier_EcalJ(result_file_dict::Dict{AbstractString,AbstractString},
   atoms_orbitals_list::Vector{Array{Int64}},

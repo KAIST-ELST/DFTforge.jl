@@ -119,6 +119,7 @@ end
 global dftresult = Dict{Int64, Hamiltonian_info_type}();
 global eigenstate_list =  Dict{Int64, Eigenstate_hdf5}(); #cached Eigenstates
 
+#=
 function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
     basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),result_index=1)
@@ -158,8 +159,8 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
     return hamiltonian_info;
   end
 end
+=#
 
-#=
 function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
     basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(), optionalInfo = Dict{AbstractString,Any}(),result_index=1)
@@ -202,7 +203,7 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
   end
 
 end
-=#
+
 function set_current_dftdataset(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,
     Wannier90_type::DFTcommon.Wannier90type,spin_type::DFTcommon.SPINtype,
@@ -429,7 +430,7 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
       end
     elseif (DFTcommon.non_colinear_type == spin_type)
       for jj = start_idx:end_idx
-        energy_idx_num = length(temp[ii][1].Eigenvalues)
+        energy_idx_num = length(temp[ii].Eigenvalues)
 
         hdf5_eigenstate_real[:,1:energy_idx_num,1,jj] = real(temp[ii].Eigenstate);
         hdf5_eigenstate_imag[:,1:energy_idx_num,1,jj] = imag(temp[ii].Eigenstate);
@@ -438,6 +439,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
         hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii].Hamiltonian);
         hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii].Hamiltonian);
 
+        hdf5_energy_idx_num[1,jj] = energy_idx_num;
+        
         ii += 1;
       end
     end
@@ -456,7 +459,7 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
 
       ii = 1;
       for jj = start_idx:end_idx
-        energy_idx_num = length(temp[ii][1].Eigenvalues)
+        energy_idx_num = length(temp[ii].Eigenvalues)
 
         hdf5_hamiltonian_real[:,1:energy_idx_num,2,jj] = real(tmp_realH_only[ii]);
         hdf5_hamiltonian_imag[:,1:energy_idx_num,2,jj] = imag(tmp_realH_only[ii]);
