@@ -17,7 +17,7 @@ export basisTransform_rule_type,orbital_rot_type
 export rot_basis!,Heff
 export ncHamiltonian_rot!
 export RotPauliX,RotPauliY,RotPauliZ,RotPauliZYZ,RotPauliZX,RotPauliZXZ,RotPauliThetaPhi
-
+export custom_transfrom_type,remap_type
 ################################################################################
 
 
@@ -256,32 +256,56 @@ function rot_D_orbital(R::Array{Float64,2})
 end
 
 
-struct orbital_merge_type
+struct orbital_downfold_type
   atom1::Int
   rel_orbital2merge::Array{Array{Int}}
+end
+
+struct remap_type
+  atom1::Int
+  oribtal::Int
+  transfromIndex::Int
+end
+struct custom_transfrom_type
+  U_matrix  # Array{ComplexF64,2}
+  orbital_remap_list::Array{remap_type,1}
 end
 
 struct basisTransform_rule_type
   orbital_rot_on::Bool;
   orbital_rot_rules::Dict{Int,orbital_rot_type}; # orbital_rot_d::orbital_rot_d_type
 
-  orbital_merge_on::Bool;
-  orbital_merge_rules::Dict{Int,orbital_merge_type}
+  orbital_downfold_on::Bool;
+  orbital_downfold_rules::Dict{Int,orbital_downfold_type}
   keep_unmerged_atoms::Bool
   keep_unmerged_orbitals::Bool
+
+  postion_merge_rule_list::Array{Union{Array{Float64,1}, Array{Int64,1}},1} 
+
   function basisTransform_rule_type()
     new(false,Dict{Int,orbital_rot_type}(),false,
-      Dict{Int,orbital_merge_type}(),true,true)
+      Dict{Int,orbital_downfold_type}(),true,true,
+      Array{Union{Array{Float64,1}, Array{Int64,1}},1}())
   end
+
   function basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
     orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals)
     new(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
-      orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals)
+      orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals,
+      Array{Union{Array{Float64,1}, Array{Int64,1}},1}())
+  end
+
+  function basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+    orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals, 
+    postion_merge_rule_list)
+    new(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+      orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals,
+      postion_merge_rule_list)
   end
 end
 
 
-export orbital_merge_type,basisTransform_rule_type,basisTransform_result_type
+export orbital_downfold_type,basisTransform_rule_type,basisTransform_result_type
 
 struct basisTransform_result_type
   atomnum::Int
@@ -332,7 +356,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
     unsurvieved_orbitals_dict[atom1_orig] = Array{Int}(undef,0);
   end
   #
-  if basisTransform.orbital_merge_on
+  if basisTransform.orbital_downfold_on
 
     orbital_index_new = Dict{Int,Int}();
     orbital_index_orig2new = Dict{Int,Dict{Int,Int}}();
@@ -341,7 +365,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
 
     atom_survived = Array{Int}(undef,0);
 
-    for (k,orbital_merge_rule) in basisTransform.orbital_merge_rules
+    for (k,orbital_merge_rule) in basisTransform.orbital_downfold_rules
       atom1_orig = orbital_merge_rule.atom1;
       push!(atom_survived,atom1_orig)
 

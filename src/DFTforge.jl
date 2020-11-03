@@ -3,7 +3,7 @@
 # 2019.05
 # https://kaist-elst.github.io/DFTforge.jl/
 ###############################################################################
-
+using Revise
 
 __precompile__(true)
 #
@@ -23,7 +23,8 @@ include("UpdateCheck.jl")
 
 #import ..DFTcommon
 #using DFTforge.DFTcommon
-include("../ext/TOML/src/TOML.jl")
+# include("../ext/TOML/src/TOML.jl")
+import TOML
 
 using Distributed
 using LinearAlgebra
@@ -58,9 +59,9 @@ end
 module PlainwaveLobsterdata
 include("backend/Plainwave_PostCommon.jl")
 end
-module Wien2kDMFTdata
-include("backend/DMFT_PostCommon.jl")
-end
+#module Wien2kDMFTdata
+#include("backend/DMFT_PostCommon.jl")
+#end
 
 module Plugins
 include("plugins/OpenMX_scfout_update.jl")
