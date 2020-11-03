@@ -3,7 +3,7 @@
 # 2019.05
 # https://kaist-elst.github.io/DFTforge.jl/
 ###############################################################################
-using Revise
+# using Revise
 
 __precompile__(true)
 #

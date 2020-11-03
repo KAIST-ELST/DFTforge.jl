@@ -670,7 +670,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
         position_merge_on = false
         postion_merge_rule_list = Nothing
-        if (haskey(toml_inputs["orbital_reassign"],"postion_merge"))
+        if (haskey(toml_inputs["orbital_reassign"],"position_merge"))
           position_merge_on = toml_inputs["orbital_reassign"]["position_merge"]
           if position_merge_on
             postion_merge_rule_list = toml_inputs["orbital_reassign"]["position_merge_rule"]
@@ -691,10 +691,12 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         end
 
         orbital_custom_transform_on = false;
+        custom_transfrom_rules = Nothing
         if (haskey(toml_inputs["orbital_reassign"],"custom_transform"))
           orbital_custom_transform_on = toml_inputs["orbital_reassign"]["custom_transform"] 
 
           if orbital_custom_transform_on
+            custom_transfrom_rules = Array{custom_transfrom_type,1}(undef,0)
             custom_rule = toml_inputs["orbital_reassign"]["custom_transfrom_rule"] # TODO: MY 
 
             for rule_i in 1:length(custom_rule)
@@ -716,19 +718,27 @@ function parse_TOML(toml_file,input::Arg_Inputs)
               
           
               if Nothing != custom_U
+                  U_matrix = custom_U[custom_rule_varible]
+                  orbital_remap_list = Array{remap_type,1}(undef,0)
                   display(custom_U[custom_rule_varible])
                   # print(custom_U["testf"](4,2))
                   display(custom_rule_remap)
-                  
+                  for (remap_i,reamp) in enumerate(custom_rule_remap)
+                    # (atom1, orbital)
+                    push!(orbital_remap_list, remap_type(reamp[1], reamp[2])) # , reamp[3]))
+                  end
+                  push!(custom_transfrom_rules, 
+                    custom_transfrom_type(copy(U_matrix),orbital_remap_list))
               end
             end
         
           end
-          input.Optional["custom_orbital_tranformfule"] = custom_rule
+          # input.Optional["custom_orbital_tranformfule"] = custom_rule
         end
 
         basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_downfold_on,
-          orbital_downfold_rules,keep_unmerged_atoms,keep_unmerged_orbitals);
+          orbital_downfold_rules,keep_unmerged_atoms,keep_unmerged_orbitals, 
+          postion_merge_rule_list, custom_transfrom_rules);
         input.Optional["basisTransform"] = basisTransform;
       end
     end

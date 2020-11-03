@@ -97,7 +97,8 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamilt
   Overlap_Band!(scf_r.OLP,S,orbitalStartIdx_list,k_point[1],k_point[2],k_point[3],scf_r);
   # S rotation  & Merge
   if hamiltonian_info.basisTransform_rule.orbital_rot_on
-    S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+    S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,
+        hamiltonian_info.basisTransform_result,0.0);
   end
   #Sq = sqrtm(S)
   #S2 = inv(Sq);
@@ -111,7 +112,8 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamilt
       Overlap_Band!(scf_r.Hks[spin],H,orbitalStartIdx_list,k_point[1],k_point[2],k_point[3],scf_r);
       # H rotation & Merge
       if hamiltonian_info.basisTransform_rule.orbital_rot_on
-        H = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+        H = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,
+            hamiltonian_info.basisTransform_result,0.0);
         #println( sum(abs(H2-H)) )
       end
       Hk_tilta = S2'*(H*S2);
@@ -231,7 +233,8 @@ function cal_colinear_eigenstate_as_nc(k_point::k_point_Tuple,hamiltonian_info::
     Overlap_Band!(scf_r.OLP,S,orbitalStartIdx_list,k_point[1],k_point[2],k_point[3],scf_r);
     #S = S';
     if hamiltonian_info.basisTransform_rule.orbital_rot_on
-      S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+      S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,
+            hamiltonian_info.basisTransform_result,0.0);
     end
 
     S2 = sqrtm_inv(S);
@@ -254,16 +257,20 @@ function cal_colinear_eigenstate_as_nc(k_point::k_point_Tuple,hamiltonian_info::
         orbitals_down =   orbitals_up + TotalOrbitalNum
         Htmp = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
         H = H1[orbitals_up,orbitals_up];
-        Htmp[orbitals_up,orbitals_up] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+        Htmp[orbitals_up,orbitals_up] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule, 
+            hamiltonian_info.basisTransform_result,0.0);
 
         H = H1[orbitals_up,orbitals_down];
-        Htmp[orbitals_up,orbitals_down] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+        Htmp[orbitals_up,orbitals_down] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,
+            hamiltonian_info.basisTransform_result,0.0);
 
         H = H1[orbitals_down,orbitals_up];
-        Htmp[orbitals_down,orbitals_up] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+        Htmp[orbitals_down,orbitals_up] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,
+        hamiltonian_info.basisTransform_result,0.0);
 
         H = H1[orbitals_down,orbitals_down];
-        Htmp[orbitals_down,orbitals_down] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+        Htmp[orbitals_down,orbitals_down] = Heff(H,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,
+            hamiltonian_info.basisTransform_result,0.0);
         H1 = Htmp;
         H = 0;
         #println( sum(abs(H2-H)) )

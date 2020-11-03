@@ -396,6 +396,7 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
     start_idx = cnt;
     end_idx = minimum([cnt+batch_size-1,Total_q_point_num]);
 
+    cal_eigenstate(job_list[start_idx]) # DEBUG: debug only
     temp = pmap(cal_eigenstate,job_list[start_idx:end_idx]);
 
     ii = 1;
