@@ -612,7 +612,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
     end
 
-    if (haskey(toml_inputs,"orbital_reassign"))
+    if (haskey(toml_inputs,"orbital_reassign") || haskey(toml_inputs,"jeff_projection_on") )
 
       orbital_rot_on = false
       orbital_rot_rules = Dict{Int,orbital_rot_type}()
@@ -620,7 +620,17 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         orbital_rot_on = toml_inputs["orbital_reassign"]["orbital_rot_on"]
       end
 
-      if orbital_rot_on
+      jeff_projection_on = false
+      jeff_orbitals = Nothing
+      if (haskey(toml_inputs["orbital_reassign"],"jeff_projection_on"))
+        jeff_projection_on = toml_inputs["orbital_reassign"]["jeff_projection_on"];
+        if jeff_projection_on
+          orbital_rot_on = true
+        end
+      end
+
+      ####
+      if orbital_rot_on || jeff_projection_on
         if (haskey(toml_inputs["orbital_reassign"],"d_orbital_rot"))
           #orbital_rot_d_dict = Dict{Int,orbital_rot_d_type}()
           for (k,v) in enumerate(toml_inputs["orbital_reassign"]["d_orbital_rot"])
@@ -739,6 +749,29 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_downfold_on,
           orbital_downfold_rules,keep_unmerged_atoms,keep_unmerged_orbitals, 
           postion_merge_rule_list, custom_transfrom_rules);
+          
+        jeff_orbitals = Nothing
+        if jeff_projection_on
+          jeff_orbitals = toml_inputs["orbital_reassign"]["jeff_orbitals"];
+          # Check   
+          jeff_projection_num = length(jeff_orbitals)
+          for Jeff_i in 1:jeff_projection_num
+            jeff_orbital_cluster = jeff_orbitals[Jeff_i]
+              @assert(4 == length(jeff_orbital_cluster))
+
+              for i in 1:4
+                  @assert(4 == length(jeff_orbital_cluster[i]))  # [[atom],[dxy],[dxz],[dyz]]
+                  @assert(1 == length(jeff_orbital_cluster[i][1]))  # [[atom],[dxy],[dxz],[dyz]]
+              end
+          end
+          #input.Optional["jeff_orbitals"] = jeff_orbitals;
+        end
+
+        #basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+        #  orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals);
+        # basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+        #   orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals, jeff_orbitals);
+
         input.Optional["basisTransform"] = basisTransform;
       end
     end

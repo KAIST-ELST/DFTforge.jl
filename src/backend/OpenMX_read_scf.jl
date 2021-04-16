@@ -187,7 +187,7 @@ function read_scf(scf_name::AbstractString)
     #SpinP_switch =  read(f,Int32)
     version_info = read(f,Int32)
 
-    version = Int32(round(version_info / 4))
+    version = Int32(floor(version_info / 4))
     SpinP_switch  = rem(version_info, 4)
 
     openmxVersion = "notset";
@@ -211,8 +211,9 @@ function read_scf(scf_name::AbstractString)
 
     # Added in OpenMX3.9
     order_max = 1
-    if (0 < version)
+    if (3 == version)
         order_max =  read(f,Int32)
+        println(order_max)
         @assert(1==order_max) # if not 1 check the code
     end
 
@@ -413,7 +414,7 @@ function read_scf(scf_name::AbstractString)
         read_Hamil(f, DM, spin, atomnum, Total_NumOrbs, FNAN, natn, 1.0)
     end
 
-    if 0 < version # OpenMx 3.9 or above
+    if 3 == version #0 < version # OpenMx 3.9 or above
         for spin = 1:2
             iDM[spin] = Array{Array{Array{Array{Float64}}}}(undef,atomnum)
             init_Hamil!(iDM, spin, atomnum, Total_NumOrbs,FNAN, natn)
