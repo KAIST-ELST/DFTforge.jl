@@ -438,6 +438,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
         hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii].Hamiltonian);
         hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii].Hamiltonian);
 
+        hdf5_energy_idx_num[1,jj] = energy_idx_num;
+
         ii += 1;
       end
     end
@@ -460,9 +462,17 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
 
         hdf5_hamiltonian_real[:,1:energy_idx_num,2,jj] = real(tmp_realH_only[ii]);
         hdf5_hamiltonian_imag[:,1:energy_idx_num,2,jj] = imag(tmp_realH_only[ii]);
+        # hdf5_eigenvalues[1:energy_idx_num,2,jj] = tmp_realH_only[ii].Eigenvalues;
+
+        hdf5_energy_idx_num[2,jj] = energy_idx_num;
+
+        energy_idx_num = length(temp[ii].Eigenvalues)
 
         hdf5_hamiltonian_real[:,1:energy_idx_num,3,jj] = real(tmp_imagH_only[ii]);
         hdf5_hamiltonian_imag[:,1:energy_idx_num,3,jj] = imag(tmp_imagH_only[ii]);
+        # hdf5_eigenvalues[1:energy_idx_num,3,jj] = tmp_imagH_only[ii].Eigenvalues;
+
+        hdf5_energy_idx_num[3,jj] = energy_idx_num;
 
         ii += 1;
       end
