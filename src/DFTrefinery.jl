@@ -159,6 +159,34 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
   end
 end
 
+#optional info 
+function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
+  dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
+    basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),optionalInfo = Dict{AbstractString,Any}(),result_index=1)
+  global dftresult;
+  println("set_current_dftdataset:1")
+  if (DFTcommon.OpenMX == dfttype || DFTcommon.EcalJ == dfttype )
+    # Read SCF and Set as current dftdata
+    #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
+    println(typeof(hamiltonian_info))
+    
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  elseif (DFTcommon.Wien2kDMFT == dfttype)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
+
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  elseif ( DFTcommon.PlainwaveLobster == dfttype)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,optionalInfo, basisTransform_rule)
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  end
+end
+
+
+
 #=
 function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
@@ -203,6 +231,7 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
 
 end
 =#
+
 function set_current_dftdataset(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,
     Wannier90_type::DFTcommon.Wannier90type,spin_type::DFTcommon.SPINtype,
