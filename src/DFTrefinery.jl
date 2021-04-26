@@ -119,6 +119,7 @@ end
 global dftresult = Dict{Int64, Hamiltonian_info_type}();
 global eigenstate_list =  Dict{Int64, Eigenstate_hdf5}(); #cached Eigenstates
 
+#=
 function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
     basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),result_index=1)
@@ -158,6 +159,7 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
     return hamiltonian_info;
   end
 end
+=#
 
 #optional info 
 function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
