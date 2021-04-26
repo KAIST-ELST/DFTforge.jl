@@ -58,9 +58,9 @@ end
 module PlainwaveLobsterdata
 include("backend/Plainwave_PostCommon.jl")
 end
-module Wien2kDMFTdata
-include("backend/DMFT_PostCommon.jl")
-end
+# module Wien2kDMFTdata
+# include("backend/DMFT_PostCommon.jl")
+# end
 
 module Plugins
 include("plugins/OpenMX_scfout_update.jl")

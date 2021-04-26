@@ -159,6 +159,34 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
   end
 end
 
+#optional info 
+function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
+  dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
+    basisTransform_rule::basisTransform_rule_type=basisTransform_rule_type(),optionalInfo = Dict{AbstractString,Any}(),result_index=1)
+  global dftresult;
+  println("set_current_dftdataset:1")
+  if (DFTcommon.OpenMX == dfttype || DFTcommon.EcalJ == dfttype )
+    # Read SCF and Set as current dftdata
+    #scf_r = DFTforge.OpenMXdata.read_scf(scf_name);
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
+    println(typeof(hamiltonian_info))
+    
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  elseif (DFTcommon.Wien2kDMFT == dfttype)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,basisTransform_rule)
+
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  elseif ( DFTcommon.PlainwaveLobster == dfttype)
+    hamiltonian_info = read_dftresult(scf_name,result_file_dict,dfttype,spin_type,optionalInfo, basisTransform_rule)
+    dftresult[result_index] = hamiltonian_info;
+    return hamiltonian_info;
+  end
+end
+
+
+
 #=
 function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,spin_type::SPINtype,
@@ -203,6 +231,7 @@ function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{
 
 end
 =#
+
 function set_current_dftdataset(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   dfttype::DFTcommon.DFTtype,
     Wannier90_type::DFTcommon.Wannier90type,spin_type::DFTcommon.SPINtype,
@@ -429,7 +458,7 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
       end
     elseif (DFTcommon.non_colinear_type == spin_type)
       for jj = start_idx:end_idx
-        energy_idx_num = length(temp[ii][1].Eigenvalues)
+        energy_idx_num = length(temp[ii].Eigenvalues)
 
         hdf5_eigenstate_real[:,1:energy_idx_num,1,jj] = real(temp[ii].Eigenstate);
         hdf5_eigenstate_imag[:,1:energy_idx_num,1,jj] = imag(temp[ii].Eigenstate);
@@ -437,6 +466,8 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
 
         hdf5_hamiltonian_real[:,:,1,jj] = real(temp[ii].Hamiltonian);
         hdf5_hamiltonian_imag[:,:,1,jj] = imag(temp[ii].Hamiltonian);
+
+        hdf5_energy_idx_num[1,jj] = energy_idx_num;
 
         ii += 1;
       end
@@ -456,13 +487,21 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
 
       ii = 1;
       for jj = start_idx:end_idx
-        energy_idx_num = length(temp[ii][1].Eigenvalues)
+        energy_idx_num = length(temp[ii].Eigenvalues)
 
         hdf5_hamiltonian_real[:,1:energy_idx_num,2,jj] = real(tmp_realH_only[ii]);
         hdf5_hamiltonian_imag[:,1:energy_idx_num,2,jj] = imag(tmp_realH_only[ii]);
+        # hdf5_eigenvalues[1:energy_idx_num,2,jj] = tmp_realH_only[ii].Eigenvalues;
+
+        hdf5_energy_idx_num[2,jj] = energy_idx_num;
+
+        energy_idx_num = length(temp[ii].Eigenvalues)
 
         hdf5_hamiltonian_real[:,1:energy_idx_num,3,jj] = real(tmp_imagH_only[ii]);
         hdf5_hamiltonian_imag[:,1:energy_idx_num,3,jj] = imag(tmp_imagH_only[ii]);
+        # hdf5_eigenvalues[1:energy_idx_num,3,jj] = tmp_imagH_only[ii].Eigenvalues;
+
+        hdf5_energy_idx_num[3,jj] = energy_idx_num;
 
         ii += 1;
       end
