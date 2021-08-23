@@ -693,10 +693,10 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           #input.Optional["jeff_orbitals"] = jeff_orbitals;
         end
 
-        #basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
-        #  orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals);
         basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
-          orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals, jeff_orbitals);
+          orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals);
+        #basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+        #  orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals, jeff_orbitals); # TODO: Jeff
 
         input.Optional["basisTransform"] = basisTransform;
       end

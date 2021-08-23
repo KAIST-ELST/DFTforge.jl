@@ -422,6 +422,7 @@ function cal_noncolinear_eigenstate(k_point,hamiltonian_info::Hamiltonian_info_t
   # C = M1 Ut H U M1
 
   if hamiltonian_info.basisTransform_rule.orbital_rot_on
+    print("rotation on")
     orbitals_up =   1:TotalOrbitalNum
     orbitals_down =  TotalOrbitalNum .+ orbitals_up
     Htmp = zeros(Complex_my,2*TotalOrbitalNum,2*TotalOrbitalNum)
