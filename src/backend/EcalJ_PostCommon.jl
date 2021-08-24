@@ -117,11 +117,13 @@ function cal_colinear_eigenstate(k_point_frac_input,hamiltonian_info,spin_list);
         ##=
         # S rotation  & Merge
         if hamiltonian_info.basisTransform_rule.orbital_rot_on
-          S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+          S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule, 
+            hamiltonian_info.basisTransform_result, 0.0);
         end
         # H rotation & Merge
         if hamiltonian_info.basisTransform_rule.orbital_rot_on
-          Hk = Heff(Hk,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+          Hk = Heff(Hk,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,
+            hamiltonian_info.basisTransform_result, 0.0);
           #println( sum(abs(H2-H)) )
         end
         #=
