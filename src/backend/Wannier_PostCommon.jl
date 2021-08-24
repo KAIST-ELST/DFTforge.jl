@@ -56,7 +56,8 @@ function cal_Hamiltonian(k_point::k_point_Tuple,   # wannier_r::Wannierdatatype,
     if (DFTcommon.non_colinear_type == spin_type)
       throw(assertionError("Non-collinear spin basis rotation not supported yet "));
     end
-    Hout = Heff(Hout,orbitalStartIdx_list, hamiltonian_info.basisTransform_rule, 0.0);
+    Hout = Heff(Hout,orbitalStartIdx_list, hamiltonian_info.basisTransform_rule,
+                hamiltonian_info.basisTransform_result, 0.0);
     #println( sum(abs(H2-H)) )
   end
 

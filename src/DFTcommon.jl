@@ -119,8 +119,11 @@ struct Hamiltonian_info_type
   scf_r;
   dfttype::DFTcommon.DFTtype
   spin_type::SPINtype
+
   #atomnum_eff::Int
   #orbitalNums_eff::Array{Int}
+  #orbitalStartIdx_list_eff::Array{Int} 
+  #Gxyz_eff::Array{Float64,2}
   #orbital_index_map::Dict{Int,Dict{Int,Int}};
   basisTransform_result::basisTransform_result_type
 
@@ -129,8 +132,15 @@ struct Hamiltonian_info_type
     atomnum::Int = copy(scf_r.atomnum);
     orbitalNums::Array{Int} = copy(scf_r.Total_NumOrbs);
     basisTransform_rule = basisTransform_rule_type()
-    basisTransform_result = basisTransform_init(atomnum,orbitalNums,basisTransform_rule)
-    new(scf_r,dfttype,spin_type,
+    basisTransform_result = basisTransform_init(atomnum, scf_r.Gxyz, orbitalNums, basisTransform_rule)
+    #atomnum_raw = copy(atomnum)
+    #orbitalNums_raw = copy(orbitalNums)
+    #orbitalStartIdx_list_eff = [0;cumsum(orbitalNums_raw)[1:end-1]]
+    @assert(basisTransform_result.atomnum_eff == atomnum)
+    @assert(basisTransform_result.Gxyz_eff == Gxyz)
+    @assert(basisTransform_result.orbitalNums_eff == orbitalNums)
+    new(scf_r, dfttype, spin_type, 
+    #atomnum, orbitalNums,orbitalStartIdx_list_eff, scf_r.Gxyz,
     basisTransform_result,basisTransform_rule);
   end
 
@@ -138,10 +148,20 @@ struct Hamiltonian_info_type
     basisTransform_rule::basisTransform_rule_type)
     atomnum::Int = copy(scf_r.atomnum);
     orbitalNums::Array{Int} = copy(scf_r.Total_NumOrbs);
-    basisTransform_result = basisTransform_init(atomnum,orbitalNums,basisTransform_rule)
-    new(scf_r,dfttype,spin_type,
+    basisTransform_result = basisTransform_init(atomnum, scf_r.Gxyz, orbitalNums, basisTransform_rule)
+    atomnum_raw = copy(atomnum)
+    orbitalNums_raw = copy(orbitalNums)
+    orbitalStartIdx_list_eff = [0;cumsum(basisTransform_result.orbitalNums)[1:end-1]]
+
+    new(scf_r,dfttype,spin_type, 
+    #basisTransform_result.atomnum_eff, basisTransform_result.orbitalNums,
+    #orbitalStartIdx_list_eff,
+    #basisTransform_result.Gxyz_eff,
     basisTransform_result,basisTransform_rule);
+
   end
+
+
 end
 
 
