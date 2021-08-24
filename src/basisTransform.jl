@@ -565,9 +565,11 @@ function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,
         end
 
         orbital_rot_full = Matrix{ComplexF64}(1.0I, size(H)[1], size(H)[1]);
+        #=
         display(atom_orbitals)
         display(U_matrix)
         display(orbital_rot_full[atom_orbitals,atom_orbitals])
+        =#
         orbital_rot_full[atom_orbitals,atom_orbitals] = U_matrix
 
         H[:,:] = orbital_rot_full'*H*(orbital_rot_full);
