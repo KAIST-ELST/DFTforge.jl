@@ -17,7 +17,7 @@ export basisTransform_rule_type,orbital_rot_type
 export rot_basis!,Heff
 export ncHamiltonian_rot!
 export RotPauliX,RotPauliY,RotPauliZ,RotPauliZYZ,RotPauliZX,RotPauliZXZ,RotPauliThetaPhi
-
+export custom_transfrom_type,remap_type
 ################################################################################
 
 
@@ -256,43 +256,79 @@ function rot_D_orbital(R::Array{Float64,2})
 end
 
 
-struct orbital_merge_type
+struct orbital_downfold_type
   atom1::Int
   rel_orbital2merge::Array{Array{Int}}
+end
+
+struct remap_type
+  atom1::Int
+  oribtal::Int
+  # transfromIndex::Int
+end
+struct custom_transfrom_type
+  U_matrix  # Array{ComplexF64,2}
+  orbital_remap_list::Array{remap_type,1}
 end
 
 struct basisTransform_rule_type
   orbital_rot_on::Bool;
   orbital_rot_rules::Dict{Int,orbital_rot_type}; # orbital_rot_d::orbital_rot_d_type
 
-  orbital_merge_on::Bool;
-  orbital_merge_rules::Dict{Int,orbital_merge_type}
+  orbital_downfold_on::Bool;
+  orbital_downfold_rules::Dict{Int,orbital_downfold_type}
   keep_unmerged_atoms::Bool
   keep_unmerged_orbitals::Bool
+
+  postion_merge_rule_list::Array{Array{Any,1},1} # Array{Union{Array{Float64,1}, Array{Int64,1}},1} 
+  custom_transfrom_rules::Array{custom_transfrom_type,1}
+
   function basisTransform_rule_type()
+    postion_merge_rule_list = Array{Union{Array{Float64,1}, Array{Int64,1}},1}(undef,0)
+    custom_transfrom_rules = Array{custom_transfrom_type,1}(undef,0)
     new(false,Dict{Int,orbital_rot_type}(),false,
-      Dict{Int,orbital_merge_type}(),true,true)
+      Dict{Int,orbital_downfold_type}(),true,true,
+      postion_merge_rule_list, custom_transfrom_rules )
   end
+
   function basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
     orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals)
     new(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
-      orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals)
+      orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals,
+      postion_merge_rule_list, custom_transfrom_rules )
+  end
+
+  function basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+    orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals, 
+    postion_merge_rule_list, custom_transfrom_rules)
+    if Nothing == postion_merge_rule_list
+      postion_merge_rule_list = Array{Union{Array{Float64,1}, Array{Int64,1}},1}(undef, 0)
+    end
+    if Nothing == custom_transfrom_rules
+      custom_transfrom_rules = Array{custom_transfrom_type,1}(undef, 0)
+    end
+    new(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+      orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals,
+      postion_merge_rule_list, custom_transfrom_rules)
   end
 end
 
 
-export orbital_merge_type,basisTransform_rule_type,basisTransform_result_type
+export orbital_downfold_type,basisTransform_rule_type,basisTransform_result_type
 
 struct basisTransform_result_type
   atomnum::Int
   orbitalNums::Array{Int}
   orbitalStartIdx_list::Array{Int}
+  Gxyz::Array{Float64,2}
+  orbital_mapping::Array{Int}
 
   orbital_index_orig2new::SortedDict{Int,Dict{Int,Int}};
   survieved_orbitals_dict::SortedDict{Int,Array{Int}};
   unsurvieved_orbitals_dict::SortedDict{Int,Array{Int}};
 
   function basisTransform_result_type(atomnum::Int,  orbitalNums::Array{Int},
+    Gxyz_eff, orbital_mapping,
     orbital_index_orig2new::SortedDict{Int,Dict{Int,Int}},
     survieved_orbitals_dict::SortedDict{Int,Array{Int}},
     unsurvieved_orbitals_dict::SortedDict{Int,Array{Int}})
@@ -307,21 +343,23 @@ struct basisTransform_result_type
     @assert(length(orbitalStartIdx_list) == atomnum);
     println(" orbitalStartIdx_list ", orbitalStartIdx_list)
     #TODO: atomnum,orbitalNums,orbitalStartIdx_list could be changed if orbitals are merged
-    new(atomnum,orbitalNums,orbitalStartIdx_list,
-    orbital_index_orig2new,survieved_orbitals_dict,unsurvieved_orbitals_dict)
+    new(atomnum, orbitalNums, orbitalStartIdx_list, Gxyz_eff, orbital_mapping, 
+    orbital_index_orig2new, survieved_orbitals_dict, unsurvieved_orbitals_dict)
   end
 
 end
 
 export basisTransform_init
 
-function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform::basisTransform_rule_type)
+function basisTransform_init(atomnum::Int, Gxyz::Array{Float64,2}, orbitalNums::Array{Int},basisTransform::basisTransform_rule_type)
   println(" basisTransform_init ")
   # Default setting
   @assert(atomnum > 0)
   @assert(length(orbitalNums) == atomnum)
   atomnum_eff = copy(atomnum)
   orbitalNums_eff = copy(orbitalNums)
+  Gxyz_eff = copy(Gxyz)
+  ####
 
   orbital_index_orig2new = Dict{Int,Dict{Int,Int}}();
   survieved_orbitals_dict = Dict{Int,Array{Int}}();
@@ -331,8 +369,81 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
     survieved_orbitals_dict[atom1_orig] = collect(1:orbitalNums[atom1_orig]);
     unsurvieved_orbitals_dict[atom1_orig] = Array{Int}(undef,0);
   end
-  #
-  if basisTransform.orbital_merge_on
+  ##### for postion_merge_rule_list
+  orbital_mapping = collect(1:sum(orbitalNums_eff))
+  postion_merge_rule_list = basisTransform.postion_merge_rule_list
+  if 0 < length(postion_merge_rule_list)
+
+    println("postion_merge_rule_list")
+    display(postion_merge_rule_list)
+
+    # atomnum_raw = copy(atomnum)
+    Gxyz_eff = Array{Array{Float64},1}(undef,0)
+    atom_groups = []
+    atom_merge_list = []
+    atom_merged = Dict{Int,Int}()
+    # orbitalNums_raw = [2 for x in 1:atomnum_raw]
+    orbitalStartIdx_list_raw = [0;cumsum(orbitalNums)[1:end-1]]
+    TotalOrbialNum = sum(orbitalNums)
+    # atomnum_tmp: merged atoms are pushed as Array, ex: 6, [1,2,3] ,[3,4], 7
+    # atom_merge_list : atoms are just reordered
+    # atom_merged : mark merged atoms
+    for rule_i in 1:length(postion_merge_rule_list)
+        postion_merge_rule = postion_merge_rule_list[rule_i]
+        prev_atoms = postion_merge_rule[2]
+        new_atoms_position = postion_merge_rule[3]
+        push!(atom_groups, prev_atoms)
+        append!(atom_merge_list, prev_atoms)
+        for atom in prev_atoms
+            atom_merged[atom] = 1
+        end
+        push!(Gxyz_eff,new_atoms_position)
+    end
+    for atom_i in 1:atomnum
+        if !haskey(atom_merged, atom_i)
+            append!(atom_groups, [atom_i])
+            append!(atom_merge_list, atom_i)
+
+            push!(Gxyz_eff, Gxyz[atom_i, :])
+        end
+    end
+    Gxyz_eff = collect(transpose(hcat(Gxyz_eff...)))
+    atomnum_eff = length(atom_groups)
+    orbitalNums_eff = zeros(Int, atomnum_eff)
+    
+    orbital_mapping = Array{Int64,1}(undef, 0) # zeros(Int, sum(orbitalNums_raw))
+    
+
+    println("\n======")
+    for (i, atom_i) in enumerate(atom_merge_list)
+        println(atom_i," ",orbitalNums[atom_i])
+        append!(orbital_mapping, 
+        1+orbitalStartIdx_list_raw[atom_i]:orbitalStartIdx_list_raw[atom_i]+ orbitalNums[atom_i])
+
+        # orbital_cnt += orbitalNums[atom_i]
+    end
+    for (i, atoms) in enumerate(atom_groups)
+        orbital_cnt = 0
+        for atom_i in atoms
+            orbital_cnt += orbitalNums[atom_i]
+        end
+        orbitalNums_eff[i] = orbital_cnt
+    end
+    # Heff = H[orbital_mapping,orbital_mapping]
+    ## End of postion_merge_rule_list
+  end
+
+  ##### basisTransform_result
+  # custom_transfrom_rules = basisTransform.custom_transfrom_rules
+  # if 0 < length(custom_transfrom_rules)
+  #   for (rule_i, rule) in enumerate(custom_transfrom_rules)
+
+  #   end
+  # end
+
+
+  ##### End of custom_transfrom_rules
+  if basisTransform.orbital_downfold_on
 
     orbital_index_new = Dict{Int,Int}();
     orbital_index_orig2new = Dict{Int,Dict{Int,Int}}();
@@ -341,7 +452,7 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
 
     atom_survived = Array{Int}(undef,0);
 
-    for (k,orbital_merge_rule) in basisTransform.orbital_merge_rules
+    for (k,orbital_merge_rule) in basisTransform.orbital_downfold_rules
       atom1_orig = orbital_merge_rule.atom1;
       push!(atom_survived,atom1_orig)
 
@@ -418,18 +529,54 @@ function basisTransform_init(atomnum::Int,orbitalNums::Array{Int},basisTransform
   survieved_orbitals_dict = SortedDict(survieved_orbitals_dict);
   unsurvieved_orbitals_dict = SortedDict(unsurvieved_orbitals_dict);
 
-  println(atomnum_eff, orbitalNums_eff)
+  println(" atomnum_eff ",atomnum_eff, " orbitalNums_eff ",orbitalNums_eff)
 
   return basisTransform_result_type(atomnum_eff,orbitalNums_eff,
-    orbital_index_orig2new,survieved_orbitals_dict,unsurvieved_orbitals_dict)
+    Gxyz_eff, orbital_mapping,
+    orbital_index_orig2new, survieved_orbitals_dict,unsurvieved_orbitals_dict)
 end
 
-function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,w)
+function Heff(H,orbitalStartIdx,basisTransform_rule::basisTransform_rule_type,
+  basisTransform_result::basisTransform_result_type, w)
     #FHeff[H00_, H01_, H11_, H10_, w_] := (H00 + H01.Inverse[w - H11].H10)
     (TotalOrbitalNum_1,TotalOrbitalNum_2)=size(H)
     @assert(TotalOrbitalNum_1 == TotalOrbitalNum_2)
     TotalOrbitalNum2 = TotalOrbitalNum_1;
 
+    orbitalStartIdx_eff = basisTransform_result.orbitalStartIdx_list
+    ## postion_merge_rule_list
+    if ( 0 < length(basisTransform_rule.postion_merge_rule_list))
+      orbital_mapping = basisTransform_result.orbital_mapping
+      H = H[orbital_mapping,orbital_mapping]
+    end
+    ## custom_transfrom_rules
+    if (0 < length(basisTransform_rule.custom_transfrom_rules))
+      custom_transfrom_rules = basisTransform_rule.custom_transfrom_rules
+      for (rule_i, rule) in enumerate(custom_transfrom_rules)
+        U_matrix = rule.U_matrix
+        orbital_remap_list = rule.orbital_remap_list
+
+        atom_orbitals = Array{Int,1}(undef, 0)
+        for remap_rule in orbital_remap_list
+          target_orbital =  orbitalStartIdx_eff[remap_rule.atom1] + remap_rule.oribtal
+          append!(atom_orbitals, target_orbital)
+          
+          #transfromIndex::Int
+        end
+
+        orbital_rot_full = Matrix{ComplexF64}(1.0I, size(H)[1], size(H)[1]);
+        #=
+        display(atom_orbitals)
+        display(U_matrix)
+        display(orbital_rot_full[atom_orbitals,atom_orbitals])
+        =#
+        orbital_rot_full[atom_orbitals,atom_orbitals] = U_matrix
+
+        H[:,:] = orbital_rot_full'*H*(orbital_rot_full);
+    
+
+      end
+    end
 
     ## Rot orbitals
     if (basisTransform_rule.orbital_rot_on)

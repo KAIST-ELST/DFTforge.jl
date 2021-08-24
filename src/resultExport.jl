@@ -73,8 +73,8 @@ function export2mat_K_Q(Xij_Q_mean_matlab,hamiltonian_info,
 
   tv = scf_r.tv;
   rv = scf_r.rv;
-  Gxy = scf_r.Gxyz;
-  atom_num = scf_r.atomnum;
+  Gxy = hamiltonian_info.basisTransform_result.Gxyz #scf_r.Gxyz;
+  atom_num = hamiltonian_info.basisTransform_result.atomnum;
   println(jq_output_dir)
   #jq_output_file = "test.mat"
   for (atom12_i,atom12) in enumerate(atom12_list)

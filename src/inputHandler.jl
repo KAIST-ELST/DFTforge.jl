@@ -612,7 +612,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
     end
 
-    if (haskey(toml_inputs,"orbital_reassign"))
+    if (haskey(toml_inputs,"orbital_reassign") || haskey(toml_inputs,"jeff_projection_on"))
 
       orbital_rot_on = false
       orbital_rot_rules = Dict{Int,orbital_rot_type}()
@@ -620,7 +620,16 @@ function parse_TOML(toml_file,input::Arg_Inputs)
         orbital_rot_on = toml_inputs["orbital_reassign"]["orbital_rot_on"]
       end
 
-      if orbital_rot_on
+      jeff_projection_on = false
+      jeff_orbitals = Nothing
+      if (haskey(toml_inputs["orbital_reassign"],"jeff_projection_on"))
+        jeff_projection_on = toml_inputs["orbital_reassign"]["jeff_projection_on"];
+        if jeff_projection_on
+          orbital_rot_on = true
+        end
+      end
+
+      if orbital_rot_on || jeff_projection_on
         if (haskey(toml_inputs["orbital_reassign"],"d_orbital_rot"))
           #orbital_rot_d_dict = Dict{Int,orbital_rot_d_type}()
           for (k,v) in enumerate(toml_inputs["orbital_reassign"]["d_orbital_rot"])
@@ -636,14 +645,14 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           #input.Optional["orbital_rot_d_dict"] = orbital_rot_d_dict;
         end
 
-        orbital_merge_on = false;
-        if (haskey(toml_inputs["orbital_reassign"],"orbital_merge_on"))
-          orbital_merge_on = toml_inputs["orbital_reassign"]["orbital_merge_on"]
+        orbital_downfold_on = false;
+        if (haskey(toml_inputs["orbital_reassign"],"orbital_downfold_on"))
+          orbital_downfold_on = toml_inputs["orbital_reassign"]["orbital_downfold_on"]
         end
-        orbital_merge_rules = Dict{Int,orbital_merge_type}()
+        orbital_downfold_rules = Dict{Int,orbital_downfold_type}()
         keep_unmerged_atoms = true;
         keep_unmerged_orbitals = true;
-        if orbital_merge_on
+        if orbital_downfold_on
           if (haskey(toml_inputs["orbital_reassign"],"keep_unmerged_atoms"))
             keep_unmerged_atoms = toml_inputs["orbital_reassign"]["keep_unmerged_atoms"]
           end
@@ -658,16 +667,111 @@ function parse_TOML(toml_file,input::Arg_Inputs)
               atom1 = convert(Int, v[1][1])
               orbital_list = convert(Array{Array{Int}},v[2:end]);
               @assert(issorted( map(v->v[1],orbital_list) ));
-              orbital_merge_rules[atom1] =
-                orbital_merge_type(atom1,orbital_list);
+              orbital_downfold_rules[atom1] =
+                orbital_downfold_type(atom1,orbital_list);
             end
               #TODO: migrate into Arg_Inputs
 
           end
+
+        
         end
 
-        basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
-          orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals);
+        position_merge_on = false
+        postion_merge_rule_list = Nothing
+        if (haskey(toml_inputs["orbital_reassign"],"position_merge"))
+          position_merge_on = toml_inputs["orbital_reassign"]["position_merge"]
+          if position_merge_on
+            postion_merge_rule_list = toml_inputs["orbital_reassign"]["position_merge_rule"]
+            Array{Union{Array{Float64,1}, Array{Int64,1}},1} == typeof(postion_merge_rule_list)
+
+            # [new atom index],[prev atom indices],[new x,new y,new z]
+            for rule_i in 1:length(postion_merge_rule_list)
+              postion_merge_rule = postion_merge_rule_list[rule_i]
+              @assert(typeof(postion_merge_rule[1]) <: Int)
+              @assert(typeof(postion_merge_rule[2]) <: Array{Int,1})
+              @assert(typeof(postion_merge_rule[3]) <: Array{Float64,1})
+              @assert(3 == length(postion_merge_rule[3]))
+              typeof(postion_merge_rule[1])
+            end
+            sort!(postion_merge_rule_list, by = x -> x[1])
+
+          end
+        end
+
+        orbital_custom_transform_on = false;
+        custom_transfrom_rules = Nothing
+        if (haskey(toml_inputs["orbital_reassign"],"custom_transform"))
+          orbital_custom_transform_on = toml_inputs["orbital_reassign"]["custom_transform"] 
+
+          if orbital_custom_transform_on
+            custom_transfrom_rules = Array{custom_transfrom_type,1}(undef,0)
+            custom_rule = toml_inputs["orbital_reassign"]["custom_transfrom_rule"] # TODO: MY 
+
+            for rule_i in 1:length(custom_rule)
+              print(custom_rule[rule_i][1]," ",custom_rule[rule_i][2])
+              custom_rule_filename =  custom_rule[rule_i][1][1]
+              custom_rule_varible =  custom_rule[rule_i][1][2]
+          
+              custom_rule_remap = custom_rule[rule_i][2]
+              custom_U = Nothing
+              print(custom_rule_filename)
+              if isfile(abspath(custom_rule_filename))
+                  custom_U = include(abspath(custom_rule_filename))
+              elseif isfile(joinpath(toml_dir, custom_rule_filename))
+                  custom_U = include(joinpath(toml_dir, custom_rule_filename))
+              else
+                  println(" custom_rule_filename ",custom_rule_filename ," dose not exist.")
+                  @assert(false)
+              end
+              
+          
+              if Nothing != custom_U
+                  U_matrix = custom_U[custom_rule_varible]
+                  orbital_remap_list = Array{remap_type,1}(undef,0)
+                  display(custom_U[custom_rule_varible])
+                  # print(custom_U["testf"](4,2))
+                  display(custom_rule_remap)
+                  for (remap_i,reamp) in enumerate(custom_rule_remap)
+                    # (atom1, orbital)
+                    push!(orbital_remap_list, remap_type(reamp[1], reamp[2])) # , reamp[3]))
+                  end
+                  push!(custom_transfrom_rules, 
+                    custom_transfrom_type(copy(U_matrix),orbital_remap_list))
+              end
+            end
+        
+          end
+          # input.Optional["custom_orbital_tranformfule"] = custom_rule
+        end
+
+        basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_downfold_on,
+          orbital_downfold_rules,keep_unmerged_atoms,keep_unmerged_orbitals, 
+          postion_merge_rule_list, custom_transfrom_rules);
+          
+        #=
+        jeff_orbitals = Nothing
+        if jeff_projection_on
+          jeff_orbitals = toml_inputs["orbital_reassign"]["jeff_orbitals"];
+          # Check   
+          jeff_projection_num = length(jeff_orbitals)
+          for Jeff_i in 1:jeff_projection_num
+            jeff_orbital_cluster = jeff_orbitals[Jeff_i]
+              @assert(4 == length(jeff_orbital_cluster))
+
+              for i in 1:4
+                  @assert(4 == length(jeff_orbital_cluster[i]))  # [[atom],[dxy],[dxz],[dyz]]
+                  @assert(1 == length(jeff_orbital_cluster[i][1]))  # [[atom],[dxy],[dxz],[dyz]]
+              end
+          end
+          #input.Optional["jeff_orbitals"] = jeff_orbitals;
+        end
+
+        #basisTransform = basisTransform_rule_type(orbital_rot_on,orbital_rot_rules,orbital_merge_on,
+        #  orbital_merge_rules,keep_unmerged_atoms,keep_unmerged_orbitals);
+        basisTransform = basisTransform_rule_type(orbital_rot_on, orbital_rot_rules, orbital_downfold_on,
+        orbital_downfold_rules, keep_unmerged_atoms, keep_unmerged_orbitals, jeff_orbitals); # TODO: Jeff
+        =#
         input.Optional["basisTransform"] = basisTransform;
       end
     end
@@ -738,6 +842,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
     end
 
+    
     if (haskey(toml_inputs,"DMFT"))
 
         start_iter = 0;
@@ -775,6 +880,8 @@ function parse_TOML(toml_file,input::Arg_Inputs)
   input_checker(input);
   return input;
 end
+
+
 function parse_input(args,input::Arg_Inputs)
 
     #input::Arg_Inputs =  Arg_Inputs()

@@ -77,7 +77,7 @@ function cal_Hamiltonian(k_point::k_point_Tuple,   # lobster_r::Wannierdatatype,
         if (DFTcommon.non_colinear_type == spin_type)
             throw(assertionError("Non-collinear spin basis rotation not supported yet "));
         end
-        Hout = Heff(Hout,orbitalStartIdx_list, hamiltonian_info.basisTransform_rule, 0.0);
+        Hout = Heff(Hout,orbitalStartIdx_list, hamiltonian_info.basisTransform_rule, hamiltonian_info.basisTransform_result, 0.0);
     #println( sum(abs(H2-H)) )
     end
     return Hout;
@@ -103,7 +103,8 @@ function cal_colinear_eigenstate(k_point::k_point_Tuple,hamiltonian_info::Hamilt
 
     # S rotation  & Merge
     if hamiltonian_info.basisTransform_rule.orbital_rot_on
-        S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,0.0);
+        S = Heff(S,orbitalStartIdx_list,hamiltonian_info.basisTransform_rule,
+                hamiltonian_info.basisTransform_result,0.0);
     end
     #Sq = sqrtm(S)
     #S2 = inv(Sq);
@@ -138,14 +139,25 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
     if(isdirpath(lobster_dirname))
         println("lobster_dirname ",lobster_dirname)
     end
-    function search_next_delimiter(search_line, lines, target)
+    function search_next_delimiter(search_line, lines, target; maxscan = -1)
+        scan_cnt = 0
+        found = false
         while(search_line < length(lines)  )
             if (occursin(target , lines[search_line]))
+                found = true
                 break;
             end
             search_line+=1
+            scan_cnt += 1
+            if (0 < maxscan & maxscan < scan_cnt )
+                print("Reached scan_cnt line ", search_line)
+                break;
+            end
         end
-        return search_line
+        if found
+            return search_line
+        end
+        return -1 # not found
     end
     ###################################################
     lobsterout_fname = joinpath(lobster_dirname,"lobsterout")
@@ -277,40 +289,97 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
     end
 
     current_line = 1
-    while(current_line < length(overlapMatrices_fname_text))
-        next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text, "Real-space Overlap for spin")
+    next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text,
+            "Real-space Overlap for spin", maxscan=10)
 
-        # Detect spin
-        tmp_str_list = split(overlapMatrices_fname_text[next_delimiter])
-        spin = parse(Int, tmp_str_list[end])
-        ##println("spin ",spin)
+    if -1 == next_delimiter
+        # Lobster after 4.0: Overlap matrix of spin 1,2 is same duplicated infor is reduced
+        next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text,
+            "Real-space Overlap", maxscan=10)
 
-        # Detect R vector
-        tmp_str_list = split(overlapMatrices_fname_text[next_delimiter+1])
-        R_vector = zeros(Int,3)
-        R_vector[1] = parse(Int,tmp_str_list[end-2])
-        R_vector[2] = parse(Int,tmp_str_list[end-1])
-        R_vector[3] = parse(Int,tmp_str_list[end-0])
-
-
-        ##println("R_vector ", R_vector)
-
-        current_R_vector_i = (R_vector_Overlap_cnt[spin] +=1)
-        R_vector_Overlap_mat[spin][current_R_vector_i,:] = R_vector
-
-        OverlapS_R[spin][current_R_vector_i]  = zeros(ComplexF64, TotalOrbitalNum, TotalOrbitalNum)
-        for i in 1:TotalOrbitalNum
-            # OverlapMatix
-            tmp_str_list_real = split(overlapMatrices_fname_text[next_delimiter+4+i]);
-            tmp_str_list_imag = split(overlapMatrices_fname_text[next_delimiter+4+TotalOrbitalNum+3+ i])
-
-            overlap_real =  parse.(Float64, tmp_str_list_real[2:end])
-            overlap_imag =  parse.(Float64, tmp_str_list_imag[2:end])
-
-            OverlapS_R[spin][current_R_vector_i][i,:] = overlap_real + 1.0im*overlap_imag
+            while(current_line < length(overlapMatrices_fname_text))
+                next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text,
+                    "Real-space Overlap", maxscan=10)
+                
+        
+                # Detect spin
+                #tmp_str_list = split(overlapMatrices_fname_text[next_delimiter])
+                #spin = parse(Int, tmp_str_list[end])
+                spin = 1
+                ##println("spin ",spin)
+        
+                # Detect R vector
+                tmp_str_list = split(overlapMatrices_fname_text[next_delimiter+1])
+                R_vector = zeros(Int,3)
+                R_vector[1] = parse(Int,tmp_str_list[end-2])
+                R_vector[2] = parse(Int,tmp_str_list[end-1])
+                R_vector[3] = parse(Int,tmp_str_list[end-0])
+        
+        
+                ##println("R_vector ", R_vector)
+        
+                current_R_vector_i = (R_vector_Overlap_cnt[spin] +=1)
+                R_vector_Overlap_mat[spin][current_R_vector_i,:] = R_vector
+        
+                OverlapS_R[spin][current_R_vector_i]  = zeros(ComplexF64, TotalOrbitalNum, TotalOrbitalNum)
+                for i in 1:TotalOrbitalNum
+                    # OverlapMatix
+                    tmp_str_list_real = split(overlapMatrices_fname_text[next_delimiter+4+i]);
+                    print(" DEBUG ",next_delimiter+4+i, " " ,tmp_str_list_real)
+                    #tmp_str_list_imag = split(overlapMatrices_fname_text[next_delimiter+4+TotalOrbitalNum+3+ i])
+        
+                    overlap_real =  parse.(Float64, tmp_str_list_real[2:end])
+                    #overlap_imag =  parse.(Float64, tmp_str_list_imag[2:end])
+        
+                    OverlapS_R[spin][current_R_vector_i][i,:] = overlap_real # + 1.0im*overlap_imag
+                end
+                current_line = next_delimiter+4+TotalOrbitalNum+3 # + TotalOrbitalNum
+            end
+            if 2==SpinP_switch
+                OverlapS_R[2] = OverlapS_R[1]
+            end
+    else
+        # Lobster before 4.0 : spin 1,2 is written
+        while(current_line < length(overlapMatrices_fname_text))
+            next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text,
+                "Real-space Overlap for spin", maxscan=10)
+            
+    
+            # Detect spin
+            tmp_str_list = split(overlapMatrices_fname_text[next_delimiter])
+            spin = parse(Int, tmp_str_list[end])
+            ##println("spin ",spin)
+    
+            # Detect R vector
+            tmp_str_list = split(overlapMatrices_fname_text[next_delimiter+1])
+            R_vector = zeros(Int,3)
+            R_vector[1] = parse(Int,tmp_str_list[end-2])
+            R_vector[2] = parse(Int,tmp_str_list[end-1])
+            R_vector[3] = parse(Int,tmp_str_list[end-0])
+    
+    
+            ##println("R_vector ", R_vector)
+    
+            current_R_vector_i = (R_vector_Overlap_cnt[spin] +=1)
+            R_vector_Overlap_mat[spin][current_R_vector_i,:] = R_vector
+    
+            OverlapS_R[spin][current_R_vector_i]  = zeros(ComplexF64, TotalOrbitalNum, TotalOrbitalNum)
+            for i in 1:TotalOrbitalNum
+                # OverlapMatix
+                tmp_str_list_real = split(overlapMatrices_fname_text[next_delimiter+4+i]);
+                tmp_str_list_imag = split(overlapMatrices_fname_text[next_delimiter+4+TotalOrbitalNum+3+ i])
+    
+                overlap_real =  parse.(Float64, tmp_str_list_real[2:end])
+                overlap_imag =  parse.(Float64, tmp_str_list_imag[2:end])
+    
+                OverlapS_R[spin][current_R_vector_i][i,:] = overlap_real + 1.0im*overlap_imag
+            end
+            current_line = next_delimiter+4+TotalOrbitalNum+3+ TotalOrbitalNum
         end
-        current_line = next_delimiter+4+TotalOrbitalNum+3+ TotalOrbitalNum
+    
     end
+    
+
     overlapMatrices_fname_text = []
     ###################################################
     #ChemP = 0.0
