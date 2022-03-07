@@ -44,7 +44,8 @@ end
 
 mutable struct Eigenstate_hdf5
   hdf_cache_name::AbstractString
-  fid_hdf::HDF5.HDF5File
+  fid_hdf::HDF5.File
+  ###fid_hdf::HDF5.HDF5File
   q_points::Array{k_point_Tuple}
   q_points_int::Array{k_point_int_Tuple};
   q_points_intdic::Dict{k_point_int_Tuple,Int};
@@ -117,7 +118,8 @@ struct Job_input_kq_atom_list_Type
 end
 
 global dftresult = Dict{Int64, Hamiltonian_info_type}();
-global eigenstate_list =  Dict{Int64, Eigenstate_hdf5}(); #cached Eigenstates
+global eigenstate_list =  Dict{Int64, Eigenstate_
+}(); #cached Eigenstates
 
 #=
 function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
