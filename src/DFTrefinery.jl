@@ -118,8 +118,7 @@ struct Job_input_kq_atom_list_Type
 end
 
 global dftresult = Dict{Int64, Hamiltonian_info_type}();
-global eigenstate_list =  Dict{Int64, Eigenstate_
-}(); #cached Eigenstates
+global eigenstate_list =  Dict{Int64, Eigenstate_hdf5 }(); #cached Eigenstates
 
 #=
 function set_current_dftdataset(scf_name::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
@@ -384,22 +383,22 @@ function cachecal_all_Qpoint_eigenstats(q_point_list::Array{k_point_Tuple},
 
   #print(spin_dim )
   fid_hdf = h5open(hdf_cache_name,"w");
-  hdf5_energy_idx_num = d_create(fid_hdf,"Energy_idx_num",datatype(Int64),
+  hdf5_energy_idx_num = create_dataset(fid_hdf,"Energy_idx_num",datatype(Int64),
   dataspace(spin_dim, Total_q_point_num));
 
-  hdf5_eigenstate_real = d_create(fid_hdf,"Eigenvect_real",datatype(Float64),
+  hdf5_eigenstate_real = create_dataset(fid_hdf,"Eigenvect_real",datatype(Float64),
   dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
-  hdf5_eigenstate_imag = d_create(fid_hdf,"Eigenvect_imag",datatype(Float64),
+  hdf5_eigenstate_imag = create_dataset(fid_hdf,"Eigenvect_imag",datatype(Float64),
   dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
-  hdf5_eigenvalues = d_create(fid_hdf,"Eigenvalues",datatype(Float64),
+  hdf5_eigenvalues = create_dataset(fid_hdf,"Eigenvalues",datatype(Float64),
   dataspace(TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
-  hdf5_hamiltonian_real = d_create(fid_hdf,"Hamiltonian_real",datatype(Float64),
+  hdf5_hamiltonian_real = create_dataset(fid_hdf,"Hamiltonian_real",datatype(Float64),
   dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim, Total_q_point_num));
 
-  hdf5_hamiltonian_imag = d_create(fid_hdf,"Hamiltonian_imag",datatype(Float64),
+  hdf5_hamiltonian_imag = create_dataset(fid_hdf,"Hamiltonian_imag",datatype(Float64),
   dataspace(TotalOrbitalNum2,TotalOrbitalNum2, spin_dim,Total_q_point_num ));
 
 
@@ -575,19 +574,19 @@ function cachecal_all_Qpoint_eigenstats_as_nc(q_point_list::Array{k_point_Tuple}
 
   #print(spin_dim )
   fid_hdf = h5open(hdf_cache_name,"w");
-  hdf5_eigenstate_real = d_create(fid_hdf,"Eigenvect_real",datatype(Float64),
+  hdf5_eigenstate_real = create_dataset(fid_hdf,"Eigenvect_real",datatype(Float64),
   dataspace(TotalOrbitalNum3,TotalOrbitalNum3, spin_dim, Total_q_point_num));
 
-  hdf5_eigenstate_imag = d_create(fid_hdf,"Eigenvect_imag",datatype(Float64),
+  hdf5_eigenstate_imag = create_dataset(fid_hdf,"Eigenvect_imag",datatype(Float64),
   dataspace(TotalOrbitalNum3,TotalOrbitalNum3, spin_dim, Total_q_point_num));
 
-  hdf5_eigenvalues = d_create(fid_hdf,"Eigenvalues",datatype(Float64),
+  hdf5_eigenvalues = create_dataset(fid_hdf,"Eigenvalues",datatype(Float64),
   dataspace(TotalOrbitalNum3, spin_dim, Total_q_point_num));
 
-  hdf5_hamiltonian_real = d_create(fid_hdf,"Hamiltonian_real",datatype(Float64),
+  hdf5_hamiltonian_real = create_dataset(fid_hdf,"Hamiltonian_real",datatype(Float64),
   dataspace(TotalOrbitalNum3,TotalOrbitalNum3, spin_dim, Total_q_point_num));
 
-  hdf5_hamiltonian_imag = d_create(fid_hdf,"Hamiltonian_imag",datatype(Float64),
+  hdf5_hamiltonian_imag = create_dataset(fid_hdf,"Hamiltonian_imag",datatype(Float64),
   dataspace(TotalOrbitalNum3,TotalOrbitalNum3, spin_dim,Total_q_point_num ));
   # Write hamiltonian
 
@@ -697,12 +696,12 @@ function cacheset(eigenstate_cache::Eigenstate_hdf5,cache_index=1)
 
   eigenstate_list[cache_index] = eigenstate_cache;
 
-  eigenstate_list[cache_index].Energy_idx_num = readmmap(fid_hdf["Energy_idx_num"]);
-  eigenstate_list[cache_index].Eigenvect_real = readmmap(fid_hdf["Eigenvect_real"]);
-  eigenstate_list[cache_index].Eigenvect_imag = readmmap(fid_hdf["Eigenvect_imag"]);
-  eigenstate_list[cache_index].Eigenvalues    = readmmap(fid_hdf["Eigenvalues"]);
-  eigenstate_list[cache_index].Hamiltonian_real    = readmmap(fid_hdf["Hamiltonian_real"]);
-  eigenstate_list[cache_index].Hamiltonian_imag    = readmmap(fid_hdf["Hamiltonian_imag"]);
+  eigenstate_list[cache_index].Energy_idx_num = HDF5.readmmap(fid_hdf["Energy_idx_num"]);
+  eigenstate_list[cache_index].Eigenvect_real = HDF5.readmmap(fid_hdf["Eigenvect_real"]);
+  eigenstate_list[cache_index].Eigenvect_imag = HDF5.readmmap(fid_hdf["Eigenvect_imag"]);
+  eigenstate_list[cache_index].Eigenvalues    = HDF5.readmmap(fid_hdf["Eigenvalues"]);
+  eigenstate_list[cache_index].Hamiltonian_real    = HDF5.readmmap(fid_hdf["Hamiltonian_real"]);
+  eigenstate_list[cache_index].Hamiltonian_imag    = HDF5.readmmap(fid_hdf["Hamiltonian_imag"]);
 
   #eigenstate_cache.fid_hdf = fid_hdf;
 

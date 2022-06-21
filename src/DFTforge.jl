@@ -32,9 +32,9 @@ using LinearAlgebra
 using ArgParse
 using ProgressMeter
 using Statistics
+using DataFrames
 using CSV
 using FileIO
-using DataFrames
 using Glob
 #using Plots
 export ArgParse,ProgressMeter,Distributed,Statistics,CSV,FileIO,DataFrames,Glob#,Plots
