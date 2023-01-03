@@ -1,8 +1,8 @@
 - Hongkee Yoon Hongkeeyoon@kaist.ac.kr
-- 2021.04 works with Julia 1.0 & 1.6
+- 2021.04 works with Julia 1.0 & 1.8
 - https://kaist-elst.github.io/DFTforge.jl/
 
-![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true)  ![Julia1.6](https://img.shields.io/badge/Julia-1.6-blue.svg?longCache=true)
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.6](https://img.shields.io/badge/Julia-1.6-blue.svg?longCache=true) ~ ![Julia1.8](https://img.shields.io/badge/Julia-1.8-blue.svg?longCache=true)
 
 The backend package for MFT code [Jx](https://kaist-elst.github.io/Jx.jl/).
 
