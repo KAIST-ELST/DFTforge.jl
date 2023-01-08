@@ -33,6 +33,8 @@ end
 function read_wannier(wannier_fname::AbstractString,result_file_dict::Dict{AbstractString,AbstractString},
   Wannier90_type::Wannier90type, spin_type::SPINtype,
   atoms_orbitals_list::Vector{Array{Int64}},atomnum::Int,atompos::Array{Float64,2})
+    println(atomnum)
+    println(atoms_orbitals_list)
   @assert(atomnum == length(atoms_orbitals_list))
   if (DFTcommon.OpenMXWF == Wannier90_type)
     if (DFTcommon.para_type == spin_type || DFTcommon.colinear_type == spin_type)

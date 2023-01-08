@@ -310,14 +310,29 @@ function parse_TOML(toml_file,input::Arg_Inputs)
             println("File not found  ",v)
             @assert(false)
           end
+        end
+        
+        if (haskey(toml_inputs,"spintype"))
+          if (lowercase(toml_inputs["spintype"]) != "nc_spin")
+            result_file_dict = Dict(
+              "result_file_up" => result_file_list[1],
+              "result_file_down" => result_file_list[2])
+            input.result_file_dict = result_file_dict;
+            println(result_file_dict)
+            #result_file_dict = Dict
+          else
+            #input.result_file = result_file_list_input[1]
+            result_file_dict = Dict(
+              "result_file" => result_file_list_input[1])
+              
+            input.result_file_dict = result_file_dict;
+            println(result_file_dict)
+            #println(input.result_file)
+
+          end
 
         end
-        result_file_dict = Dict(
-        "result_file_up" => result_file_list[1],
-        "result_file_down" => result_file_list[2])
-        input.result_file_dict = result_file_dict;
-        println(result_file_dict)
-        #result_file_dict = Dict
+
       end
     elseif ((Wannier90 == input.DFT_type &&  EcalJWF ==  input.Wannier90_type))
       ## Wannier90
