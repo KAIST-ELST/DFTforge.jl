@@ -150,7 +150,7 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
             search_line+=1
             scan_cnt += 1
             if (0 < maxscan & maxscan < scan_cnt )
-                print("Reached scan_cnt line ", search_line)
+                println("Reached scan_cnt line ", search_line) 
                 break;
             end
         end
@@ -276,8 +276,8 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
 
     # num_R_vector_Overlap
     tmp_str_list = split(overlapMatrices_fname_text[1])
-    num_R_vector_Overlap = parse(Int64, tmp_str_list[4])
-    R_vector_Overlap_cnt = zeros(Int,SpinP_switch)
+    num_R_vector_Overlap = parse(Int64, tmp_str_list[4]) # This file contains ## matrices
+    R_vector_Overlap_cnt = zeros(Int,SpinP_switch)   ##
     println("num_R_vector_Overlap ",num_R_vector_Overlap)
 
     R_vector_Overlap_mat = Array{Array{Int,2}}(undef,SpinP_switch)
@@ -291,6 +291,7 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
     current_line = 1
     next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text,
             "Real-space Overlap for spin", maxscan=10)
+    #println("next_delimiter =", next_delimiter) ## for debug: KIEM
 
     if -1 == next_delimiter
         # Lobster after 4.0: Overlap matrix of spin 1,2 is same duplicated infor is reduced
@@ -300,7 +301,8 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
             while(current_line < length(overlapMatrices_fname_text))
                 next_delimiter = search_next_delimiter(current_line, overlapMatrices_fname_text,
                     "Real-space Overlap", maxscan=10)
-                
+                #println("next_delimiter =", next_delimiter) ## for debug: KIEM
+                #println("current_line = ", current_line) ## for debug: KIEM
         
                 # Detect spin
                 #tmp_str_list = split(overlapMatrices_fname_text[next_delimiter])
@@ -309,6 +311,7 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
                 ##println("spin ",spin)
         
                 # Detect R vector
+                #println("overlap current line = ", overlapMatrices_fname_text[next_delimiter+1] )  ## for debug: KIEM
                 tmp_str_list = split(overlapMatrices_fname_text[next_delimiter+1])
                 R_vector = zeros(Int,3)
                 R_vector[1] = parse(Int,tmp_str_list[end-2])
@@ -316,7 +319,7 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
                 R_vector[3] = parse(Int,tmp_str_list[end-0])
         
         
-                ##println("R_vector ", R_vector)
+                #println("R_vector ", R_vector) ## for debug: KIEM
         
                 current_R_vector_i = (R_vector_Overlap_cnt[spin] +=1)
                 R_vector_Overlap_mat[spin][current_R_vector_i,:] = R_vector
@@ -325,7 +328,7 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
                 for i in 1:TotalOrbitalNum
                     # OverlapMatix
                     tmp_str_list_real = split(overlapMatrices_fname_text[next_delimiter+4+i]);
-                    print(" DEBUG ",next_delimiter+4+i, " " ,tmp_str_list_real)
+                    #print(" DEBUG ",next_delimiter+4+i, " \n" ,tmp_str_list_real,"\n") ## for debug: KIEM
                     #tmp_str_list_imag = split(overlapMatrices_fname_text[next_delimiter+4+TotalOrbitalNum+3+ i])
         
                     overlap_real =  parse.(Float64, tmp_str_list_real[2:end])
@@ -333,7 +336,7 @@ function read_lobster(lobster_dirname::AbstractString,spin_type::SPINtype,
         
                     OverlapS_R[spin][current_R_vector_i][i,:] = overlap_real # + 1.0im*overlap_imag
                 end
-                current_line = next_delimiter+4+TotalOrbitalNum+3 # + TotalOrbitalNum
+                current_line = next_delimiter+4+TotalOrbitalNum+2 # 
             end
             if 2==SpinP_switch
                 OverlapS_R[2] = OverlapS_R[1]
