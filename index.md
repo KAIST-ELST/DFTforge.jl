@@ -1,7 +1,7 @@
 ---
 layout: default
 ---
-![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true) ~ ![Julia1.8](https://img.shields.io/badge/Julia-1.8-blue.svg?longCache=true) 
+![Julia1.0](https://img.shields.io/badge/Julia-1.0-blue.svg?longCache=true)  ![Julia1.1](https://img.shields.io/badge/Julia-1.1-blue.svg?longCache=true) ~ ![Julia1.9](https://img.shields.io/badge/Julia-1.9-blue.svg?longCache=true) 
 
 
 
@@ -18,11 +18,11 @@ The wrapper for calculating Hamiltonian, Eigenvalue, Eigenvector from DFT result
 
  * read DFT results from [OpenMX](http://www.openmx-square.org/), [Wannier90](http://www.wannier.org/), EcalJ
  * Calculate Phi, Enk, Hks,
- * Generalised arguments parser (support TOML sytle input).
+ * Generalised arguments parser (support TOML style input).
 
 
 ### DFTrefinery
-use DFTforge for calcuating various properties
+use DFTforge for calculating various properties
 Wrapper module for easy access of DFTforge, especially easy use of HDF5 cached eigenstate information.
 
  * Store Eigenvalues & Eigenvectors in HDF5 format (K,Q)
@@ -32,7 +32,7 @@ Wrapper module for easy access of DFTforge, especially easy use of HDF5 cached e
 
 ## Why Julia?
 
-Julia was designed from the beginning for high performance. Julia programs compile to efficient native code for multiple platforms via LLVM.
+Julia was designed from the beginning for high performance. Julia programs compile into efficient native code for multiple platforms via LLVM.
 [See Julia benchmark compared to C, Fortran, Pythons, Matlab & more...](https://julialang.org/benchmarks/).
 
 
@@ -41,7 +41,7 @@ Julia was designed from the beginning for high performance. Julia programs compi
 ## Install Julia (1.0 or above)
 Visit [https://julialang.org/](https://julialang.org/) for details.
 
-## Excute the [Julia](https://julialang.org/) and type:
+## Execute the [Julia](https://julialang.org/) and type:
 ```julia
 import Pkg
 Pkg.add("DFTforge")
