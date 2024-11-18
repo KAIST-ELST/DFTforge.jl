@@ -94,6 +94,15 @@ struct Arg_DMFT_DFT
 end
 
 ######### added by TJ
+const eVToKelvin = 11604.5250061657
+function SetOrDefault( parser, item_name, item_default_val )
+    try
+        return parser[item_name]
+    catch
+        return item_default_val
+    end
+end
+
 struct Arg_DMFT_
   Calculation_mode::String
   mpi_prefix::String
@@ -101,7 +110,9 @@ struct Arg_DMFT_
   KgridNum::Array{Int64,1}
   RgridNum::Array{Int64,1}
   iWgridCut::Float64
+  # NImFreq::Int64
   Solver_green_Cut::Float64
+  # beta::Float64
   Temperature::Float64
   Corr_atom_Ind::Array{Int64,1}
   Corr_orbital_Ind::Array{Array{Int64,1},1}
@@ -139,6 +150,7 @@ struct Arg_DMFT_
   EDMFTF_PChangeOrder::Float64
 
   SelfE_file::String
+  chem_int::Float64
 end
 
 
@@ -962,18 +974,24 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
 
     ############# added by TJ #############
-    if (haskey(toml_inputs,"DMFT_Jx"))
+    if ( haskey(toml_inputs,"DMFT_Jx") || haskey(toml_inputs,"KaiEDJ") )
        
+       header_dmft_jx = "DMFT_Jx"
+       if( haskey(toml_inputs,"KaiEDJ") )
+          header_dmft_jx = "KaiEDJ"
+       end
+       toml_input_header_dmft_jx = toml_inputs[header_dmft_jx]
+
        Calculation_mode = "DMFT"
        
-       if (haskey(toml_inputs["DMFT_Jx"],"Calculation_mode"))
-          Calculation_mode = toml_inputs["DMFT_Jx"]["Calculation_mode"]
+       if (haskey(toml_input_header_dmft_jx,"Calculation_mode"))
+          Calculation_mode = toml_input_header_dmft_jx["Calculation_mode"]
        end
 
        if (Calculation_mode == "DMFT")
           KgridNum = [5,5,5]
           RgridNum = [5,5,5]
-          iWgridCut = 30
+          # iWgridCut = 30
           Solver_green_Cut = 30
           imp_Measure_time = 20;
           imp_Thermal_time = 1;
@@ -990,6 +1008,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           imp_dc_type ="nominal"
           DMFT_solver ="ComCTQMC"
           SelfE_file = ""
+          chem_int = 0.0
 
 
           EDMFTF_MonteCar_step = 1000000
@@ -1001,114 +1020,127 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
           compute_EF = true
 
-          if (haskey(toml_inputs["DMFT_Jx"],"compute_EF"))
-            compute_EF = toml_inputs["DMFT_Jx"]["compute_EF"]
+          if (haskey(toml_input_header_dmft_jx,"compute_EF"))
+            compute_EF = toml_input_header_dmft_jx["compute_EF"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_MonteCar_step"))
-            EDMFTF_MonteCar_step = toml_inputs["DMFT_Jx"]["EDMFTF_MonteCar_step"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_MonteCar_step"))
+            EDMFTF_MonteCar_step = toml_input_header_dmft_jx["EDMFTF_MonteCar_step"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_warmup_step"))
-            EDMFTF_warmup_step = toml_inputs["DMFT_Jx"]["EDMFTF_warmup_step"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_warmup_step"))
+            EDMFTF_warmup_step = toml_input_header_dmft_jx["EDMFTF_warmup_step"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_GlobalFlip"))
-            EDMFTF_GlobalFlip = toml_inputs["DMFT_Jx"]["EDMFTF_GlobalFlip"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_GlobalFlip"))
+            EDMFTF_GlobalFlip = toml_input_header_dmft_jx["EDMFTF_GlobalFlip"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_tsample"))
-            EDMFTF_tsample = toml_inputs["DMFT_Jx"]["EDMFTF_tsample"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_tsample"))
+            EDMFTF_tsample = toml_input_header_dmft_jx["EDMFTF_tsample"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_nom"))
-            EDMFTF_nom = toml_inputs["DMFT_Jx"]["EDMFTF_nom"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_nom"))
+            EDMFTF_nom = toml_input_header_dmft_jx["EDMFTF_nom"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_PChangeOrder"))
-            EDMFTF_PChangeOrder = toml_inputs["DMFT_Jx"]["EDMFTF_PChangeOrder"]
-          end
-
-
-
-
-
-          if (haskey(toml_inputs["DMFT_Jx"],"DMFT_solver"))
-            DMFT_solver = toml_inputs["DMFT_Jx"]["DMFT_solver"]
-          end
-
-          if (haskey(toml_inputs["DMFT_Jx"],"DMFT_loop_N"))
-            DMFT_loop_N = toml_inputs["DMFT_Jx"]["DMFT_loop_N"]
-          end
-
-          if (haskey(toml_inputs["DMFT_Jx"],"basis_transform"))
-            basis_transform = toml_inputs["DMFT_Jx"]["basis_transform"]
-          end
-
-          if (haskey(toml_inputs["DMFT_Jx"],"consider_degeneracy"))
-            consider_degeneracy = toml_inputs["DMFT_Jx"]["consider_degeneracy"]
-          end
-
-
-          if (haskey(toml_inputs["DMFT_Jx"],"KgridNum"))
-            KgridNum = toml_inputs["DMFT_Jx"]["KgridNum"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"RgridNum"))
-            RgridNum = toml_inputs["DMFT_Jx"]["RgridNum"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"iWgridCut"))
-            iWgridCut = toml_inputs["DMFT_Jx"]["iWgridCut"]
-          end
-
-          if (haskey(toml_inputs["DMFT_Jx"],"Solver_green_Cut"))
-            Solver_green_Cut = toml_inputs["DMFT_Jx"]["Solver_green_Cut"]
-          end
-
-          if (haskey(toml_inputs["DMFT_Jx"],"mpi_prefix"))
-            mpi_prefix = toml_inputs["DMFT_Jx"]["mpi_prefix"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"smth_step"))
-            smth_step = toml_inputs["DMFT_Jx"]["smth_step"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"cal_susc"))
-            cal_susc = toml_inputs["DMFT_Jx"]["cal_susc"]
-          end
-
-          if (haskey(toml_inputs["DMFT_Jx"],"green_basis"))
-            green_basis = toml_inputs["DMFT_Jx"]["green_basis"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"green_legendre_cutoff"))
-            green_legendre_cutoff = toml_inputs["DMFT_Jx"]["green_legendre_cutoff"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_PChangeOrder"))
+            EDMFTF_PChangeOrder = toml_input_header_dmft_jx["EDMFTF_PChangeOrder"]
           end
 
 
 
 
-          if (haskey(toml_inputs["DMFT_Jx"],"imp_Measure_time"))
-            imp_Measure_time = toml_inputs["DMFT_Jx"]["imp_Measure_time"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"imp_Thermal_time"))
-            imp_Thermal_time = toml_inputs["DMFT_Jx"]["imp_Thermal_time"]
+
+          if (haskey(toml_input_header_dmft_jx,"DMFT_solver"))
+            DMFT_solver = toml_input_header_dmft_jx["DMFT_solver"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"Mix_selfE"))
-            Mix_selfE = toml_inputs["DMFT_Jx"]["Mix_selfE"]
+          if (haskey(toml_input_header_dmft_jx,"DMFT_loop_N"))
+            DMFT_loop_N = toml_input_header_dmft_jx["DMFT_loop_N"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"init_bias"))
-            init_bias = toml_inputs["DMFT_Jx"]["init_bias"]
+          if (haskey(toml_input_header_dmft_jx,"basis_transform"))
+            basis_transform = toml_input_header_dmft_jx["basis_transform"]
+          end
+
+          if (haskey(toml_input_header_dmft_jx,"consider_degeneracy"))
+            consider_degeneracy = toml_input_header_dmft_jx["consider_degeneracy"]
           end
 
 
-          Temperature = toml_inputs["DMFT_Jx"]["Temperature"]
-          Corr_atom_Ind = toml_inputs["DMFT_Jx"]["Corr_atom_Ind"]
-          Corr_orbital_Ind = toml_inputs["DMFT_Jx"]["Corr_orbital_Ind"]
-          Corr_atom_equiv = toml_inputs["DMFT_Jx"]["Corr_atom_equiv"]
+          if (haskey(toml_input_header_dmft_jx,"KgridNum"))
+            KgridNum = toml_input_header_dmft_jx["KgridNum"]
+          end
+          if (haskey(toml_input_header_dmft_jx,"RgridNum"))
+            RgridNum = toml_input_header_dmft_jx["RgridNum"]
+          end
 
-          Spin_type = toml_inputs["DMFT_Jx"]["DMFT_Spin_type"]
+          beta          = SetOrDefault( toml_input_header_dmft_jx, "beta", NaN )
+          if (isnan(beta))
+            Temperature   = SetOrDefault( toml_input_header_dmft_jx, "Temperature", 90.66035161070313 )
+          else
+            Temperature   = 1. / beta * eVToKelvin
+          end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"imp_dc_type"))
-             imp_dc_type = toml_inputs["DMFT_Jx"]["imp_dc_type"]
+          NImFreq       = SetOrDefault( toml_input_header_dmft_jx, "NImFreq", NaN )
+          if (isnan(NImFreq))
+            iWgridCut = SetOrDefault( toml_input_header_dmft_jx, "iWgridCut", NaN )
+          else
+            iWgridCut = (2*NImFreq)*pi/beta
+          end
+          # if (haskey(toml_input_header_dmft_jx,"iWgridCut"))
+          #   iWgridCut = toml_input_header_dmft_jx["iWgridCut"]
+          # end
+
+          if (haskey(toml_input_header_dmft_jx,"Solver_green_Cut"))
+            Solver_green_Cut = toml_input_header_dmft_jx["Solver_green_Cut"]
+          end
+
+          if (haskey(toml_input_header_dmft_jx,"mpi_prefix"))
+            mpi_prefix = toml_input_header_dmft_jx["mpi_prefix"]
+          end
+          if (haskey(toml_input_header_dmft_jx,"smth_step"))
+            smth_step = toml_input_header_dmft_jx["smth_step"]
+          end
+          if (haskey(toml_input_header_dmft_jx,"cal_susc"))
+            cal_susc = toml_input_header_dmft_jx["cal_susc"]
+          end
+
+          if (haskey(toml_input_header_dmft_jx,"green_basis"))
+            green_basis = toml_input_header_dmft_jx["green_basis"]
+          end
+          if (haskey(toml_input_header_dmft_jx,"green_legendre_cutoff"))
+            green_legendre_cutoff = toml_input_header_dmft_jx["green_legendre_cutoff"]
+          end
+
+
+
+
+          if (haskey(toml_input_header_dmft_jx,"imp_Measure_time"))
+            imp_Measure_time = toml_input_header_dmft_jx["imp_Measure_time"]
+          end
+          if (haskey(toml_input_header_dmft_jx,"imp_Thermal_time"))
+            imp_Thermal_time = toml_input_header_dmft_jx["imp_Thermal_time"]
+          end
+
+          if (haskey(toml_input_header_dmft_jx,"Mix_selfE"))
+            Mix_selfE = toml_input_header_dmft_jx["Mix_selfE"]
+          end
+
+          if (haskey(toml_input_header_dmft_jx,"init_bias"))
+            init_bias = toml_input_header_dmft_jx["init_bias"]
+          end
+
+
+          Corr_atom_Ind = toml_input_header_dmft_jx["Corr_atom_Ind"]
+          Corr_orbital_Ind = toml_input_header_dmft_jx["Corr_orbital_Ind"]
+          Corr_atom_equiv = toml_input_header_dmft_jx["Corr_atom_equiv"]
+
+          Spin_type = toml_input_header_dmft_jx["DMFT_Spin_type"]
+
+          if (haskey(toml_input_header_dmft_jx,"imp_dc_type"))
+             imp_dc_type = toml_input_header_dmft_jx["imp_dc_type"]
           end
           imp_U=[]
           imp_J=[]
@@ -1119,33 +1151,33 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           imp_lev_shift=[]
           for i in unique(abs.(Corr_atom_equiv))
              str=string("imp",i,"_U")
-             push!(imp_U, toml_inputs["DMFT_Jx"][str])
+             push!(imp_U, toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_J")
-             push!(imp_J,toml_inputs["DMFT_Jx"][str])
+             push!(imp_J,toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_dc")
-             push!(imp_dc,toml_inputs["DMFT_Jx"][str])
+             push!(imp_dc,toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_int_type")
-             push!(imp_int_type,toml_inputs["DMFT_Jx"][str])
+             push!(imp_int_type,toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_int_parameterisation")
-             push!(imp_int_parameterisation,toml_inputs["DMFT_Jx"][str])
+             push!(imp_int_parameterisation,toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_block")
-             Ind_2d_block=zeros(Int64, size( toml_inputs["DMFT_Jx"][str] )[1], size( toml_inputs["DMFT_Jx"][str][1] )[1] )
-             for j = 1:size( toml_inputs["DMFT_Jx"][str] )[1]
-               Ind_2d_block[j,:] = toml_inputs["DMFT_Jx"][str][j]
+             Ind_2d_block=zeros(Int64, size( toml_input_header_dmft_jx[str] )[1], size( toml_input_header_dmft_jx[str][1] )[1] )
+             for j = 1:size( toml_input_header_dmft_jx[str] )[1]
+               Ind_2d_block[j,:] = toml_input_header_dmft_jx[str][j]
              end
              push!(imp_block,Ind_2d_block)
 
 
              str2=string("imp",i,"_lev_shift")
-             lev_shift_2d_block=zeros(Float64, size( toml_inputs["DMFT_Jx"][str] )[1], size( toml_inputs["DMFT_Jx"][str][1] )[1] )
-             if (haskey(toml_inputs["DMFT_Jx"],str2))
-                 for j = 1:size( toml_inputs["DMFT_Jx"][str2] )[1]
-                    lev_shift_2d_block[j,:] = toml_inputs["DMFT_Jx"][str2][j]
+             lev_shift_2d_block=zeros(Float64, size( toml_input_header_dmft_jx[str] )[1], size( toml_input_header_dmft_jx[str][1] )[1] )
+             if (haskey(toml_input_header_dmft_jx,str2))
+                 for j = 1:size( toml_input_header_dmft_jx[str2] )[1]
+                    lev_shift_2d_block[j,:] = toml_input_header_dmft_jx[str2][j]
                  end
              end
              push!(imp_lev_shift,lev_shift_2d_block)
@@ -1158,13 +1190,13 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           imp_int_parameterisation=convert(Array{String,1},imp_int_parameterisation)
           imp_block = convert(Array{Array{Int64,2},1}, imp_block)
           imp_lev_shift = convert(Array{Array{Float64,2},1}, imp_lev_shift)
-          input.Optional["DMFT_Jx"] = Arg_DMFT_(Calculation_mode,mpi_prefix,DMFT_loop_N, KgridNum, RgridNum, iWgridCut, Solver_green_Cut, Temperature, Corr_atom_Ind, Corr_orbital_Ind, Corr_atom_equiv, Spin_type, Mix_selfE,init_bias,smth_step,cal_susc,compute_EF,DMFT_solver,imp_dc_type, imp_U,imp_J,imp_dc,imp_int_type,imp_int_parameterisation,imp_block, imp_lev_shift, imp_Measure_time, imp_Thermal_time, basis_transform,consider_degeneracy, green_basis, green_legendre_cutoff, EDMFTF_MonteCar_step, EDMFTF_warmup_step, EDMFTF_GlobalFlip, EDMFTF_tsample, EDMFTF_nom, EDMFTF_PChangeOrder,SelfE_file)
+          input.Optional[header_dmft_jx] = Arg_DMFT_(Calculation_mode,mpi_prefix,DMFT_loop_N, KgridNum, RgridNum, iWgridCut, Solver_green_Cut, Temperature, Corr_atom_Ind, Corr_orbital_Ind, Corr_atom_equiv, Spin_type, Mix_selfE,init_bias,smth_step,cal_susc,compute_EF,DMFT_solver,imp_dc_type, imp_U,imp_J,imp_dc,imp_int_type,imp_int_parameterisation,imp_block, imp_lev_shift, imp_Measure_time, imp_Thermal_time, basis_transform,consider_degeneracy, green_basis, green_legendre_cutoff, EDMFTF_MonteCar_step, EDMFTF_warmup_step, EDMFTF_GlobalFlip, EDMFTF_tsample, EDMFTF_nom, EDMFTF_PChangeOrder,SelfE_file,chem_int)
 
 
-       elseif(Calculation_mode == "Jx-DMFT" || Calculation_mode == "Jx-DMFT-private")
+       elseif(Calculation_mode == "Jx-DMFT" || Calculation_mode == "Jx-DMFT-private" || Calculation_mode=="DMFT+MFT")
           KgridNum = [5,5,5]
           RgridNum = [5,5,5]
-          iWgridCut = 30
+          # iWgridCut = 30
           Solver_green_Cut = 30
           imp_Measure_time = 20;
           imp_Thermal_time = 1;
@@ -1181,6 +1213,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           imp_dc_type ="nominal"
           DMFT_solver = "ComCTQMC"
           SelfE_file = ""
+          chem_int = 0.0
 
           EDMFTF_MonteCar_step = 1000000
           EDMFTF_warmup_step = 100000
@@ -1191,113 +1224,128 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
           compute_EF = true
 
-          if (haskey(toml_inputs["DMFT_Jx"],"compute_EF"))
-            compute_EF = toml_inputs["DMFT_Jx"]["compute_EF"]
+          if (haskey(toml_input_header_dmft_jx,"compute_EF"))
+            compute_EF = toml_input_header_dmft_jx["compute_EF"]
           end
 
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_MonteCar_step"))
-            EDMFTF_MonteCar_step = toml_inputs["DMFT_Jx"]["EDMFTF_MonteCar_step"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_MonteCar_step"))
+            EDMFTF_MonteCar_step = toml_input_header_dmft_jx["EDMFTF_MonteCar_step"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_warmup_step"))
-            EDMFTF_warmup_step = toml_inputs["DMFT_Jx"]["EDMFTF_warmup_step"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_warmup_step"))
+            EDMFTF_warmup_step = toml_input_header_dmft_jx["EDMFTF_warmup_step"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_GlobalFlip"))
-            EDMFTF_GlobalFlip = toml_inputs["DMFT_Jx"]["EDMFTF_GlobalFlip"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_GlobalFlip"))
+            EDMFTF_GlobalFlip = toml_input_header_dmft_jx["EDMFTF_GlobalFlip"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_tsample"))
-            EDMFTF_tsample = toml_inputs["DMFT_Jx"]["EDMFTF_tsample"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_tsample"))
+            EDMFTF_tsample = toml_input_header_dmft_jx["EDMFTF_tsample"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_nom"))
-            EDMFTF_nom = toml_inputs["DMFT_Jx"]["EDMFTF_nom"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_nom"))
+            EDMFTF_nom = toml_input_header_dmft_jx["EDMFTF_nom"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"EDMFTF_PChangeOrder"))
-            EDMFTF_PChangeOrder = toml_inputs["DMFT_Jx"]["EDMFTF_PChangeOrder"]
-          end
-
-
-          if (haskey(toml_inputs["DMFT_Jx"],"DMFT_solver"))
-            DMFT_solver = toml_inputs["DMFT_Jx"]["DMFT_solver"]
-          end
-
-          if (haskey(toml_inputs["DMFT_Jx"],"SelfE_file"))
-            SelfE_file = toml_inputs["DMFT_Jx"]["SelfE_file"]
+          if (haskey(toml_input_header_dmft_jx,"EDMFTF_PChangeOrder"))
+            EDMFTF_PChangeOrder = toml_input_header_dmft_jx["EDMFTF_PChangeOrder"]
           end
 
 
-          if (haskey(toml_inputs["DMFT_Jx"],"DMFT_loop_N"))
-            DMFT_loop_N = toml_inputs["DMFT_Jx"]["DMFT_loop_N"]
+          if (haskey(toml_input_header_dmft_jx,"DMFT_solver"))
+            DMFT_solver = toml_input_header_dmft_jx["DMFT_solver"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"basis_transform"))
-            basis_transform = toml_inputs["DMFT_Jx"]["basis_transform"]
+          if (haskey(toml_input_header_dmft_jx,"SelfE_file"))
+            SelfE_file = toml_input_header_dmft_jx["SelfE_file"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"consider_degeneracy"))
-            consider_degeneracy = toml_inputs["DMFT_Jx"]["consider_degeneracy"]
+          if (haskey(toml_input_header_dmft_jx,"chem_int"))
+            chem_int = toml_input_header_dmft_jx["chem_int"]
+          end
+
+
+          if (haskey(toml_input_header_dmft_jx,"DMFT_loop_N"))
+            DMFT_loop_N = toml_input_header_dmft_jx["DMFT_loop_N"]
+          end
+
+          if (haskey(toml_input_header_dmft_jx,"basis_transform"))
+            basis_transform = toml_input_header_dmft_jx["basis_transform"]
+          end
+
+          if (haskey(toml_input_header_dmft_jx,"consider_degeneracy"))
+            consider_degeneracy = toml_input_header_dmft_jx["consider_degeneracy"]
           end
 
 
 
-          if (haskey(toml_inputs["DMFT_Jx"],"KgridNum"))
-            KgridNum = toml_inputs["DMFT_Jx"]["KgridNum"]
+          if (haskey(toml_input_header_dmft_jx,"KgridNum"))
+            KgridNum = toml_input_header_dmft_jx["KgridNum"]
           end
-          if (haskey(toml_inputs["DMFT_Jx"],"RgridNum"))
-            RgridNum = toml_inputs["DMFT_Jx"]["RgridNum"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"iWgridCut"))
-            iWgridCut = toml_inputs["DMFT_Jx"]["iWgridCut"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"Solver_green_Cut"))
-            Solver_green_Cut = toml_inputs["DMFT_Jx"]["Solver_green_Cut"]
+          if (haskey(toml_input_header_dmft_jx,"RgridNum"))
+            RgridNum = toml_input_header_dmft_jx["RgridNum"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"mpi_prefix"))
-            mpi_prefix = toml_inputs["DMFT_Jx"]["mpi_prefix"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"smth_step"))
-            smth_step = toml_inputs["DMFT_Jx"]["smth_step"]
-          end
-          if (haskey(toml_inputs["DMFT_Jx"],"cal_susc"))
-            cal_susc = toml_inputs["DMFT_Jx"]["cal_susc"]
+          beta          = SetOrDefault( toml_input_header_dmft_jx, "beta", NaN )
+          if (isnan(beta))
+            Temperature   = SetOrDefault( toml_input_header_dmft_jx, "Temperature", 90.66035161070313 )
+          else
+            Temperature   = 1. / beta * eVToKelvin
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"green_basis"))
-            green_basis = toml_inputs["DMFT_Jx"]["green_basis"]
+          NImFreq       = SetOrDefault( toml_input_header_dmft_jx, "NImFreq", NaN )
+          if (isnan(NImFreq))
+            iWgridCut = SetOrDefault( toml_input_header_dmft_jx, "iWgridCut", NaN )
+          else
+            iWgridCut = (2*NImFreq)*pi/beta
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"green_legendre_cutoff"))
-            green_legendre_cutoff = toml_inputs["DMFT_Jx"]["green_legendre_cutoff"]
+          if (haskey(toml_input_header_dmft_jx,"Solver_green_Cut"))
+            Solver_green_Cut = toml_input_header_dmft_jx["Solver_green_Cut"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"imp_Measure_time"))
-            imp_Measure_time = toml_inputs["DMFT_Jx"]["imp_Measure_time"]
+          if (haskey(toml_input_header_dmft_jx,"mpi_prefix"))
+            mpi_prefix = toml_input_header_dmft_jx["mpi_prefix"]
           end
-          if (haskey(toml_inputs["DMFT_Jx"],"imp_Thermal_time"))
-            imp_Thermal_time = toml_inputs["DMFT_Jx"]["imp_Thermal_time"]
+          if (haskey(toml_input_header_dmft_jx,"smth_step"))
+            smth_step = toml_input_header_dmft_jx["smth_step"]
+          end
+          if (haskey(toml_input_header_dmft_jx,"cal_susc"))
+            cal_susc = toml_input_header_dmft_jx["cal_susc"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"Mix_selfE"))
-            Mix_selfE = toml_inputs["DMFT_Jx"]["Mix_selfE"]
+          if (haskey(toml_input_header_dmft_jx,"green_basis"))
+            green_basis = toml_input_header_dmft_jx["green_basis"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"init_bias"))
-            init_bias = toml_inputs["DMFT_Jx"]["init_bias"]
+          if (haskey(toml_input_header_dmft_jx,"green_legendre_cutoff"))
+            green_legendre_cutoff = toml_input_header_dmft_jx["green_legendre_cutoff"]
           end
-          Temperature = toml_inputs["DMFT_Jx"]["Temperature"]
-          Corr_atom_Ind = toml_inputs["DMFT_Jx"]["Corr_atom_Ind"]
-          Corr_orbital_Ind = toml_inputs["DMFT_Jx"]["Corr_orbital_Ind"]
-          Corr_atom_equiv = toml_inputs["DMFT_Jx"]["Corr_atom_equiv"]
 
-          Spin_type = toml_inputs["DMFT_Jx"]["DMFT_Spin_type"]
+          if (haskey(toml_input_header_dmft_jx,"imp_Measure_time"))
+            imp_Measure_time = toml_input_header_dmft_jx["imp_Measure_time"]
+          end
+          if (haskey(toml_input_header_dmft_jx,"imp_Thermal_time"))
+            imp_Thermal_time = toml_input_header_dmft_jx["imp_Thermal_time"]
+          end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"imp_dc_type"))
-             imp_dc_type = toml_inputs["DMFT_Jx"]["imp_dc_type"]
+          if (haskey(toml_input_header_dmft_jx,"Mix_selfE"))
+            Mix_selfE = toml_input_header_dmft_jx["Mix_selfE"]
+          end
+
+          if (haskey(toml_input_header_dmft_jx,"init_bias"))
+            init_bias = toml_input_header_dmft_jx["init_bias"]
+          end
+          Corr_atom_Ind = toml_input_header_dmft_jx["Corr_atom_Ind"]
+          Corr_orbital_Ind = toml_input_header_dmft_jx["Corr_orbital_Ind"]
+          Corr_atom_equiv = toml_input_header_dmft_jx["Corr_atom_equiv"]
+
+          Spin_type = toml_input_header_dmft_jx["DMFT_Spin_type"]
+
+          if (haskey(toml_input_header_dmft_jx,"imp_dc_type"))
+             imp_dc_type = toml_input_header_dmft_jx["imp_dc_type"]
           end
 
           imp_U=[]
@@ -1309,31 +1357,31 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           imp_lev_shift=[]
           for i in unique(abs.(Corr_atom_equiv))
              str=string("imp",i,"_U")
-             push!(imp_U, toml_inputs["DMFT_Jx"][str])
+             push!(imp_U, toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_J")
-             push!(imp_J,toml_inputs["DMFT_Jx"][str])
+             push!(imp_J,toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_dc")
-             push!(imp_dc,toml_inputs["DMFT_Jx"][str])
+             push!(imp_dc,toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_int_type")
-             push!(imp_int_type,toml_inputs["DMFT_Jx"][str])
+             push!(imp_int_type,toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_int_parameterisation")
-             push!(imp_int_parameterisation,toml_inputs["DMFT_Jx"][str])
+             push!(imp_int_parameterisation,toml_input_header_dmft_jx[str])
 
              str=string("imp",i,"_block")
-             Ind_2d_block=zeros(Int64, size( toml_inputs["DMFT_Jx"][str] )[1], size( toml_inputs["DMFT_Jx"][str][1] )[1] )
-             for j = 1:size( toml_inputs["DMFT_Jx"][str] )[1]
-               Ind_2d_block[j,:] = toml_inputs["DMFT_Jx"][str][j]
+             Ind_2d_block=zeros(Int64, size( toml_input_header_dmft_jx[str] )[1], size( toml_input_header_dmft_jx[str][1] )[1] )
+             for j = 1:size( toml_input_header_dmft_jx[str] )[1]
+               Ind_2d_block[j,:] = toml_input_header_dmft_jx[str][j]
              end
              push!(imp_block,Ind_2d_block)
              str2=string("imp",i,"_lev_shift")
-             lev_shift_2d_block=zeros(Float64, size( toml_inputs["DMFT_Jx"][str] )[1], size( toml_inputs["DMFT_Jx"][str][1] )[1] )
-             if (haskey(toml_inputs["DMFT_Jx"],str2))
-                 for j = 1:size( toml_inputs["DMFT_Jx"][str2] )[1]
-                    lev_shift_2d_block[j,:] = toml_inputs["DMFT_Jx"][str2][j]
+             lev_shift_2d_block=zeros(Float64, size( toml_input_header_dmft_jx[str] )[1], size( toml_input_header_dmft_jx[str][1] )[1] )
+             if (haskey(toml_input_header_dmft_jx,str2))
+                 for j = 1:size( toml_input_header_dmft_jx[str2] )[1]
+                    lev_shift_2d_block[j,:] = toml_input_header_dmft_jx[str2][j]
                  end
              end
              push!(imp_lev_shift,lev_shift_2d_block)
@@ -1347,11 +1395,11 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           imp_int_parameterisation=convert(Array{String,1},imp_int_parameterisation)
           imp_block = convert(Array{Array{Int64,2},1}, imp_block)
           imp_lev_shift = convert(Array{Array{Float64,2},1}, imp_lev_shift)
-          input.Optional["DMFT_Jx"] = Arg_DMFT_(Calculation_mode,mpi_prefix,DMFT_loop_N, KgridNum, RgridNum, iWgridCut, Solver_green_Cut, Temperature, Corr_atom_Ind, Corr_orbital_Ind, Corr_atom_equiv, Spin_type, Mix_selfE,init_bias,smth_step,cal_susc,compute_EF,DMFT_solver,imp_dc_type, imp_U,imp_J,imp_dc,imp_int_type,imp_int_parameterisation,imp_block, imp_lev_shift, imp_Measure_time, imp_Thermal_time, basis_transform,consider_degeneracy, green_basis, green_legendre_cutoff, EDMFTF_MonteCar_step, EDMFTF_warmup_step, EDMFTF_GlobalFlip, EDMFTF_tsample, EDMFTF_nom, EDMFTF_PChangeOrder,SelfE_file)
+          input.Optional[header_dmft_jx] = Arg_DMFT_(Calculation_mode,mpi_prefix,DMFT_loop_N, KgridNum, RgridNum, iWgridCut, Solver_green_Cut, Temperature, Corr_atom_Ind, Corr_orbital_Ind, Corr_atom_equiv, Spin_type, Mix_selfE,init_bias,smth_step,cal_susc,compute_EF,DMFT_solver,imp_dc_type, imp_U,imp_J,imp_dc,imp_int_type,imp_int_parameterisation,imp_block, imp_lev_shift, imp_Measure_time, imp_Thermal_time, basis_transform,consider_degeneracy, green_basis, green_legendre_cutoff, EDMFTF_MonteCar_step, EDMFTF_warmup_step, EDMFTF_GlobalFlip, EDMFTF_tsample, EDMFTF_nom, EDMFTF_PChangeOrder,SelfE_file,chem_int)
 
 
 
-       elseif (Calculation_mode == "Jx0" || Calculation_mode == "Magnon")
+       elseif (Calculation_mode == "Jx0" || Calculation_mode == "MFT" || Calculation_mode == "Spinwave"|| Calculation_mode == "Magnon")
 
           KgridNum = [5,5,5]
           RgridNum = [5,5,5]
@@ -1360,40 +1408,40 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           qmode = 1
           Neighbors_cut = 300
 
-          if (haskey(toml_inputs["DMFT_Jx"],"qmode"))
-            qmode = toml_inputs["DMFT_Jx"]["qmode"]
+          if (haskey(toml_input_header_dmft_jx,"qmode"))
+            qmode = toml_input_header_dmft_jx["qmode"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"Neighbors_cut"))
-            Neighbors_cut = toml_inputs["DMFT_Jx"]["Neighbors_cut"]
+          if (haskey(toml_input_header_dmft_jx,"Neighbors_cut"))
+            Neighbors_cut = toml_input_header_dmft_jx["Neighbors_cut"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"Temperature"))
-            Temperature = toml_inputs["DMFT_Jx"]["Temperature"]
+          if (haskey(toml_input_header_dmft_jx,"Temperature"))
+            Temperature = toml_input_header_dmft_jx["Temperature"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"iWgridCut"))
-            iWgridCut = toml_inputs["DMFT_Jx"]["iWgridCut"]
+          if (haskey(toml_input_header_dmft_jx,"iWgridCut"))
+            iWgridCut = toml_input_header_dmft_jx["iWgridCut"]
           end
 
-          if (haskey(toml_inputs["DMFT_Jx"],"KgridNum"))
-            KgridNum = toml_inputs["DMFT_Jx"]["KgridNum"]
+          if (haskey(toml_input_header_dmft_jx,"KgridNum"))
+            KgridNum = toml_input_header_dmft_jx["KgridNum"]
           end
-          if (haskey(toml_inputs["DMFT_Jx"],"RgridNum"))
-            RgridNum = toml_inputs["DMFT_Jx"]["RgridNum"]
-          end
-
-          if (haskey(toml_inputs["DMFT_Jx"],"iWgridCut"))
-            iWgridCut = toml_inputs["DMFT_Jx"]["iWgridCut"]
+          if (haskey(toml_input_header_dmft_jx,"RgridNum"))
+            RgridNum = toml_input_header_dmft_jx["RgridNum"]
           end
 
+          if (haskey(toml_input_header_dmft_jx,"iWgridCut"))
+            iWgridCut = toml_input_header_dmft_jx["iWgridCut"]
+          end
 
-          Corr_atom_Ind = toml_inputs["DMFT_Jx"]["Corr_atom_Ind"]
-          Corr_orbital_Ind = toml_inputs["DMFT_Jx"]["Corr_orbital_Ind"]
-          Corr_atom_equiv = toml_inputs["DMFT_Jx"]["Corr_atom_equiv"]
+
+          Corr_atom_Ind = toml_input_header_dmft_jx["Corr_atom_Ind"]
+          Corr_orbital_Ind = toml_input_header_dmft_jx["Corr_orbital_Ind"]
+          Corr_atom_equiv = toml_input_header_dmft_jx["Corr_atom_equiv"]
 
 
-          input.Optional["DMFT_Jx"] = Arg_DFT_Jx(Calculation_mode, qmode, Neighbors_cut,KgridNum, RgridNum,iWgridCut,Temperature, Corr_atom_Ind, Corr_orbital_Ind, Corr_atom_equiv)
+          input.Optional[header_dmft_jx] = Arg_DFT_Jx(Calculation_mode, qmode, Neighbors_cut,KgridNum, RgridNum,iWgridCut,Temperature, Corr_atom_Ind, Corr_orbital_Ind, Corr_atom_equiv)
        end
 
     end
