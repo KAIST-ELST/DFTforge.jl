@@ -165,6 +165,8 @@ struct Arg_DFT_Jx
   Corr_atom_Ind::Array{Int64,1}
   Corr_orbital_Ind::Array{Array{Int64,1},1}
   Corr_atom_equiv::Array{Int64,1}
+  beta::Float64
+  NImFreq::Int64
 end
 
 struct Arg_GWEDMFT
@@ -1403,8 +1405,8 @@ function parse_TOML(toml_file,input::Arg_Inputs)
 
           KgridNum = [5,5,5]
           RgridNum = [5,5,5]
-          iWgridCut = 30
-          Temperature = 500
+          # iWgridCut = 30
+          # Temperature = 500
           qmode = 1
           Neighbors_cut = 300
 
@@ -1416,12 +1418,18 @@ function parse_TOML(toml_file,input::Arg_Inputs)
             Neighbors_cut = toml_input_header_dmft_jx["Neighbors_cut"]
           end
 
-          if (haskey(toml_input_header_dmft_jx,"Temperature"))
-            Temperature = toml_input_header_dmft_jx["Temperature"]
+          beta          = SetOrDefault( toml_input_header_dmft_jx, "beta", 0 )
+          if (iszero(beta))
+            Temperature   = SetOrDefault( toml_input_header_dmft_jx, "Temperature", 90.66035161070313 )
+          else
+            Temperature   = 1. / beta * eVToKelvin
           end
 
-          if (haskey(toml_input_header_dmft_jx,"iWgridCut"))
-            iWgridCut = toml_input_header_dmft_jx["iWgridCut"]
+          NImFreq       = SetOrDefault( toml_input_header_dmft_jx, "NImFreq", 0 )
+          if (iszero(NImFreq))
+            iWgridCut = SetOrDefault( toml_input_header_dmft_jx, "iWgridCut", 30 )
+          else
+            iWgridCut = (2*NImFreq)*pi/beta
           end
 
           if (haskey(toml_input_header_dmft_jx,"KgridNum"))
@@ -1441,7 +1449,7 @@ function parse_TOML(toml_file,input::Arg_Inputs)
           Corr_atom_equiv = toml_input_header_dmft_jx["Corr_atom_equiv"]
 
 
-          input.Optional[header_dmft_jx] = Arg_DFT_Jx(Calculation_mode, qmode, Neighbors_cut,KgridNum, RgridNum,iWgridCut,Temperature, Corr_atom_Ind, Corr_orbital_Ind, Corr_atom_equiv)
+          input.Optional[header_dmft_jx] = Arg_DFT_Jx(Calculation_mode, qmode, Neighbors_cut,KgridNum, RgridNum,iWgridCut,Temperature, Corr_atom_Ind, Corr_orbital_Ind, Corr_atom_equiv, beta, NImFreq)
        end
 
     end
